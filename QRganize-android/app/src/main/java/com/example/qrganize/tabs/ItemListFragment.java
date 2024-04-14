@@ -1,4 +1,4 @@
-package com.example.qrganize;
+package com.example.qrganize.tabs;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,6 +10,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.qrganize.R;
 
 import java.util.ArrayList;
 import java.util.List;

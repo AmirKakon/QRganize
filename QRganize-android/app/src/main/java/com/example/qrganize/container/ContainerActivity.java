@@ -1,10 +1,12 @@
-package com.example.qrganize;
+package com.example.qrganize.container;
 
 import android.os.Bundle;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.qrganize.R;
 
 public class ContainerActivity extends AppCompatActivity {
 

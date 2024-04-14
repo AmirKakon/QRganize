@@ -1,8 +1,9 @@
-package com.example.qrganize;
+package com.example.qrganize.tabs;
 
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.LayoutInflater;
@@ -22,6 +23,16 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.qrganize.MainActivity;
+import com.example.qrganize.api.ApiClient;
+import com.example.qrganize.container.ContainerActivity;
+import com.example.qrganize.R;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.MultiFormatReader;
@@ -43,7 +54,6 @@ public class QRScannerFragment extends Fragment {
     private ExecutorService cameraExecutor;
     private ProcessCameraProvider cameraProvider;
     private boolean isScanCompleted = false;
-
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 100;
 
     @Nullable

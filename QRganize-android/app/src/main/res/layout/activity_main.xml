@@ -10,10 +10,18 @@
         android:layout_alignParentTop="true"
         android:minHeight="?attr/actionBarSize" />
 
+    <TextView
+        android:id="@+id/test"
+        android:text="TEST"
+        android:gravity="center"
+        android:layout_below="@id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <androidx.viewpager.widget.ViewPager
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/tabLayout" />
+        android:layout_below="@id/test" />
 
 </RelativeLayout>

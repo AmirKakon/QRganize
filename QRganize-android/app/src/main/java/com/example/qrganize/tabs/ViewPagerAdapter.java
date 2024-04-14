@@ -1,4 +1,4 @@
-package com.example.qrganize;
+package com.example.qrganize.tabs;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
