@@ -50,4 +50,6 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.1.0")
     implementation("androidx.camera:camera-view:1.3.2")
     implementation("com.android.volley:volley:1.2.1")
+    implementation("com.google.code.gson:gson:2.8.8")
+
 }

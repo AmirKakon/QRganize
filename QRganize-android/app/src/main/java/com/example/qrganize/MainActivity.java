@@ -21,44 +21,19 @@ import com.example.qrganize.tabs.ViewPagerAdapter;
 import com.google.android.material.tabs.TabLayout;
 
 public class MainActivity extends AppCompatActivity {
-
-    private ApiClient apiClient;
     private ViewPager viewPager;
     private TabLayout tabLayout;
-
-    private TextView textView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        try {
+
         viewPager = findViewById(R.id.viewPager);
         setupViewPager(viewPager);
 
         tabLayout = findViewById(R.id.tabLayout);
         tabLayout.setupWithViewPager(viewPager);
-
-        textView = findViewById(R.id.test);
-
-            apiClient = new ApiClient(this);
-            String url = "https://us-central1-qrganize-f651b.cloudfunctions.net/helloWorld";
-
-            apiClient.Get(url, new ApiClient.ApiResponseListener<String>() {
-                @Override
-                public void onSuccess(String response) {
-                    textView.setText("Response is: " + response);
-                }
-
-                @Override
-                public void onError(String errorMessage) {
-                    textView.setText("Error: " + errorMessage);
-                }
-            });
-
-        } catch (Exception e) {
-            textView.setText(e.getMessage());
-        }
     }
 
     private void setupViewPager(ViewPager viewPager) {
