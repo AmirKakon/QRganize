@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.content.ContextWrapper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,23 +24,23 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ItemListFragment extends Fragment {
+public class ContainerListFragment extends Fragment {
 
     private RecyclerView recyclerView;
-    private ItemAdapter itemAdapter;
-    private List<ContainerModel> itemList;
+    private ContainerListAdapter containerListAdapter;
+    private List<ContainerModel> containerList;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_item_list, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_container_list, container, false);
 
         recyclerView = rootView.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        itemList = new ArrayList<>();
+        containerList = new ArrayList<>();
         generateItemList();
-        itemAdapter = new ItemAdapter(itemList, getContext());
-        recyclerView.setAdapter(itemAdapter);
+        containerListAdapter = new ContainerListAdapter(containerList, getContext());
+        recyclerView.setAdapter(containerListAdapter);
 
         return rootView;
     }
@@ -61,18 +60,18 @@ public class ItemListFragment extends Fragment {
                             if (response.getData() instanceof JSONObject) {
                                 JSONObject jsonObject = (JSONObject) response.getData();
                                 ContainerModel container = gson.fromJson(jsonObject.toString(), ContainerModel.class);
-                                itemList.add(container);
+                                containerList.add(container);
                             } else if (response.getData() instanceof JSONArray) {
                                 JSONArray jsonArray = (JSONArray) response.getData();
 
                                 for (int i = 0; i < jsonArray.length(); i++) {
                                     JSONObject containerJson = jsonArray.getJSONObject(i);
                                     ContainerModel container = gson.fromJson(containerJson.toString(), ContainerModel.class);
-                                    itemList.add(container);
+                                    containerList.add(container);
                                 }
                             }
 
-                            itemAdapter.notifyDataSetChanged();
+                            containerListAdapter.notifyDataSetChanged();
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }

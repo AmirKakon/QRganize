@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">QRganize</string>
     <string name="scan_qr_title">Scan a QR code</string>
+    <string name="container_list_title">Containers</string>
 </resources>
