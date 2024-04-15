@@ -13,6 +13,11 @@ public class AuthResponse {
         this.refreshToken = refreshToken;
     }
 
+    public AuthResponse(String status, String accessToken) {
+        this.status = status;
+        this.accessToken = accessToken;
+    }
+
     public String getStatus() {
         return status;
     }

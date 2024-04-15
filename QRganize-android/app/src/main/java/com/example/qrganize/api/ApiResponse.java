@@ -2,14 +2,15 @@ package com.example.qrganize.api;
 
 import com.google.gson.Gson;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ApiResponse {
     private String status;
-    private JSONObject data;
+    private Object data; // Change type to Object
 
-    public ApiResponse(String status, JSONObject data) {
+    public ApiResponse(String status, Object data) {
         this.status = status;
         this.data = data;
     }
@@ -18,7 +19,7 @@ public class ApiResponse {
         return status;
     }
 
-    public JSONObject getData() {
+    public Object getData() { // Change return type to Object
         return data;
     }
 
@@ -26,7 +27,7 @@ public class ApiResponse {
         try {
             JSONObject jsonObject = new JSONObject(jsonString);
             String status = jsonObject.getString("status");
-            JSONObject data = jsonObject.optJSONObject("data");
+            Object data = jsonObject.opt("data");
             return new ApiResponse(status, data);
         } catch (JSONException e) {
             e.printStackTrace();

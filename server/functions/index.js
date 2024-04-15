@@ -16,7 +16,3 @@ exports.app = functions.https.onRequest(app);
 
 // Export the dev version
 exports.dev = functions.https.onRequest(dev);
-
-exports.helloWorld = functions.https.onRequest((request, response) => {
-  response.send(["Hello from Firebase!", "this is cool"]);
-});

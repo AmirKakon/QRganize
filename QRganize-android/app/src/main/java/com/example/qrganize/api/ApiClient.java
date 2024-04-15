@@ -11,6 +11,8 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 
+import org.json.JSONException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,12 +35,16 @@ public class ApiClient {
     }
 
     public void Get(String url, final ApiResponseListener<ApiResponse> listener) {
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         ApiResponse res = ApiResponse.fromJson(response);
-                        listener.onSuccess(res);
+                        try {
+                            listener.onSuccess(res);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -48,19 +54,18 @@ public class ApiClient {
         }) {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
-                System.out.println("TOKEN: " + AuthClient.getInstance(context.getApplicationContext()).getAccessToken());
+                String token = AuthClient.getInstance(context.getApplicationContext()).getAccessToken();
                 Map<String, String> headers = new HashMap<>();
-                headers.put("Authorization", "Bearer " + AuthClient.getInstance(context.getApplicationContext()).getAccessToken());
+                headers.put("Authorization", "Bearer " + token);
                 return headers;
             }
         };
-
-        // Add the request to the RequestQueue.
-        requestQueue.add(stringRequest);
+            // Add the request to the RequestQueue.
+            requestQueue.add(stringRequest);
     }
 
     public interface ApiResponseListener<T> {
-        void onSuccess(T response);
+        void onSuccess(T response) throws JSONException;
 
         void onError(String errorMessage);
     }

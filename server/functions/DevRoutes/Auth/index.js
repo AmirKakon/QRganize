@@ -29,7 +29,7 @@ const authenticate = async (req, res, next) => {
     next();
   } catch (error) {
     logger.error(error);
-    res.status(400).send({ status: "Failed", error: error.message });
+    res.status(401).send({ status: "Failed", error: error.message });
   }
 };
 
@@ -112,7 +112,7 @@ dev.post("/api/auth/login", async (req, res) => {
     });
   } catch (error) {
     logger.error(error);
-    res.status(400).send({ status: "Failed", message: error.message });
+    res.status(401).send({ status: "Failed", message: error.message });
   }
 });
 
@@ -163,7 +163,7 @@ dev.post("/api/auth/refresh", async (req, res) => {
     });
   } catch (error) {
     logger.error(error);
-    res.status(400).send({ status: "Failed", message: error.message });
+    res.status(401).send({ status: "Failed", message: error.message });
   }
 });
 

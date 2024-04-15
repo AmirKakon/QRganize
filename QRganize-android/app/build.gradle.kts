@@ -51,5 +51,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.2")
     implementation("com.android.volley:volley:1.2.1")
     implementation("com.google.code.gson:gson:2.8.8")
+    implementation ("io.jsonwebtoken:jjwt:0.9.1")
+
 
 }
