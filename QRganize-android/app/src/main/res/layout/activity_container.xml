@@ -5,10 +5,16 @@
 
     <TextView
         android:id="@+id/textViewResult"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:textSize="18sp"
         android:textStyle="bold" />
+    <Button
+        android:id="@+id/button"
+        android:text="Click"
+        android:layout_below="@id/textViewResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </RelativeLayout>

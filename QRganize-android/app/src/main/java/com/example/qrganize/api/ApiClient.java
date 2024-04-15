@@ -16,17 +16,23 @@ import java.util.Map;
 
 public class ApiClient {
 
+    private static ApiClient instance;
     private final Context context;
-    private String jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoidGVzdCIsImlkIjoiMSIsImlhdCI6MTcxMzExMTk1OSwiZXhwIjoxNzEzMTEyODU5fQ.F7JqSuCM7wUtotmX-rtmndGwguKl8iG-v4WHZZacrk0zsesezw";
+    private final RequestQueue requestQueue;
 
-    public ApiClient(Context context) {
+    private ApiClient(Context context) {
         this.context = context;
+        this.requestQueue = Volley.newRequestQueue(context);
+    }
+
+    public static synchronized ApiClient getInstance(Context context) {
+        if (instance == null) {
+            instance = new ApiClient(context);
+        }
+        return instance;
     }
 
     public void Get(String url, final ApiResponseListener<ApiResponse> listener) {
-        // Instantiate the RequestQueue.
-        RequestQueue queue = Volley.newRequestQueue(context);
-
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
@@ -42,14 +48,15 @@ public class ApiClient {
         }) {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
+                System.out.println("TOKEN: " + AuthClient.getInstance(context.getApplicationContext()).getAccessToken());
                 Map<String, String> headers = new HashMap<>();
-                headers.put("Authorization", "Bearer " + jwtToken);
+                headers.put("Authorization", "Bearer " + AuthClient.getInstance(context.getApplicationContext()).getAccessToken());
                 return headers;
             }
         };
 
         // Add the request to the RequestQueue.
-        queue.add(stringRequest);
+        requestQueue.add(stringRequest);
     }
 
     public interface ApiResponseListener<T> {

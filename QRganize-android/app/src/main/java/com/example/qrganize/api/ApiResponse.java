@@ -2,6 +2,7 @@ package com.example.qrganize.api;
 
 import com.google.gson.Gson;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ApiResponse {
@@ -21,11 +22,15 @@ public class ApiResponse {
         return data;
     }
 
-    // Static method to parse JSON response
-    public static ApiResponse fromJson(String jsonObject) {
-        Gson gson = new Gson();
-        ApiResponse apiResponse = gson.fromJson(jsonObject, ApiResponse.class);
-
-        return apiResponse;
+    public static ApiResponse fromJson(String jsonString) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            String status = jsonObject.getString("status");
+            JSONObject data = jsonObject.optJSONObject("data");
+            return new ApiResponse(status, data);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
