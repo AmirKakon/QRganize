@@ -158,7 +158,7 @@ public class QRScannerFragment extends Fragment {
                     isScanCompleted = true;
                     // Start QRResultActivity and pass the scanned QR code text as an extra
                     Intent intent = new Intent(requireContext(), ContainerActivity.class);
-                    intent.putExtra("qrCodeText", result.getText());
+                    intent.putExtra("containerId", result.getText());
                     startActivity(intent);
                     // Vibrate when code is scanned
                     vibrate();

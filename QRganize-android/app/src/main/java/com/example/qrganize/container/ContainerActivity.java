@@ -38,7 +38,7 @@ public class ContainerActivity extends AppCompatActivity {
         button = findViewById(R.id.button);
         try {
             // Get the scanned QR code text from the intent
-            String qrCodeText = getIntent().getStringExtra("qrCodeText");
+            String qrCodeText = getIntent().getStringExtra("containerId");
 
             if (qrCodeText != null) {
 

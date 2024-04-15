@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.content.ContextWrapper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,6 +13,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.qrganize.R;
+import com.example.qrganize.api.ApiClient;
+import com.example.qrganize.api.ApiResponse;
+import com.example.qrganize.container.ContainerModel;
+import com.google.gson.Gson;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +29,7 @@ public class ItemListFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private ItemAdapter itemAdapter;
-    private List<String> itemList;
+    private List<ContainerModel> itemList;
 
     @Nullable
     @Override
@@ -29,20 +38,56 @@ public class ItemListFragment extends Fragment {
 
         recyclerView = rootView.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        itemList = generateItemList();
-        itemAdapter = new ItemAdapter(itemList);
+        itemList = new ArrayList<>();
+        generateItemList();
+        itemAdapter = new ItemAdapter(itemList, getContext());
         recyclerView.setAdapter(itemAdapter);
 
         return rootView;
     }
 
-    private List<String> generateItemList() {
-        List<String> itemList = new ArrayList<>();
-        itemList.add("Item 1");
-        itemList.add("Item 2");
-        itemList.add("Item 3");
-        itemList.add("Item 4");
-        itemList.add("Item 5");
-        return itemList;
+    private void generateItemList() {
+        try {
+            ApiClient apiClient = ApiClient.getInstance(getContext());
+            String url = "https://us-central1-qrganize-f651b.cloudfunctions.net/dev/api/containers/getAll";
+
+            apiClient.Get(url, new ApiClient.ApiResponseListener<ApiResponse>() {
+                @Override
+                public void onSuccess(ApiResponse response) {
+                    if (response.getData() != null) {
+                        try {
+                            Gson gson = new Gson();
+
+                            if (response.getData() instanceof JSONObject) {
+                                JSONObject jsonObject = (JSONObject) response.getData();
+                                ContainerModel container = gson.fromJson(jsonObject.toString(), ContainerModel.class);
+                                itemList.add(container);
+                            } else if (response.getData() instanceof JSONArray) {
+                                JSONArray jsonArray = (JSONArray) response.getData();
+
+                                for (int i = 0; i < jsonArray.length(); i++) {
+                                    JSONObject containerJson = jsonArray.getJSONObject(i);
+                                    ContainerModel container = gson.fromJson(containerJson.toString(), ContainerModel.class);
+                                    itemList.add(container);
+                                }
+                            }
+
+                            itemAdapter.notifyDataSetChanged();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+
+                @Override
+                public void onError(String errorMessage) {
+                    System.out.println("FAIL!");
+                }
+            });
+
+        } catch (Exception e) {
+            System.out.println("FAIL%");
+        }
     }
 }
