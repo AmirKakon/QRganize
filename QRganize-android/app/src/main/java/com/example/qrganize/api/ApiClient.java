@@ -1,12 +1,14 @@
 package com.example.qrganize.api;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
@@ -62,6 +64,33 @@ public class ApiClient {
         };
             // Add the request to the RequestQueue.
             requestQueue.add(stringRequest);
+    }
+
+    public void GetQrCodeImage(String containerId, final ApiResponseListener<Bitmap> listener) {
+        String url = "https://quickchart.io/qr?text=" + containerId;
+
+        ImageRequest imageRequest = new ImageRequest(url,
+                new Response.Listener<Bitmap>() {
+                    @Override
+                    public void onResponse(Bitmap response) {
+                        try {
+                            listener.onSuccess(response);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                },
+                0,
+                0,
+                null,
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        listener.onError(error.getMessage());
+                    }
+                });
+
+        requestQueue.add(imageRequest);
     }
 
     public interface ApiResponseListener<T> {

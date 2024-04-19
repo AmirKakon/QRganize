@@ -1,4 +1,4 @@
-package com.example.qrganize.tabs;
+package com.example.qrganize.container;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,8 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.qrganize.R;
-import com.example.qrganize.container.ContainerActivity;
-import com.example.qrganize.container.ContainerModel;
 
 import java.util.HashMap;
 import java.util.List;

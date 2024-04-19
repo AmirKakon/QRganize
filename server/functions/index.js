@@ -9,6 +9,7 @@ const { app, dev, functions } = require("./setup");
 // dev routes
 require("./DevRoutes/Auth");
 require("./DevRoutes/Containers");
+require("./DevRoutes/Items");
 require("./DevRoutes/Users");
 
 // Export the main app

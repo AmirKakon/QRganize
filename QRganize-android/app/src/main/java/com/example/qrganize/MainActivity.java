@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new QRScannerFragment(), "QR Scanner");
-        adapter.addFragment(new ContainerListFragment(), "Containers List");
+        adapter.addFragment(new ContainerListFragment(), "My Containers");
         viewPager.setAdapter(adapter);
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);
