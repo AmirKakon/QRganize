@@ -14,6 +14,7 @@ import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,6 +65,42 @@ public class ApiClient {
         };
             // Add the request to the RequestQueue.
             requestQueue.add(stringRequest);
+    }
+
+    public void Post(String url, final JSONObject requestBody, final ApiResponseListener<ApiResponse> listener) {
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        ApiResponse res = ApiResponse.fromJson(response);
+                        try {
+                            listener.onSuccess(res);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                listener.onError(error.getMessage());
+            }
+        }) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                String token = AuthClient.getInstance(context.getApplicationContext()).getAccessToken();
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + token);
+                headers.put("Content-Type", "application/json");
+                return headers;
+            }
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                return requestBody.toString().getBytes();
+            }
+        };
+
+        // Add the request to the RequestQueue.
+        requestQueue.add(stringRequest);
     }
 
     public void GetQrCodeImage(String containerId, final ApiResponseListener<Bitmap> listener) {

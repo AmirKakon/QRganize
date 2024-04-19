@@ -1,19 +1,13 @@
-package com.example.qrganize.container;
+package com.example.qrganize.item;
 
-import java.util.ArrayList;
-
-public class ContainerModel {
+public class ItemModel {
     private String id;
     private String name;
-    private ArrayList<String> items;
-    private String owner;
 
     // Constructor
-    public ContainerModel(String id, String name, ArrayList<String> items, String owner) {
+    public ItemModel(String id, String name) {
         this.id = id;
         this.name = name;
-        this.items = items;
-        this.owner = owner;
     }
 
     // Getter and Setter methods
@@ -31,21 +25,5 @@ public class ContainerModel {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public ArrayList<String> getItems() {
-        return items;
-    }
-
-    public void setItems(ArrayList<String> items) {
-        this.items = items;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
     }
 }
