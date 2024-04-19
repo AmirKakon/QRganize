@@ -75,6 +75,37 @@ dev.get("/api/items/getAll", authenticate, async (req, res) => {
   }
 });
 
+// get batch of items
+dev.post("/api/items/getBatch", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["items"], req.body);
+    const itemsList = req.body.items;
+    const itemsRef = db.collection(baseDB);
+    const snapshot = await itemsRef.get();
+
+    if (snapshot.empty) {
+      throw new Error("No items found");
+    }
+
+    const items = snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .filter((item) => itemsList.includes(item.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    // Send the items as a response
+    return res.status(200).send({
+      status: "Success",
+      data: items,
+    });
+  } catch (error) {
+    logger.error(error);
+    return res.status(400).send({ status: "Failed", msg: error.message });
+  }
+});
+
 // update items
 dev.put("/api/items/update/:id", authenticate, async (req, res) => {
   try {
