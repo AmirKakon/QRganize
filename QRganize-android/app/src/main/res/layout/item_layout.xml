@@ -1,0 +1,40 @@
+<!-- item_layout.xml -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/frame"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:background="@color/white">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+                <include
+                    android:id="@+id/id"
+                    layout="@layout/label_textview_pair" />
+                <include
+                    android:id="@+id/name"
+                    layout="@layout/label_textview_pair"
+                    android:layout_below="@id/id"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+                <include
+                    android:id="@+id/owner"
+                    layout="@layout/label_textview_pair"
+                    android:layout_below="@id/name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+                <include
+                    android:id="@+id/item_count"
+                    layout="@layout/label_textview_pair"
+                    android:layout_below="@id/owner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_below="@id/item_count"/>
+        </RelativeLayout>
+</FrameLayout>
