@@ -1,4 +1,4 @@
-package com.example.qrganize.container;
+package com.example.qrganize.item;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,18 +12,20 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.qrganize.R;
+import com.example.qrganize.container.ContainerActivity;
+import com.example.qrganize.container.ContainerModel;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ContainerListAdapter extends RecyclerView.Adapter<ContainerListAdapter.ItemViewHolder> {
+public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemViewHolder> {
 
-    private List<ContainerModel> containerList;
+    private List<ItemModel> itemList;
     private Context context;
 
-    public ContainerListAdapter(List<ContainerModel> containerList, Context context) {
-        this.containerList = containerList;
+    public ItemListAdapter(List<ItemModel> itemList, Context context) {
+        this.itemList = itemList;
         this.context = context;
     }
 
@@ -31,51 +33,44 @@ public class ContainerListAdapter extends RecyclerView.Adapter<ContainerListAdap
     @Override
     public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.container_item_layout, parent, false);
+                .inflate(R.layout.item_layout, parent, false);
         return new ItemViewHolder(itemView);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
-        holder.bind(containerList.get(position));
+        holder.bind(itemList.get(position));
     }
 
     @Override
     public int getItemCount() {
-        return containerList.size();
+        return itemList.size();
     }
 
     public class ItemViewHolder extends RecyclerView.ViewHolder {
         private FrameLayout frame;
         private Map<String, TextView> idMap;
         private Map<String, TextView> nameMap;
-        private Map<String, TextView> ownerMap;
-
-        private Map<String, TextView> itemCountMap;
 
         public ItemViewHolder(@NonNull View itemView) {
             super(itemView);
             frame = itemView.findViewById(R.id.frame);
             idMap = buildLabelTextviewPair(itemView, R.id.id);
             nameMap = buildLabelTextviewPair(itemView, R.id.name);
-            ownerMap = buildLabelTextviewPair(itemView, R.id.owner);
-            itemCountMap = buildLabelTextviewPair(itemView, R.id.item_count);
 
-            frame.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(context, ContainerActivity.class);
-                    intent.putExtra("containerId", idMap.get("text").getText().toString());
-                    context.startActivity(intent);
-                }
-            });
+//            frame.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    Intent intent = new Intent(context, ContainerActivity.class);
+//                    intent.putExtra("containerId", idMap.get("text").getText().toString());
+//                    context.startActivity(intent);
+//                }
+//            });
         }
 
-        public void bind(ContainerModel item) {
+        public void bind(ItemModel item) {
             setLabelTextviewPair(idMap, "ID", item.getId());
             setLabelTextviewPair(nameMap, "Name", item.getName());
-            setLabelTextviewPair(ownerMap, "Owner", item.getOwner());
-            setLabelTextviewPair(itemCountMap, "Items", String.valueOf(item.getItems().size()));
         }
 
         private Map<String, TextView> buildLabelTextviewPair(View itemView, int view) {

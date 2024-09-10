@@ -2,8 +2,8 @@ package com.example.qrganize.api;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -18,10 +18,6 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwts;
 
 public class AuthClient {
 
@@ -40,29 +36,7 @@ public class AuthClient {
         loadTokens();
     }
 
-    public String getAccessToken() {
-        if(isTokenExpired(accessToken)) {
-            try {
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("token", refreshToken);
-                Refresh(jsonObject, new AuthResponseListener<AuthResponse>() {
-                    @Override
-                    public void onSuccess(AuthResponse response) {
-                        accessToken = response.getAccessToken();
-                        saveTokens();
-                    }
-
-                    @Override
-                    public void onError(String errorMessage) {
-                        System.out.println("ERROR" + errorMessage);
-                    }
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return accessToken;
-    }
+    public String getAccessToken() { return accessToken; }
     public String getRefreshToken() { return refreshToken; }
 
     private void loadTokens() {
@@ -79,26 +53,89 @@ public class AuthClient {
         editor.apply();
     }
 
-    public boolean isTokenExpired(String token) {
+    public void verifyTokens(final AuthResponseListener<Boolean> listener) throws JSONException {
         try {
-            // Parse the JWT token
-            Jws<Claims> claimsJws = Jwts.parser().parseClaimsJws(token);
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("accessToken", accessToken);
+            jsonObject.put("refreshToken", refreshToken);
 
-            // Get the claims from the token
-            Claims claims = claimsJws.getBody();
+            Verify(jsonObject, new AuthResponseListener<VerifyAuthResponse>() {
+                @Override
+                public void onSuccess(VerifyAuthResponse response) throws JSONException {
+                    switch (response.getStatus()) {
+                        case Valid:
+                            listener.onSuccess(true);
+                            break;
+                        case ACCESSTOKEN:
+                            refreshAccessToken(listener);
+                            break;
+                        case REFRESHTOKEN:
+                            relogin(listener);
+                            break;
+                        default:
+                            listener.onSuccess(false);
+                            break;
+                    }
+                }
 
-            // Get the expiration time from the claims
-            long expirationTimeMillis = claims.getExpiration().getTime();
-
-            // Get the current time
-            long currentTimeMillis = System.currentTimeMillis();
-
-            // Compare current time with the expiry time
-            return currentTimeMillis >= expirationTimeMillis;
-        } catch (Exception e) {
-            // Error parsing the token or missing expiration claim
+                @Override
+                public void onError(String errorMessage) throws JSONException {
+                    listener.onSuccess(false);
+                }
+            });
+        } catch (JSONException e) {
             e.printStackTrace();
-            return true; // Token is considered expired if unable to parse or missing expiration claim
+            listener.onSuccess(false);
+        }
+    }
+
+    private void refreshAccessToken(final AuthResponseListener<Boolean> listener) throws JSONException {
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("token", refreshToken);
+
+            Refresh(jsonObject, new AuthResponseListener<AuthResponse>() {
+                @Override
+                public void onSuccess(AuthResponse response) throws JSONException {
+                    accessToken = response.getAccessToken();
+                    saveTokens();
+                    listener.onSuccess(true);
+                }
+
+                @Override
+                public void onError(String errorMessage) throws JSONException {
+                    listener.onSuccess(false);
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+            listener.onSuccess(false);
+        }
+    }
+
+    private void relogin(final AuthResponseListener<Boolean> listener) throws JSONException {
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("username", "test");
+            jsonObject.put("id", 1);
+
+            Login(jsonObject, new AuthResponseListener<AuthResponse>() {
+                @Override
+                public void onSuccess(AuthResponse response) throws JSONException {
+                    accessToken = response.getAccessToken();
+                    refreshToken = response.getRefreshToken();
+                    saveTokens();
+                    listener.onSuccess(true);
+                }
+
+                @Override
+                public void onError(String errorMessage) throws JSONException {
+                    listener.onSuccess(false);
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+            listener.onSuccess(false);
         }
     }
 
@@ -119,12 +156,20 @@ public class AuthClient {
                         accessToken = res.getAccessToken();
                         refreshToken = res.getRefreshToken();
                         saveTokens();
-                        listener.onSuccess(res);
+                        try {
+                            listener.onSuccess(res);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                listener.onError(error.getMessage());
+                try {
+                    listener.onError(error.getMessage());
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }) {
             @Override
@@ -152,12 +197,20 @@ public class AuthClient {
                         AuthResponse res = AuthResponse.fromJson(response);
                         accessToken = res.getAccessToken();
                         saveTokens();
-                        listener.onSuccess(res);
+                        try {
+                            listener.onSuccess(res);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                listener.onError(error.getMessage());
+                try {
+                    listener.onError(error.getMessage());
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }) {
             @Override
@@ -185,12 +238,59 @@ public class AuthClient {
                         accessToken = null;
                         refreshToken = null;
                         saveTokens();
-                        listener.onSuccess(res);
+                        try {
+                            listener.onSuccess(res);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                listener.onError(error.getMessage());
+                try {
+                    listener.onError(error.getMessage());
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                return headers;
+            }
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                return requestBody.toString().getBytes();
+            }
+        };
+
+        // Add the request to the RequestQueue.
+        requestQueue.add(stringRequest);
+    }
+
+    public void Verify(final JSONObject requestBody, final AuthResponseListener<VerifyAuthResponse> listener) {
+        String url = baseUrl + "/api/auth/verify";
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        VerifyAuthResponse res = VerifyAuthResponse.fromJson(response);
+                        try {
+                            listener.onSuccess(res);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                try {
+                    listener.onError(error.getMessage());
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }) {
             @Override
@@ -210,8 +310,7 @@ public class AuthClient {
     }
 
     public interface AuthResponseListener<T> {
-        void onSuccess(T response);
-
-        void onError(String errorMessage);
+        void onSuccess(T response) throws JSONException;
+        void onError(String errorMessage) throws JSONException;
     }
 }

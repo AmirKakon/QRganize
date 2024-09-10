@@ -20,21 +20,9 @@
                     android:layout_below="@id/id"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
-                <include
-                    android:id="@+id/owner"
-                    layout="@layout/label_textview_pair"
-                    android:layout_below="@id/name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-                <include
-                    android:id="@+id/item_count"
-                    layout="@layout/label_textview_pair"
-                    android:layout_below="@id/owner"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
         <com.google.android.material.divider.MaterialDivider
             android:layout_width="match_parent"
             android:layout_height="3dp"
-            android:layout_below="@id/item_count"/>
+            android:layout_below="@id/name"/>
         </RelativeLayout>
 </FrameLayout>

@@ -11,8 +11,6 @@
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
 
-
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -34,6 +32,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".container.ContainerActivity" />
+        <activity android:name=".login.LoginActivity" />
+        <activity android:name=".tabs.BarcodeScannerActivity" />
     </application>
 
 </manifest>

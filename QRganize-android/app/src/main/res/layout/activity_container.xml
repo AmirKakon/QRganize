@@ -2,7 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="10dp">
+    android:padding="10dp"
+    android:background="#e2e2e2">
 
     <include
         android:id="@+id/header"
@@ -39,6 +40,12 @@
         android:layout_below="@+id/owner"
         android:textSize="18sp"
         android:textStyle="bold" />
+    <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/recyclerView"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+        android:layout_below="@id/items"
+    android:layout_margin="10dp"/>
     <ImageView
         android:id="@+id/qr_code_image"
         android:layout_width="match_parent"

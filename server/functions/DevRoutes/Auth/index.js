@@ -71,12 +71,7 @@ const deleteRefreshToken = async (userId) => {
 };
 
 const generateTokens = async (user, refresh) => {
-  if (
-    !user ||
-    !user.id ||
-    !user.name ||
-    user.name !== "test"
-  ) {
+  if (!user || !user.id || !user.name || user.name !== "test") {
     throw new Error("Invalid user");
   }
 
@@ -164,6 +159,33 @@ dev.post("/api/auth/refresh", async (req, res) => {
   } catch (error) {
     logger.error(error);
     res.status(401).send({ status: "Failed", message: error.message });
+  }
+});
+
+dev.post("/api/auth/verify", async (req, res) => {
+  const { accessToken, refreshToken } = req.body;
+  try {
+    // Verify the access token
+    await jwtVerify(accessToken, jwtKey);
+    res.status(200).json({ status: 0, message: "Access token is valid" });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      // If the access token is expired, verify the refresh token
+      try {
+        await jwtVerify(refreshToken, jwtRefresh);
+        res
+          .status(200)
+          .json({ status: 1, message: "Refresh token is valid" });
+      } catch (error) {
+        if (error.name === "TokenExpiredError") {
+          res.status(200).json({ status: 2, message: "Tokens Expired" });
+        } else {
+          res.status(401).json({ status: 3, message: error });
+        }
+      }
+    } else {
+      res.status(401).json({ status: 3, message: error });
+    }
   }
 });
 

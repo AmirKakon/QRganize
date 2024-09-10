@@ -8,6 +8,7 @@ import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -22,8 +23,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.example.qrganize.MainActivity;
 import com.example.qrganize.container.ContainerActivity;
 import com.example.qrganize.R;
+import com.example.qrganize.login.LoginActivity;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.MultiFormatReader;
@@ -38,6 +41,7 @@ import java.util.concurrent.Executors;
 
 public class QRScannerFragment extends Fragment {
 
+    private Button button;
     private PreviewView previewView;
     private TextView textView;
     private Vibrator vibrator;
@@ -52,6 +56,7 @@ public class QRScannerFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_qr_scanner, container, false);
 
+        button = rootView.findViewById(R.id.button);
         previewView = rootView.findViewById(R.id.previewView);
         textView = rootView.findViewById(R.id.text);
         textView.setText(R.string.scan_qr_title);
@@ -62,6 +67,14 @@ public class QRScannerFragment extends Fragment {
         requestCameraPermission(); // Request camera permission when the fragment is created
 
         startCamera();
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(requireContext(), LoginActivity.class);
+                startActivity(intent);
+            }
+        });
 
         return rootView;
     }
@@ -84,12 +97,14 @@ public class QRScannerFragment extends Fragment {
     public void onStop() {
         super.onStop();
         releaseCamera();
+        isScanCompleted = true;
     }
 
     @Override
     public void onPause() {
         super.onPause();
         releaseCamera();
+        isScanCompleted = true;
     }
 
     private void releaseCamera() {

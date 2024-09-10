@@ -48,7 +48,7 @@ public class ContainerListFragment extends Fragment {
 
     private void generateItemList() {
         try {
-            ApiClient apiClient = ApiClient.getInstance(getContext());
+            ApiClient apiClient = ApiClient.getInstance(getContext().getApplicationContext());
             String url = "https://us-central1-qrganize-f651b.cloudfunctions.net/dev/api/containers/getAll";
 
             apiClient.Get(url, new ApiClient.ApiResponseListener<ApiResponse>() {

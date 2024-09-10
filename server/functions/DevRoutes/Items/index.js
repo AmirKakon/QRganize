@@ -1,17 +1,28 @@
 const { dev, logger, db } = require("../../setup");
 const { authenticate } = require("../Auth");
-const { checkRequiredParams } = require("../Utilities");
+const { checkRequiredParams, searchBarcode } = require("../Utilities");
 
 const baseDB = "items_dev";
 
 // create an item
 dev.post("/api/items/create", authenticate, async (req, res) => {
   try {
-    checkRequiredParams(["name"], req.body);
+    checkRequiredParams(["name", "image"], req.body);
 
-    const itemRef = await db.collection(baseDB).add({
-      name: req.body.name,
-    });
+    let itemRef = null;
+
+    if (req.body.id) {
+      await db.collection(baseDB).doc(String(req.body.id)).set({
+        name: req.body.name,
+        image: req.body.image,
+      });
+      itemRef = db.collection(baseDB).doc(String(req.body.id));
+    } else {
+      itemRef = await db.collection(baseDB).add({
+        name: req.body.name,
+        image: req.body.image,
+      });
+    }
 
     const doc = await itemRef.get();
 
@@ -110,16 +121,15 @@ dev.post("/api/items/getBatch", authenticate, async (req, res) => {
 dev.put("/api/items/update/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
-    checkRequiredParams(["name"], req.body);
+    checkRequiredParams(["name", "image"], req.body);
 
     const reqDoc = db.collection(baseDB).doc(req.params.id);
     await reqDoc.update({
       name: req.body.name,
+      image: req.body.image,
     });
 
-    return res
-      .status(200)
-      .send({ status: "Success", msg: "Item Updated" });
+    return res.status(200).send({ status: "Success", msg: "Item Updated" });
   } catch (error) {
     logger.error(error);
     return res.status(400).send({ status: "Failed", msg: error });
@@ -140,13 +150,40 @@ dev.delete("/api/items/delete/:id", authenticate, async (req, res) => {
 
     await reqDoc.delete();
 
-    return res
-      .status(200)
-      .send({ status: "Success", msg: "Item Deleted" });
+    return res.status(200).send({ status: "Success", msg: "Item Deleted" });
   } catch (error) {
     logger.error(error);
     return res.status(400).send({ status: "Failed", msg: error });
   }
 });
+
+dev.post(
+  "/api/items/searchBarcode/:barcode",
+  authenticate,
+  async (req, res) => {
+    try {
+      checkRequiredParams(["barcode"], req.params);
+      const barcode = Number(req.params.barcode);
+      const results = await searchBarcode(barcode);
+
+      if (!results || results.length === 0) {
+        throw new Error("No results found");
+      }
+
+      const items = results.map((item) => {
+        return {
+          id: barcode,
+          name: item.title,
+          image: item.src,
+        };
+      });
+
+      return res.status(200).send({ status: "Success", data: items });
+    } catch (error) {
+      logger.error(error);
+      return res.status(400).send({ status: "Failed", msg: error });
+    }
+  },
+);
 
 module.exports = { dev };

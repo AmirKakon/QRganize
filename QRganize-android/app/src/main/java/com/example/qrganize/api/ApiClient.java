@@ -95,7 +95,10 @@ public class ApiClient {
             }
             @Override
             public byte[] getBody() throws AuthFailureError {
-                return requestBody.toString().getBytes();
+                if(requestBody != null) {
+                    return requestBody.toString().getBytes();
+                }
+                return null;
             }
         };
 

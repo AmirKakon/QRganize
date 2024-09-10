@@ -1,10 +1,14 @@
 package com.example.qrganize;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
 
+import com.example.qrganize.login.LoginActivity;
 import com.example.qrganize.tabs.ContainerListFragment;
 import com.example.qrganize.tabs.QRScannerFragment;
 import com.example.qrganize.tabs.ViewPagerAdapter;
@@ -17,7 +21,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
 
         viewPager = findViewById(R.id.viewPager);
         setupViewPager(viewPager);

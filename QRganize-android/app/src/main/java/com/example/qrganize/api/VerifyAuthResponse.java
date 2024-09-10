@@ -1,34 +1,28 @@
 package com.example.qrganize.api;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-public class AuthResponse {
-    private String status;
-    private String accessToken;
-    private String refreshToken;
+public class VerifyAuthResponse {
+    private Verifications status;
+    private String message;
 
-    public AuthResponse(String status, String accessToken, String refreshToken) {
+    public VerifyAuthResponse(Verifications status, String accessToken) {
         this.status = status;
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
+        this.message = accessToken;
     }
 
-    public AuthResponse(String status, String accessToken) {
-        this.status = status;
-        this.accessToken = accessToken;
-    }
-
-    public String getStatus() {
+    public Verifications getStatus() {
         return status;
     }
-    public String getAccessToken() { return accessToken; }
-    public String getRefreshToken() { return refreshToken; }
+    public String getMessage() { return message; }
 
     // Static method to parse JSON response
-    public static AuthResponse fromJson(String jsonObject) {
-        Gson gson = new Gson();
-        AuthResponse authResponse = gson.fromJson(jsonObject, AuthResponse.class);
-
-        return authResponse;
+    public static VerifyAuthResponse fromJson(String jsonObject) {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(Verifications.class, new VerificationsDeserializer())
+                .create();
+        return gson.fromJson(jsonObject, VerifyAuthResponse.class);
     }
 }
+
