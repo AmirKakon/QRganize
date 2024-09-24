@@ -1,9 +1,5 @@
 package com.example.qrganize.container;
 
-import static androidx.core.content.ContentProviderCompat.requireContext;
-
-import static java.security.AccessController.getContext;
-
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -12,7 +8,6 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,12 +19,10 @@ import com.example.qrganize.api.ApiClient;
 import com.example.qrganize.api.ApiResponse;
 import com.example.qrganize.item.ItemListAdapter;
 import com.example.qrganize.item.ItemModel;
-import com.example.qrganize.tabs.BarcodeScannerActivity;
+import com.example.qrganize.tabs.BarcodeScannerFragment;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -162,7 +155,7 @@ public class ContainerActivity extends AppCompatActivity {
 //                        }
 //                    });
 
-                    Intent intent = new Intent(ContainerActivity.this, BarcodeScannerActivity.class);
+                    Intent intent = new Intent(ContainerActivity.this, BarcodeScannerFragment.class);
                     startActivity(intent);
 
 

@@ -33,7 +33,7 @@
         </activity>
         <activity android:name=".container.ContainerActivity" />
         <activity android:name=".login.LoginActivity" />
-        <activity android:name=".tabs.BarcodeScannerActivity" />
+        <activity android:name=".tabs.BarcodeScannerFragment" />
     </application>
 
 </manifest>

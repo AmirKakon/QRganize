@@ -8,7 +8,6 @@ import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,10 +22,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.qrganize.MainActivity;
-import com.example.qrganize.container.ContainerActivity;
 import com.example.qrganize.R;
-import com.example.qrganize.login.LoginActivity;
+import com.example.qrganize.container.ContainerActivity;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.MultiFormatReader;
@@ -39,7 +36,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class QRScannerFragment extends Fragment {
+public class BarcodeScannerFragment extends Fragment {
     private PreviewView previewView;
     private TextView textView;
     private Vibrator vibrator;
@@ -52,11 +49,11 @@ public class QRScannerFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_qr_scanner, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_barcode_scanner, container, false);
 
         previewView = rootView.findViewById(R.id.previewView);
         textView = rootView.findViewById(R.id.text);
-        textView.setText(R.string.scan_qr_title);
+        textView.setText(R.string.scan_barcode_title);
         vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE); // Initialize Vibrator
 
         cameraExecutor = Executors.newSingleThreadExecutor();
@@ -121,7 +118,7 @@ public class QRScannerFragment extends Fragment {
                 ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                         .build();
                 imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
-                    scanQRCode(imageProxy);
+                    scanBarCode(imageProxy);
                 });
 
                 // Select back camera as the default
@@ -138,23 +135,24 @@ public class QRScannerFragment extends Fragment {
         }, ContextCompat.getMainExecutor(requireContext()));
     }
 
-    private void scanQRCode(ImageProxy imageProxy) {
+    private void scanBarCode(ImageProxy imageProxy) {
         if (!isScanCompleted) { // Check if a scan has already been performed
 
             // Convert the imageProxy to a BinaryBitmap
             BinaryBitmap bitmap = createBinaryBitmap(imageProxy);
 
-            // Use the MultiFormatReader to decode the QR code
+            // Use the MultiFormatReader to decode the barcode
             MultiFormatReader reader = new MultiFormatReader();
             try {
                 Result result = reader.decode(bitmap);
                 // Update the TextView with the decoded result
                 requireActivity().runOnUiThread(() -> {
                     isScanCompleted = true;
-                    // Start QRResultActivity and pass the scanned QR code text as an extra
-                    Intent intent = new Intent(requireContext(), ContainerActivity.class);
-                    intent.putExtra("containerId", result.getText());
-                    startActivity(intent);
+                    // Start Activity and pass the scanned barcode text as an extra
+//                    Intent intent = new Intent(requireContext(), ContainerActivity.class);
+//                    intent.putExtra("barcode", result.getText());
+//                    startActivity(intent);
+                    textView.setText(result.getText());
                     // Vibrate when code is scanned
                     vibrate();
                 });
@@ -170,7 +168,18 @@ public class QRScannerFragment extends Fragment {
         byte[] imageData = imageProxyToByteArray(imageProxy);
         int width = imageProxy.getWidth();
         int height = imageProxy.getHeight();
-        return new BinaryBitmap(new HybridBinarizer(new PlanarYUVLuminanceSource(imageData, width, height, 0, 0, width, height, false)));
+
+        // Get the rotation degrees from ImageProxy and adjust the image data accordingly
+        int rotationDegrees = imageProxy.getImageInfo().getRotationDegrees();
+        if (rotationDegrees != 0) {
+            // Rotate the image data to adjust for the camera orientation
+            imageData = rotateImage(imageData, width, height, rotationDegrees);
+        }
+
+        // Create a luminance source using the adjusted image data
+        PlanarYUVLuminanceSource luminanceSource = new PlanarYUVLuminanceSource(
+                imageData, width, height, 0, 0, width, height, false);
+        return new BinaryBitmap(new HybridBinarizer(luminanceSource));
     }
 
     private byte[] imageProxyToByteArray(ImageProxy imageProxy) {
@@ -178,6 +187,54 @@ public class QRScannerFragment extends Fragment {
         byte[] data = new byte[buffer.remaining()];
         buffer.get(data);
         return data;
+    }
+
+    private byte[] rotateImage(byte[] data, int width, int height, int rotationDegrees) {
+        // Perform rotation based on rotation degrees
+        if (rotationDegrees == 90) {
+            return rotate90(data, width, height);
+        } else if (rotationDegrees == 180) {
+            return rotate180(data, width, height);
+        } else if (rotationDegrees == 270) {
+            return rotate270(data, width, height);
+        } else {
+            // No rotation needed
+            return data;
+        }
+    }
+
+    private byte[] rotate90(byte[] data, int width, int height) {
+        byte[] rotatedData = new byte[data.length];
+        int k = 0;
+        for (int i = width - 1; i >= 0; i--) {
+            for (int j = 0; j < height; j++) {
+                rotatedData[k] = data[j * width + i];
+                k++;
+            }
+        }
+        return rotatedData;
+    }
+
+    private byte[] rotate180(byte[] data, int width, int height) {
+        byte[] rotatedData = new byte[data.length];
+        int k = 0;
+        for (int i = width * height - 1; i >= 0; i--) {
+            rotatedData[k] = data[i];
+            k++;
+        }
+        return rotatedData;
+    }
+
+    private byte[] rotate270(byte[] data, int width, int height) {
+        byte[] rotatedData = new byte[data.length];
+        int k = 0;
+        for (int i = 0; i < width; i++) {
+            for (int j = height - 1; j >= 0; j--) {
+                rotatedData[k] = data[j * width + i];
+                k++;
+            }
+        }
+        return rotatedData;
     }
 
     private void vibrate() {

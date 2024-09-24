@@ -1,43 +1,16 @@
 package com.example.qrganize.login;
 
-import static androidx.core.content.ContentProviderCompat.requireContext;
-
-import static java.security.AccessController.getContext;
-
-import android.content.Intent;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.qrganize.MainActivity;
 import com.example.qrganize.R;
-import com.example.qrganize.api.ApiClient;
-import com.example.qrganize.api.ApiResponse;
 import com.example.qrganize.api.AuthClient;
-import com.example.qrganize.api.AuthResponse;
-import com.example.qrganize.container.ContainerActivity;
-import com.example.qrganize.item.ItemListAdapter;
-import com.example.qrganize.item.ItemModel;
-import com.example.qrganize.tabs.BarcodeScannerActivity;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class LoginActivity extends AppCompatActivity {
     private TextView title;
