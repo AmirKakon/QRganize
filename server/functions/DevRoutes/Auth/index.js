@@ -14,18 +14,18 @@ const jwtRefreshExpire = functions.config().serviceaccount_clientid_jwt.expire;
 
 const authenticate = async (req, res, next) => {
   try {
-    const authHeader = req.headers["authorization"];
-    if (!authHeader) {
-      throw new Error("Missing authorization header");
-    }
+    // const authHeader = req.headers["authorization"];
+    // if (!authHeader) {
+    //   throw new Error("Missing authorization header");
+    // }
 
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-      throw new Error("Missing token in authorization header");
-    }
+    // const token = authHeader.split(" ")[1];
+    // if (!token) {
+    //   throw new Error("Missing token in authorization header");
+    // }
 
-    const user = await jwtVerify(token, jwtKey);
-    req.user = user;
+    // const user = await jwtVerify(token, jwtKey);
+    // req.user = user;
     next();
   } catch (error) {
     logger.error(error);

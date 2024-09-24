@@ -1,3 +1,4 @@
+const { functions } = require("../../setup");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const ApifyClient = require("apify-client").ApifyClient;
@@ -10,10 +11,13 @@ const checkRequiredParams = (requiredParams, params) => {
   }
 };
 
+const apifyToken = functions.config().apify_api.token;
+const apifyGoogleSearchActor = functions.config().apify_googlesearch.actor;
+
 const searchBarcodeApify = async (barcode) => {
   // Initialize the ApifyClient with API token
   const client = new ApifyClient({
-    token: "apify_api_v7VWlnIypDayZeokrC3ehVb7HTCUTb3M6i43",
+    token: apifyToken,
   });
 
   // Prepare Actor input
@@ -29,7 +33,7 @@ const searchBarcodeApify = async (barcode) => {
     includeIcons: true,
   };
   // Run the Actor and wait for it to finish
-  const run = await client.actor("nFJndFXA5zjCTuudP").call(input);
+  const run = await client.actor(apifyGoogleSearchActor).call(input);
 
   // Fetch and print Actor results from the run's dataset (if any)
   const { items } = await client.dataset(run.defaultDatasetId).listItems();

@@ -87,8 +87,60 @@ public class LoginActivity extends AppCompatActivity {
         refreshButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                startActivity(intent);
+                try {
+                    AuthClient authClient = AuthClient.getInstance(getApplicationContext());
+                    authClient.refreshAccessToken(new AuthClient.AuthResponseListener<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean isValid) {
+                            if (isValid) {
+                                Toast.makeText(LoginActivity.this, "Tokens are valid!", Toast.LENGTH_SHORT).show();
+                                // Proceed with the application logic
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Tokens are invalid!", Toast.LENGTH_SHORT).show();
+                                // Handle invalid tokens or refreshed tokens logic
+                            }
+                        }
+
+                        @Override
+                        public void onError(String errorMessage) {
+                            Toast.makeText(LoginActivity.this, "Error verifying tokens: " + errorMessage, Toast.LENGTH_SHORT).show();
+                            // Handle error case
+                        }
+                    });
+
+                } catch (Exception e) {
+                    title.setText("FAILED" + e.getMessage());
+                }
+            }
+        });
+
+        logoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    AuthClient authClient = AuthClient.getInstance(getApplicationContext());
+                    authClient.relogin(new AuthClient.AuthResponseListener<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean isValid) {
+                            if (isValid) {
+                                Toast.makeText(LoginActivity.this, "Tokens are valid!", Toast.LENGTH_SHORT).show();
+                                // Proceed with the application logic
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Tokens are invalid!", Toast.LENGTH_SHORT).show();
+                                // Handle invalid tokens or refreshed tokens logic
+                            }
+                        }
+
+                        @Override
+                        public void onError(String errorMessage) {
+                            Toast.makeText(LoginActivity.this, "Error verifying tokens: " + errorMessage, Toast.LENGTH_SHORT).show();
+                            // Handle error case
+                        }
+                    });
+
+                } catch (Exception e) {
+                    title.setText("FAILED" + e.getMessage());
+                }
             }
         });
     }

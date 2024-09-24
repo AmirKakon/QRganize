@@ -89,7 +89,7 @@ public class AuthClient {
         }
     }
 
-    private void refreshAccessToken(final AuthResponseListener<Boolean> listener) throws JSONException {
+    public void refreshAccessToken(final AuthResponseListener<Boolean> listener) throws JSONException {
         try {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("token", refreshToken);
@@ -113,7 +113,7 @@ public class AuthClient {
         }
     }
 
-    private void relogin(final AuthResponseListener<Boolean> listener) throws JSONException {
+    public void relogin(final AuthResponseListener<Boolean> listener) throws JSONException {
         try {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("username", "test");
