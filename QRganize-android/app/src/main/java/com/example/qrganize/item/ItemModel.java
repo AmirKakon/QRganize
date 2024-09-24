@@ -1,5 +1,9 @@
 package com.example.qrganize.item;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+
 import kotlin.text.UStringsKt;
 
 public class ItemModel {
@@ -35,4 +39,14 @@ public class ItemModel {
     public String getImage() { return image;}
 
     public void setImage(String image) { this.image = image; }
+
+    public Bitmap getBitmapImage() {
+        if(this.image == null) {
+            return null;
+        }
+        byte[] decodedBytes = Base64.decode(this.image, Base64.DEFAULT);
+
+        // Convert the byte array into a Bitmap
+        return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+    }
 }

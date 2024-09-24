@@ -24,6 +24,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.qrganize.R;
 import com.example.qrganize.container.ContainerActivity;
+import com.example.qrganize.item.ItemActivity;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.MultiFormatReader;
@@ -149,10 +150,9 @@ public class BarcodeScannerFragment extends Fragment {
                 requireActivity().runOnUiThread(() -> {
                     isScanCompleted = true;
                     // Start Activity and pass the scanned barcode text as an extra
-//                    Intent intent = new Intent(requireContext(), ContainerActivity.class);
-//                    intent.putExtra("barcode", result.getText());
-//                    startActivity(intent);
-                    textView.setText(result.getText());
+                    Intent intent = new Intent(requireContext(), ItemActivity.class);
+                    intent.putExtra("barcode", result.getText());
+                    startActivity(intent);
                     // Vibrate when code is scanned
                     vibrate();
                 });
