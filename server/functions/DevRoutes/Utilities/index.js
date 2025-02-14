@@ -91,7 +91,7 @@ const searchBarcode = async (barcode) => {
     items = await searchBarcodeApify(barcode);
 
     if (!items) {
-      throw new Error(`No item was found for barcode ${barcode}`);
+      throw new NotFoundError(`No item was found for barcode ${barcode}`);
     }
   }
 

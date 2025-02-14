@@ -15,12 +15,14 @@ dev.post("/api/items/create", authenticate, async (req, res) => {
       await db.collection(baseDB).doc(String(req.body.id)).set({
         name: req.body.name,
         image: req.body.image,
+        amount: req.body.quantity ?? 1,
       });
       itemRef = db.collection(baseDB).doc(String(req.body.id));
     } else {
       itemRef = await db.collection(baseDB).add({
         name: req.body.name,
         image: req.body.image,
+        amount: req.body.quantity ?? 1,
       });
     }
 
@@ -78,7 +80,7 @@ dev.get("/api/items/getAll", authenticate, async (req, res) => {
     const snapshot = await itemsRef.get();
 
     if (snapshot.empty) {
-      throw new Error("No items found");
+      return res.status(200).send({status: "Success", data: []});
     }
 
     const items = snapshot.docs
@@ -94,8 +96,8 @@ dev.get("/api/items/getAll", authenticate, async (req, res) => {
       data: items,
     });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error.message });
+    logger.error(`Failed to get all items`, error);
+    return res.status(500).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -108,7 +110,7 @@ dev.post("/api/items/getBatch", authenticate, async (req, res) => {
     const snapshot = await itemsRef.get();
 
     if (snapshot.empty) {
-      throw new Error("No items found");
+      return res.status(200).send({status: "Success", data: []});
     }
 
     const items = snapshot.docs
@@ -125,8 +127,13 @@ dev.post("/api/items/getBatch", authenticate, async (req, res) => {
       data: items,
     });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error.message });
+    let status = 500
+    if (error instanceof MissingArgumentError) {
+      status = 400
+    }
+
+    logger.error(`Failed to get batch of items`, error);
+    return res.status(status).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -134,7 +141,7 @@ dev.post("/api/items/getBatch", authenticate, async (req, res) => {
 dev.put("/api/items/update/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
-    checkRequiredParams(["name", "image"], req.body);
+    checkRequiredParams(["name", "image", "quantity"], req.body);
 
     const reqDoc = db.collection(baseDB).doc(req.params.id);
     await reqDoc.update({
@@ -144,8 +151,45 @@ dev.put("/api/items/update/:id", authenticate, async (req, res) => {
 
     return res.status(200).send({ status: "Success", msg: "Item Updated" });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error });
+    let status = 500
+    if (error instanceof MissingArgumentError) {
+      status = 400
+    }
+    
+    logger.error(`Failed to update item: ${req.params.id}`, error);
+    return res.status(status).send({ status: "Failed", msg: error.message });
+  }
+});
+
+// update quantity of item
+dev.put("/api/items/quantity/update/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    checkRequiredParams(["quantity"], req.body);
+
+    const id = req.params.id;
+    const itemRef = db.collection(baseDB).doc(id);
+    const doc = await itemRef.get(); // gets doc
+    const data = doc.data(); // the actual data of the item
+
+    if (!data) {
+      throw new NotFoundError(`No item found with id: ${id}`);
+    }
+
+    const reqDoc = db.collection(baseDB).doc(req.params.id);
+    await reqDoc.update({
+      quantity: req.body.quantity
+    });
+
+    return res.status(200).send({ status: "Success", msg: "Item Quantity Updated" });
+  } catch (error) {
+    let status = 500
+    if (error instanceof MissingArgumentError) {
+      status = 400
+    }
+    
+    logger.error(`Failed to update item quantity: ${req.params.id}`, error);
+    return res.status(status).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -158,15 +202,22 @@ dev.delete("/api/items/delete/:id", authenticate, async (req, res) => {
     const doc = await reqDoc.get();
 
     if (!doc.exists) {
-      throw new Error("Item not found");
+      throw new NotFoundError(`Item ${req.params.id} not found`);
     }
 
     await reqDoc.delete();
 
     return res.status(200).send({ status: "Success", msg: "Item Deleted" });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error });
+    let status = 500
+    if (error instanceof MissingArgumentError) {
+      status = 400
+    } else if (error instanceof NotFoundError) {
+      status = 404
+    }
+    
+    logger.error(`Failed to delete item: ${req.params.id}`, error);
+    return res.status(status).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -180,7 +231,7 @@ dev.post(
       const results = await searchBarcode(barcode);
 
       if (!results || results.length === 0) {
-        throw new Error("No results found");
+        return res.status(200).send({status: "Success", data: []});
       }
 
       const items = results.map((item) => {
@@ -193,8 +244,15 @@ dev.post(
 
       return res.status(200).send({ status: "Success", data: items });
     } catch (error) {
-      logger.error(error);
-      return res.status(400).send({ status: "Failed", msg: error });
+      let status = 500
+    if (error instanceof MissingArgumentError) {
+      status = 400
+    } else if (error instanceof NotFoundError) {
+      status = 404
+    }
+    
+    logger.error(`Failed to search for item: ${req.params.barcode}`, error);
+    return res.status(status).send({ status: "Failed", msg: error.message });
     }
   },
 );
