@@ -9,23 +9,24 @@
         android:id="@+id/item_image"
         android:layout_alignParentTop="true"
         android:layout_marginTop="50dp"
-        android:src="@drawable/edit_icon"
         android:layout_width="match_parent"
         android:layout_height="150dp" />
 
-    <TextView
+    <include
         android:id="@+id/item_id"
+        layout="@layout/label_textview_pair"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/item_image"
-        android:layout_marginTop="50dp"/>
+        android:layout_marginTop="10dp"/>
 
-    <TextView
+    <include
         android:id="@+id/item_name"
+        layout="@layout/label_textview_pair"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/item_id"
-        android:layout_marginTop="15dp"/>
+        android:layout_marginTop="10dp"/>
 
     <Button
         android:id="@+id/save_item_button"
@@ -34,5 +35,21 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="15dp"
         android:text="Save Item" />
+
+    <FrameLayout
+        android:id="@+id/loading_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:background="#80E2E2E2"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/loading_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
 
 </RelativeLayout>

@@ -31,4 +31,13 @@
         android:textColor="@android:color/black"
         android:textSize="16sp" />
 
+    <Button
+        android:id="@+id/add_item_manually_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/add_item_button"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="50dp"
+        />
+
 </RelativeLayout>

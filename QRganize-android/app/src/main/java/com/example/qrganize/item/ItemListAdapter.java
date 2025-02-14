@@ -1,6 +1,7 @@
 package com.example.qrganize.item;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.qrganize.R;
+import com.example.qrganize.container.ContainerActivity;
 
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +60,15 @@ public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemVi
             idMap = buildLabelTextviewPair(itemView, R.id.id);
             nameMap = buildLabelTextviewPair(itemView, R.id.name);
             imageView = itemView.findViewById(R.id.image);
+
+            frame.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(context, ItemActivity.class);
+                    intent.putExtra("barcode", idMap.get("text").getText().toString());
+                    context.startActivity(intent);
+                }
+            });
         }
 
         public void bind(ItemModel item) {

@@ -8,6 +8,7 @@ import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -40,6 +41,7 @@ import java.util.concurrent.Executors;
 public class BarcodeScannerFragment extends Fragment {
     private PreviewView previewView;
     private TextView textView;
+    private Button addManuallyButton;
     private Vibrator vibrator;
 
     private ExecutorService cameraExecutor;
@@ -55,6 +57,8 @@ public class BarcodeScannerFragment extends Fragment {
         previewView = rootView.findViewById(R.id.previewView);
         textView = rootView.findViewById(R.id.text);
         textView.setText(R.string.scan_barcode_title);
+        addManuallyButton = rootView.findViewById(R.id.add_item_manually_button);
+
         vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE); // Initialize Vibrator
 
         cameraExecutor = Executors.newSingleThreadExecutor();
@@ -62,6 +66,15 @@ public class BarcodeScannerFragment extends Fragment {
         requestCameraPermission(); // Request camera permission when the fragment is created
 
         startCamera();
+
+        addManuallyButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(requireContext(), ItemActivity.class);
+                intent.putExtra("barcode", "$");
+                startActivity(intent);
+            }
+        });
 
         return rootView;
     }
