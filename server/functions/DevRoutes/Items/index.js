@@ -30,8 +30,13 @@ dev.post("/api/items/create", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "Item Saved", itemId: doc.id });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error });
+    let status = 500
+    if (error instanceof MissingArgumentError) {
+      status = 400
+    }
+
+    logger.error(`Failed to create item: ${req.body}`, error);
+    return res.status(status).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -39,13 +44,14 @@ dev.post("/api/items/create", authenticate, async (req, res) => {
 dev.get("/api/items/get/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
+
     const id = req.params.id;
     const itemRef = db.collection(baseDB).doc(id);
     const doc = await itemRef.get(); // gets doc
     const data = doc.data(); // the actual data of the item
 
     if (!data) {
-      throw new Error(`No item found with id: ${id}`);
+      throw new NotFoundError(`No item found with id: ${id}`);
     }
 
     const item = {
@@ -54,8 +60,15 @@ dev.get("/api/items/get/:id", authenticate, async (req, res) => {
     };
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error });
+    let status = 500
+    if (error instanceof MissingArgumentError) {
+      status = 400
+    } else if (error instanceof NotFoundError) {
+      status = 404
+    }
+
+    logger.error(`Failed to get item: ${req.params.id}`, error);
+    return res.status(status).send({ status: "Failed", msg: error.message });
   }
 });
 
