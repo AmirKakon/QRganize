@@ -1,4 +1,5 @@
 const { functions } = require("../../setup");
+const { mapErrorToStatusCode } = require("./error-types");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const ApifyClient = require("apify-client").ApifyClient;
@@ -98,4 +99,4 @@ const searchBarcode = async (barcode) => {
   return items;
 };
 
-module.exports = { checkRequiredParams, searchBarcode };
+module.exports = { checkRequiredParams, searchBarcode, mapErrorToStatusCode };

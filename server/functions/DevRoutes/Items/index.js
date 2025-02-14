@@ -1,6 +1,6 @@
 const { dev, logger, db } = require("../../setup");
 const { authenticate } = require("../Auth");
-const { checkRequiredParams, searchBarcode } = require("../Utilities");
+const { checkRequiredParams, searchBarcode, mapErrorToStatusCode } = require("../Utilities");
 
 const baseDB = "items_dev";
 
@@ -32,13 +32,9 @@ dev.post("/api/items/create", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "Item Saved", itemId: doc.id });
   } catch (error) {
-    let status = 500
-    if (error instanceof MissingArgumentError) {
-      status = 400
-    }
 
     logger.error(`Failed to create item: ${req.body}`, error);
-    return res.status(status).send({ status: "Failed", msg: error.message });
+    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -62,15 +58,8 @@ dev.get("/api/items/get/:id", authenticate, async (req, res) => {
     };
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
-    let status = 500
-    if (error instanceof MissingArgumentError) {
-      status = 400
-    } else if (error instanceof NotFoundError) {
-      status = 404
-    }
-
     logger.error(`Failed to get item: ${req.params.id}`, error);
-    return res.status(status).send({ status: "Failed", msg: error.message });
+    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -97,7 +86,7 @@ dev.get("/api/items/getAll", authenticate, async (req, res) => {
     });
   } catch (error) {
     logger.error(`Failed to get all items`, error);
-    return res.status(500).send({ status: "Failed", msg: error.message });
+    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -127,13 +116,8 @@ dev.post("/api/items/getBatch", authenticate, async (req, res) => {
       data: items,
     });
   } catch (error) {
-    let status = 500
-    if (error instanceof MissingArgumentError) {
-      status = 400
-    }
-
     logger.error(`Failed to get batch of items`, error);
-    return res.status(status).send({ status: "Failed", msg: error.message });
+    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -151,13 +135,8 @@ dev.put("/api/items/update/:id", authenticate, async (req, res) => {
 
     return res.status(200).send({ status: "Success", msg: "Item Updated" });
   } catch (error) {
-    let status = 500
-    if (error instanceof MissingArgumentError) {
-      status = 400
-    }
-    
     logger.error(`Failed to update item: ${req.params.id}`, error);
-    return res.status(status).send({ status: "Failed", msg: error.message });
+    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -183,13 +162,8 @@ dev.put("/api/items/quantity/update/:id", authenticate, async (req, res) => {
 
     return res.status(200).send({ status: "Success", msg: "Item Quantity Updated" });
   } catch (error) {
-    let status = 500
-    if (error instanceof MissingArgumentError) {
-      status = 400
-    }
-    
     logger.error(`Failed to update item quantity: ${req.params.id}`, error);
-    return res.status(status).send({ status: "Failed", msg: error.message });
+    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -208,16 +182,9 @@ dev.delete("/api/items/delete/:id", authenticate, async (req, res) => {
     await reqDoc.delete();
 
     return res.status(200).send({ status: "Success", msg: "Item Deleted" });
-  } catch (error) {
-    let status = 500
-    if (error instanceof MissingArgumentError) {
-      status = 400
-    } else if (error instanceof NotFoundError) {
-      status = 404
-    }
-    
+  } catch (error) {    
     logger.error(`Failed to delete item: ${req.params.id}`, error);
-    return res.status(status).send({ status: "Failed", msg: error.message });
+    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
   }
 });
 
@@ -243,16 +210,9 @@ dev.post(
       });
 
       return res.status(200).send({ status: "Success", data: items });
-    } catch (error) {
-      let status = 500
-    if (error instanceof MissingArgumentError) {
-      status = 400
-    } else if (error instanceof NotFoundError) {
-      status = 404
-    }
-    
+    } catch (error) {    
     logger.error(`Failed to search for item: ${req.params.barcode}`, error);
-    return res.status(status).send({ status: "Failed", msg: error.message });
+    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
     }
   },
 );

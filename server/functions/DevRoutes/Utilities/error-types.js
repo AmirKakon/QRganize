@@ -11,4 +11,17 @@ class MissingArgumentError extends Error {
         this.name = "MissingArgumentError";
     }
 }
+
+const mapErrorToStatusCode = (error) => {
+    switch (true) {
+        case error instanceof NotFoundError:
+          return 404;
+        case error instanceof MissingArgumentError:
+          return 400;
+        default:
+          return 500;
+      }
+};
+
+module.exports = { mapErrorToStatusCode }
   
