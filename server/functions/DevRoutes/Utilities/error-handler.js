@@ -54,6 +54,7 @@ const mapErrorToStatusCode = (error) => {
  *
  * @param {Response} res - the response of the current request
  * @param {Error} error - The error instance to map.
+ * @param {string} errorMessage - the error message to add to the logs
  * @return {Response} - sends the response with data
  */
 const handleError = (res, error, errorMessage) => {
@@ -61,7 +62,7 @@ const handleError = (res, error, errorMessage) => {
 
   return res.status(mapErrorToStatusCode(error)).send({
     status: "Failed",
-    msg: errorMsg,
+    msg: errorMessage,
   });
 };
 

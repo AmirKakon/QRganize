@@ -28,13 +28,18 @@ dev.get("/api/containers/get/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
     const doc = await db.collection(containersDB).doc(req.params.id).get();
-    if (!doc.exists)
+    if (!doc.exists) {
       throw new NotFoundError(`No container found with id: ${req.params.id}`);
+    }
     return res
       .status(200)
       .send({ status: "Success", data: { id: doc.id, ...doc.data() } });
   } catch (error) {
-    return handleErrors(res, error, `Failed to get container: ${req.params.id}`);
+    return handleErrors(
+      res,
+      error,
+      `Failed to get container: ${req.params.id}`,
+    );
   }
 });
 
@@ -64,7 +69,11 @@ dev.put("/api/containers/update/:id", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "Container Updated" });
   } catch (error) {
-    return handleErrors(res, error, `Failed to update container: ${req.params.id}`);
+    return handleErrors(
+      res,
+      error,
+      `Failed to update container: ${req.params.id}`,
+    );
   }
 });
 
@@ -73,14 +82,19 @@ dev.delete("/api/containers/delete/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
     const docRef = db.collection(containersDB).doc(req.params.id);
-    if (!(await docRef.get()).exists)
+    if (!(await docRef.get()).exists) {
       throw new NotFoundError("Container not found");
+    }
     await docRef.delete();
     return res
       .status(200)
       .send({ status: "Success", msg: "Container Deleted" });
   } catch (error) {
-    return handleErrors(res, error, `Failed to delete container: ${req.params.id}`);
+    return handleErrors(
+      res,
+      error,
+      `Failed to delete container: ${req.params.id}`,
+    );
   }
 });
 

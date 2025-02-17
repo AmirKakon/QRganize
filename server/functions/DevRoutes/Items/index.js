@@ -165,7 +165,7 @@ dev.put("/api/items/quantity/update/:id", authenticate, async (req, res) => {
     handleErrors(
       res,
       error,
-      `Failed to update item quantity: ${req.params.id}`
+      `Failed to update item quantity: ${req.params.id}`,
     );
   }
 });
@@ -216,10 +216,10 @@ dev.post(
       handleErrors(
         res,
         error,
-        `Failed to search for item: ${req.params.barcode}`
+        `Failed to search for item: ${req.params.barcode}`,
       );
     }
-  }
+  },
 );
 
 module.exports = { dev };
