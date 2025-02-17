@@ -1,7 +1,8 @@
 const { dev, db } = require("../../setup");
-const { NotFoundError, handleErrors } = require("../Utilities/error-types");
+const { NotFoundError, handleError } = require("../Utilities/error-handler");
 const { authenticate } = require("../Auth");
 const { checkRequiredParams, searchBarcode } = require("../Utilities");
+
 
 const baseDB = "items_dev";
 
@@ -36,7 +37,7 @@ dev.post("/api/items/create", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "Item Saved", itemId: doc.id });
   } catch (error) {
-    handleErrors(res, error, `Failed to create item: ${req.body}`);
+    handleError(res, error, `Failed to create item: ${req.body}`);
   }
 });
 
@@ -60,7 +61,7 @@ dev.get("/api/items/get/:id", authenticate, async (req, res) => {
     };
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
-    handleErrors(res, error, `Failed to get item: ${req.params.id}`);
+    handleError(res, error, `Failed to get item: ${req.params.id}`);
   }
 });
 
@@ -86,7 +87,7 @@ dev.get("/api/items/getAll", authenticate, async (req, res) => {
       data: items,
     });
   } catch (error) {
-    handleErrors(res, error, `Failed to get all items`);
+    handleError(res, error, `Failed to get all items`);
   }
 });
 
@@ -116,7 +117,7 @@ dev.post("/api/items/getBatch", authenticate, async (req, res) => {
       data: items,
     });
   } catch (error) {
-    handleErrors(res, error, `Failed to get batch of items`);
+    handleError(res, error, `Failed to get batch of items`);
   }
 });
 
@@ -134,7 +135,7 @@ dev.put("/api/items/update/:id", authenticate, async (req, res) => {
 
     return res.status(200).send({ status: "Success", msg: "Item Updated" });
   } catch (error) {
-    handleErrors(res, error, `Failed to update item: ${req.params.id}`);
+    handleError(res, error, `Failed to update item: ${req.params.id}`);
   }
 });
 
@@ -162,7 +163,7 @@ dev.put("/api/items/quantity/update/:id", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "Item Quantity Updated" });
   } catch (error) {
-    handleErrors(
+    handleError(
       res,
       error,
       `Failed to update item quantity: ${req.params.id}`,
@@ -186,7 +187,7 @@ dev.delete("/api/items/delete/:id", authenticate, async (req, res) => {
 
     return res.status(200).send({ status: "Success", msg: "Item Deleted" });
   } catch (error) {
-    handleErrors(res, error, `Failed to delete item: ${req.params.id}`);
+    handleError(res, error, `Failed to delete item: ${req.params.id}`);
   }
 });
 
@@ -213,7 +214,7 @@ dev.post(
 
       return res.status(200).send({ status: "Success", data: items });
     } catch (error) {
-      handleErrors(
+      handleError(
         res,
         error,
         `Failed to search for item: ${req.params.barcode}`,

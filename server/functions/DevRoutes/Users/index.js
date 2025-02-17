@@ -1,10 +1,7 @@
 const { dev, db } = require("../../setup");
 const { authenticate } = require("../Auth");
-const {
-  checkRequiredParams,
-  NotFoundError,
-  handleErrors,
-} = require("../Utilities");
+const { checkRequiredParams } = require("../Utilities");
+const { NotFoundError, handleError } = require("../Utilities/error-handler");
 
 const usersDB = "users_dev";
 
@@ -17,7 +14,7 @@ dev.post("/api/users/create", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "User Saved", userId: userRef.id });
   } catch (error) {
-    return handleErrors(res, error, `Failed to create user: ${req.body}`);
+    return handleError(res, error, `Failed to create user: ${req.body}`);
   }
 });
 
@@ -33,7 +30,7 @@ dev.get("/api/users/get/:id", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", data: { id: doc.id, ...doc.data() } });
   } catch (error) {
-    return handleErrors(res, error, `Failed to get user: ${req.params.id}`);
+    return handleError(res, error, `Failed to get user: ${req.params.id}`);
   }
 });
 
@@ -42,14 +39,12 @@ dev.get("/api/users/getAll", authenticate, async (req, res) => {
   try {
     const snapshot = await db.collection(usersDB).get();
     if (snapshot.empty) throw new NotFoundError("No users found");
-    return res
-      .status(200)
-      .send({
-        status: "Success",
-        data: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-      });
+    return res.status(200).send({
+      status: "Success",
+      data: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    });
   } catch (error) {
-    return handleErrors(res, error, `Failed to get all users`);
+    return handleError(res, error, `Failed to get all users`);
   }
 });
 
@@ -61,7 +56,7 @@ dev.put("/api/users/update/:id", authenticate, async (req, res) => {
     await db.collection(usersDB).doc(req.params.id).update(req.body);
     return res.status(200).send({ status: "Success", msg: "User Updated" });
   } catch (error) {
-    return handleErrors(res, error, `Failed to update user: ${req.params.id}`);
+    return handleError(res, error, `Failed to update user: ${req.params.id}`);
   }
 });
 
@@ -74,7 +69,7 @@ dev.delete("/api/users/delete/:id", authenticate, async (req, res) => {
     await docRef.delete();
     return res.status(200).send({ status: "Success", msg: "User Deleted" });
   } catch (error) {
-    return handleErrors(res, error, `Failed to delete user: ${req.params.id}`);
+    return handleError(res, error, `Failed to delete user: ${req.params.id}`);
   }
 });
 

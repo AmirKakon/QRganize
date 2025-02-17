@@ -1,10 +1,7 @@
 const { dev, db } = require("../../setup");
 const { authenticate } = require("../Auth");
-const {
-  checkRequiredParams,
-  NotFoundError,
-  handleErrors,
-} = require("../Utilities");
+const { checkRequiredParams } = require("../Utilities");
+const { NotFoundError, handleError } = require("../Utilities/error-handler");
 
 const containersDB = "containers_dev";
 
@@ -19,7 +16,7 @@ dev.post("/api/containers/create", authenticate, async (req, res) => {
       containerId: itemRef.id,
     });
   } catch (error) {
-    return handleErrors(res, error, `Failed to create container: ${req.body}`);
+    return handleError(res, error, `Failed to create container: ${req.body}`);
   }
 });
 
@@ -35,7 +32,7 @@ dev.get("/api/containers/get/:id", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", data: { id: doc.id, ...doc.data() } });
   } catch (error) {
-    return handleErrors(
+    return handleError(
       res,
       error,
       `Failed to get container: ${req.params.id}`,
@@ -55,7 +52,7 @@ dev.get("/api/containers/getAll", authenticate, async (req, res) => {
         .sort((a, b) => a.name.localeCompare(b.name)),
     });
   } catch (error) {
-    return handleErrors(res, error, `Failed to get all containers`);
+    return handleError(res, error, `Failed to get all containers`);
   }
 });
 
@@ -69,7 +66,7 @@ dev.put("/api/containers/update/:id", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "Container Updated" });
   } catch (error) {
-    return handleErrors(
+    return handleError(
       res,
       error,
       `Failed to update container: ${req.params.id}`,
@@ -90,7 +87,7 @@ dev.delete("/api/containers/delete/:id", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "Container Deleted" });
   } catch (error) {
-    return handleErrors(
+    return handleError(
       res,
       error,
       `Failed to delete container: ${req.params.id}`,
