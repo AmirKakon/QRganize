@@ -1,121 +1,65 @@
-const { dev, logger, db } = require("../../setup");
+const { dev, db } = require("../../setup");
 const { authenticate } = require("../Auth");
-const { checkRequiredParams } = require("../Utilities");
+const { checkRequiredParams, NotFoundError, handleErrors } = require("../Utilities");
 
-const baseDB = "users_dev";
+const usersDB = "users_dev";
 
-// create a user
+// Create a user
 dev.post("/api/users/create", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["name", "email"], req.body);
-
-    const itemRef = await db.collection(baseDB).add({
-      name: req.body.name,
-      email: req.body.email,
-    });
-
-    const doc = await itemRef.get();
-
-    return res
-      .status(200)
-      .send({ status: "Success", msg: "User Saved", userId: doc.id });
+    const userRef = await db.collection(usersDB).add(req.body);
+    return res.status(200).send({ status: "Success", msg: "User Saved", userId: userRef.id });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error });
+    return handleErrors(res, error, `Failed to create user: ${req.body}`);
   }
 });
 
-// get a single user using specific id
+// Get a single user
 dev.get("/api/users/get/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
-    const id = req.params.id;
-    const itemRef = db.collection(baseDB).doc(id);
-    const doc = await itemRef.get(); // gets doc
-    const data = doc.data(); // the actual data of the item
-
-    if (!data) {
-      throw new Error(`No user found with id: ${id}`);
-    }
-
-    const user = {
-      id: doc.id,
-      ...data,
-    };
-    return res.status(200).send({ status: "Success", data: user });
+    const doc = await db.collection(usersDB).doc(req.params.id).get();
+    if (!doc.exists) throw new NotFoundError(`No user found with id: ${req.params.id}`);
+    return res.status(200).send({ status: "Success", data: { id: doc.id, ...doc.data() } });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error });
+    return handleErrors(res, error, `Failed to get user: ${req.params.id}`);
   }
 });
 
+// Get all users
 dev.get("/api/users/getAll", authenticate, async (req, res) => {
   try {
-    const itemsRef = db.collection(baseDB);
-    const snapshot = await itemsRef.get();
-
-    if (snapshot.empty) {
-      throw new Error("No users found");
-    }
-
-    const users = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-    // Send the users as a response
-    return res.status(200).send({
-      status: "Success",
-      data: users,
-    });
+    const snapshot = await db.collection(usersDB).get();
+    if (snapshot.empty) throw new NotFoundError("No users found");
+    return res.status(200).send({ status: "Success", data: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error.message });
+    return handleErrors(res, error, `Failed to get all users`);
   }
 });
 
-// update users
+// Update a user
 dev.put("/api/users/update/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
     checkRequiredParams(["name", "email"], req.body);
-
-    const reqDoc = db.collection(baseDB).doc(req.params.id);
-    await reqDoc.update({
-      name: req.body.name,
-      email: req.body.email,
-    });
-
-    return res
-      .status(200)
-      .send({ status: "Success", msg: "User Updated" });
+    await db.collection(usersDB).doc(req.params.id).update(req.body);
+    return res.status(200).send({ status: "Success", msg: "User Updated" });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error });
+    return handleErrors(res, error, `Failed to update user: ${req.params.id}`);
   }
 });
 
-// delete user
+// Delete a user
 dev.delete("/api/users/delete/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
-
-    const reqDoc = db.collection(baseDB).doc(req.params.id);
-    const doc = await reqDoc.get();
-
-    if (!doc.exists) {
-      throw new Error("User not found");
-    }
-
-    await reqDoc.delete();
-
-    return res
-      .status(200)
-      .send({ status: "Success", msg: "User Deleted" });
+    const docRef = db.collection(usersDB).doc(req.params.id);
+    if (!(await docRef.get()).exists) throw new NotFoundError("User not found");
+    await docRef.delete();
+    return res.status(200).send({ status: "Success", msg: "User Deleted" });
   } catch (error) {
-    logger.error(error);
-    return res.status(400).send({ status: "Failed", msg: error });
+    return handleErrors(res, error, `Failed to delete user: ${req.params.id}`);
   }
 });
 

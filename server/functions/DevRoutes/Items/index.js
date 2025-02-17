@@ -1,6 +1,7 @@
-const { dev, logger, db } = require("../../setup");
+const { dev, db } = require("../../setup");
+const { NotFoundError, handleErrors } = require("../Utilities/error-types");
 const { authenticate } = require("../Auth");
-const { checkRequiredParams, searchBarcode, mapErrorToStatusCode } = require("../Utilities");
+const { checkRequiredParams, searchBarcode } = require("../Utilities");
 
 const baseDB = "items_dev";
 
@@ -12,11 +13,14 @@ dev.post("/api/items/create", authenticate, async (req, res) => {
     let itemRef = null;
 
     if (req.body.id) {
-      await db.collection(baseDB).doc(String(req.body.id)).set({
-        name: req.body.name,
-        image: req.body.image,
-        amount: req.body.quantity ?? 1,
-      });
+      await db
+        .collection(baseDB)
+        .doc(String(req.body.id))
+        .set({
+          name: req.body.name,
+          image: req.body.image,
+          amount: req.body.quantity ?? 1,
+        });
       itemRef = db.collection(baseDB).doc(String(req.body.id));
     } else {
       itemRef = await db.collection(baseDB).add({
@@ -32,9 +36,7 @@ dev.post("/api/items/create", authenticate, async (req, res) => {
       .status(200)
       .send({ status: "Success", msg: "Item Saved", itemId: doc.id });
   } catch (error) {
-
-    logger.error(`Failed to create item: ${req.body}`, error);
-    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
+    handleErrors(res, error, `Failed to create item: ${req.body}`);
   }
 });
 
@@ -58,8 +60,7 @@ dev.get("/api/items/get/:id", authenticate, async (req, res) => {
     };
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
-    logger.error(`Failed to get item: ${req.params.id}`, error);
-    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
+    handleErrors(res, error, `Failed to get item: ${req.params.id}`);
   }
 });
 
@@ -69,7 +70,7 @@ dev.get("/api/items/getAll", authenticate, async (req, res) => {
     const snapshot = await itemsRef.get();
 
     if (snapshot.empty) {
-      return res.status(200).send({status: "Success", data: []});
+      return res.status(200).send({ status: "Success", data: [] });
     }
 
     const items = snapshot.docs
@@ -85,8 +86,7 @@ dev.get("/api/items/getAll", authenticate, async (req, res) => {
       data: items,
     });
   } catch (error) {
-    logger.error(`Failed to get all items`, error);
-    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
+    handleErrors(res, error, `Failed to get all items`);
   }
 });
 
@@ -99,7 +99,7 @@ dev.post("/api/items/getBatch", authenticate, async (req, res) => {
     const snapshot = await itemsRef.get();
 
     if (snapshot.empty) {
-      return res.status(200).send({status: "Success", data: []});
+      return res.status(200).send({ status: "Success", data: [] });
     }
 
     const items = snapshot.docs
@@ -116,8 +116,7 @@ dev.post("/api/items/getBatch", authenticate, async (req, res) => {
       data: items,
     });
   } catch (error) {
-    logger.error(`Failed to get batch of items`, error);
-    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
+    handleErrors(res, error, `Failed to get batch of items`);
   }
 });
 
@@ -135,8 +134,7 @@ dev.put("/api/items/update/:id", authenticate, async (req, res) => {
 
     return res.status(200).send({ status: "Success", msg: "Item Updated" });
   } catch (error) {
-    logger.error(`Failed to update item: ${req.params.id}`, error);
-    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
+    handleErrors(res, error, `Failed to update item: ${req.params.id}`);
   }
 });
 
@@ -157,13 +155,18 @@ dev.put("/api/items/quantity/update/:id", authenticate, async (req, res) => {
 
     const reqDoc = db.collection(baseDB).doc(req.params.id);
     await reqDoc.update({
-      quantity: req.body.quantity
+      quantity: req.body.quantity,
     });
 
-    return res.status(200).send({ status: "Success", msg: "Item Quantity Updated" });
+    return res
+      .status(200)
+      .send({ status: "Success", msg: "Item Quantity Updated" });
   } catch (error) {
-    logger.error(`Failed to update item quantity: ${req.params.id}`, error);
-    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
+    handleErrors(
+      res,
+      error,
+      `Failed to update item quantity: ${req.params.id}`
+    );
   }
 });
 
@@ -182,9 +185,8 @@ dev.delete("/api/items/delete/:id", authenticate, async (req, res) => {
     await reqDoc.delete();
 
     return res.status(200).send({ status: "Success", msg: "Item Deleted" });
-  } catch (error) {    
-    logger.error(`Failed to delete item: ${req.params.id}`, error);
-    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
+  } catch (error) {
+    handleErrors(res, error, `Failed to delete item: ${req.params.id}`);
   }
 });
 
@@ -198,7 +200,7 @@ dev.post(
       const results = await searchBarcode(barcode);
 
       if (!results || results.length === 0) {
-        return res.status(200).send({status: "Success", data: []});
+        return res.status(200).send({ status: "Success", data: [] });
       }
 
       const items = results.map((item) => {
@@ -210,11 +212,14 @@ dev.post(
       });
 
       return res.status(200).send({ status: "Success", data: items });
-    } catch (error) {    
-    logger.error(`Failed to search for item: ${req.params.barcode}`, error);
-    return res.status(mapErrorToStatusCode(error)).send({ status: "Failed", msg: error.message });
+    } catch (error) {
+      handleErrors(
+        res,
+        error,
+        `Failed to search for item: ${req.params.barcode}`
+      );
     }
-  },
+  }
 );
 
 module.exports = { dev };
