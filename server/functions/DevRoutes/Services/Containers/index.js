@@ -1,5 +1,5 @@
 const { dev, db, logger } = require("../../../setup");
-const { NotFoundError } = require("../../Contracts/Errors")
+const { NotFoundError } = require("../../Contracts/Errors");
 
 const containersDB = "containers_dev";
 const containerItemsDB = "containerItems_dev";
@@ -13,7 +13,7 @@ const createContainer = async (name, userId) => {
 
   return {
     containerId: itemRef.id,
-  }
+  };
 };
 
 // Get a single container
@@ -45,12 +45,15 @@ const getAllContainers = async () => {
 
 // Get all containers of a user
 const getUserContainers = async (userId) => {
-  const snapshot = await db.collection(containersDB)
+  const snapshot = await db
+    .collection(containersDB)
     .where("userId", "==", userId)
     .get();
 
   if (snapshot.empty) {
-    logger.info(`Get users containers | No containers found for user ${userId}`);
+    logger.info(
+      `Get users containers | No containers found for user ${userId}`,
+    );
     return { containers: [] };
   }
 
@@ -85,8 +88,9 @@ const deleteContainer = async (id) => {
       throw new NotFoundError("Container not found");
     }
 
-    const itemsSnapshot = await db.collection(containerItemsDB)
-      .where("containerId", "==", containerId)
+    const itemsSnapshot = await db
+      .collection(containerItemsDB)
+      .where("containerId", "==", id)
       .get();
 
     itemsSnapshot.forEach((doc) => {
@@ -105,7 +109,9 @@ const deleteContainer = async (id) => {
 
 // add item to container
 const addItemToContainer = async (containerId, itemId, quantity) => {
-  const itemRef = db.collection(containerItemsDB).doc(`${containerId}_${itemId}`);
+  const itemRef = db
+    .collection(containerItemsDB)
+    .doc(`${containerId}_${itemId}`);
   await itemRef.set({
     containerId,
     itemId,
@@ -114,22 +120,29 @@ const addItemToContainer = async (containerId, itemId, quantity) => {
 
   return {
     id: itemRef.id,
-  }
+  };
 };
 
 // remove item from container
 const removeItemFromContainer = async (containerId, itemId) => {
-  await db.collection(containerItemsDB).doc(`${containerId}_${itemId}`).delete();
+  await db
+    .collection(containerItemsDB)
+    .doc(`${containerId}_${itemId}`)
+    .delete();
   return true;
 };
 
 // update quantity of item in container
 const updateItemQuantity = async ({ containerId, itemId, quantity }) => {
-  const itemRef = db.collection(containerItemsDB).doc(`${containerId}_${itemId}`);
+  const itemRef = db
+    .collection(containerItemsDB)
+    .doc(`${containerId}_${itemId}`);
 
   const itemDoc = await itemRef.get();
   if (!itemDoc.exists) {
-    throw new NotFoundError(`Item ${itemId} not found in container ${containerId}`);
+    throw new NotFoundError(
+      `Item ${itemId} not found in container ${containerId}`,
+    );
   }
 
   await itemRef.update({ quantity });
@@ -137,10 +150,12 @@ const updateItemQuantity = async ({ containerId, itemId, quantity }) => {
   return true;
 };
 
-
 // get all items in a container
 const getItemsByContainerId = async (containerId) => {
-  const snapshot = await db.collection(containerItemsDB).where("containerId", "==", containerId).get();
+  const snapshot = await db
+    .collection(containerItemsDB)
+    .where("containerId", "==", containerId)
+    .get();
 
   if (snapshot.empty) {
     return { containerId, items: [] };
@@ -151,5 +166,16 @@ const getItemsByContainerId = async (containerId) => {
   return { containerId, items };
 };
 
-
-module.exports = { dev, createContainer, getContainer, getAllContainers, getUserContainers, updateContainer, deleteContainer, addItemToContainer, removeItemFromContainer, updateItemQuantity, getItemsByContainerId };
+module.exports = {
+  dev,
+  createContainer,
+  getContainer,
+  getAllContainers,
+  getUserContainers,
+  updateContainer,
+  deleteContainer,
+  addItemToContainer,
+  removeItemFromContainer,
+  updateItemQuantity,
+  getItemsByContainerId,
+};

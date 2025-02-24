@@ -1,4 +1,5 @@
 const { logger } = require("../../setup");
+const { NotFoundError, MissingArgumentError } = require("../Contracts/Errors");
 
 /**
  * Maps a given error to an appropriate HTTP status code.
