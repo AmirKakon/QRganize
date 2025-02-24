@@ -1,4 +1,4 @@
-const { dev, db } = require("../../setup");
+const { dev, db } = require("../../../setup");
 const { NotFoundError, handleError } = require("../Utilities/error-handler");
 const { authenticate } = require("../Auth");
 const { checkRequiredParams, searchBarcode } = require("../Utilities");

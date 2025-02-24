@@ -1,4 +1,36 @@
-const { logger } = require("../../setup");
+const { logger } = require("../../../setup");
+
+/**
+ * @class NotFoundError
+ * @extends Error
+ * @description Custom error for cases where a requested resource is not found.
+ */
+class NotFoundError extends Error {
+  /**
+   * Creates a NotFoundError instance.
+   * @param {string} message - Error message describing the missing resource.
+   */
+  constructor(message) {
+    super(message);
+    this.name = "NotFoundError";
+  }
+}
+
+/**
+ * @class MissingArgumentError
+ * @extends Error
+ * @description Custom error for cases where a required argument is missing.
+ */
+class MissingArgumentError extends Error {
+  /**
+   * Creates a MissingArgumentError instance.
+   * @param {string} message - Error message describing the missing argument.
+   */
+  constructor(message) {
+    super(message);
+    this.name = "MissingArgumentError";
+  }
+}
 
 /**
  * Maps a given error to an appropriate HTTP status code.
@@ -34,4 +66,4 @@ const handleError = (res, error, errorMessage) => {
   });
 };
 
-module.exports = { handleError };
+module.exports = { NotFoundError, MissingArgumentError, handleError };

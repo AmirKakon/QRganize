@@ -1,7 +1,7 @@
-const { dev, db } = require("../../setup");
+const { dev, db } = require("../../../setup");
 const { authenticate } = require("../Auth");
-const { checkRequiredParams } = require("../Utilities");
-const { NotFoundError, handleError } = require("../Utilities/error-handler");
+const { checkRequiredParams } = require("../../Utilities");
+const { NotFoundError, handleError } = require("../../Utilities/error-handler");
 
 const usersDB = "users_dev";
 
