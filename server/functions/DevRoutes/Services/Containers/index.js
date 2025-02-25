@@ -133,7 +133,7 @@ const removeItemFromContainer = async (containerId, itemId) => {
 };
 
 // update quantity of item in container
-const updateItemQuantity = async ({ containerId, itemId, quantity }) => {
+const updateItemQuantity = async ( containerId, itemId, quantity ) => {
   const itemRef = db
     .collection(containerItemsDB)
     .doc(`${containerId}_${itemId}`);

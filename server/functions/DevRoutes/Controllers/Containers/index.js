@@ -157,7 +157,7 @@ dev.put(
       checkRequiredParams(["containerId"], req.params);
       checkRequiredParams(["itemId", "quantity"], req.body);
       const updated = await ContainerService.updateItemQuantity(
-        req.params.id,
+        req.params.containerId,
         req.body.itemId,
         req.body.quantity,
       );
@@ -170,7 +170,7 @@ dev.put(
       return handleError(
         res,
         error,
-        `Failed to update item quantity in container: ${req.body.containerId}`,
+        `Failed to update item quantity in container: ${req.params.containerId}`,
       );
     }
   },
