@@ -44,7 +44,7 @@ const getAllContainers = async () => {
 };
 
 // Get all containers of a user
-const getUserContainers = async (userId) => {
+const getUserContainers = async (userId, asSnapshot = false) => {
   const snapshot = await db
     .collection(containersDB)
     .where("userId", "==", userId)
@@ -57,11 +57,13 @@ const getUserContainers = async (userId) => {
     return { containers: [] };
   }
 
-  return {
-    containers: snapshot.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .sort((a, b) => a.name.localeCompare(b.name)),
-  };
+  return asSnapshot ?
+    snapshot :
+    {
+      containers: snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    };
 };
 
 // Update a container
@@ -88,10 +90,7 @@ const deleteContainer = async (id) => {
       throw new NotFoundError("Container not found");
     }
 
-    const itemsSnapshot = await db
-      .collection(containerItemsDB)
-      .where("containerId", "==", id)
-      .get();
+    const itemsSnapshot = await getItemsByContainerId(id, true);
 
     itemsSnapshot.forEach((doc) => {
       batch.delete(doc.ref);
@@ -151,14 +150,21 @@ const updateItemQuantity = async ( containerId, itemId, quantity ) => {
 };
 
 // get all items in a container
-const getItemsByContainerId = async (containerId) => {
+const getItemsByContainerId = async (containerId, asSnapshot = false) => {
   const snapshot = await db
     .collection(containerItemsDB)
     .where("containerId", "==", containerId)
     .get();
 
   if (snapshot.empty) {
+    logger.info(
+      `Get container items | No items found for contianer ${containerId}`,
+    );
     return { containerId, items: [] };
+  }
+
+  if(asSnapshot){
+    return snapshot;
   }
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data() }));
