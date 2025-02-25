@@ -1,3 +1,4 @@
 const Container = require("./Container");
+const ContainerItem = require("./ContainerItem");
 
-module.exports = { Container };
+module.exports = { Container, ContainerItem };
