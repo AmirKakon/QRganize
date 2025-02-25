@@ -161,7 +161,7 @@ const getItemsByContainerId = async (containerId) => {
     return { containerId, items: [] };
   }
 
-  const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const items = snapshot.docs.map((doc) => ({ ...doc.data() }));
 
   return { containerId, items };
 };

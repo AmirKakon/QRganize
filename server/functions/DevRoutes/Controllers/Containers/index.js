@@ -156,7 +156,11 @@ dev.put(
     try {
       checkRequiredParams(["containerId"], req.params);
       checkRequiredParams(["itemId", "quantity"], req.body);
-      const updated = await ContainerService.updateItemQuantity(req.body);
+      const updated = await ContainerService.updateItemQuantity(
+        req.params.id,
+        req.body.itemId,
+        req.body.quantity,
+      );
       return updated ?
         res.status(200).send({ status: "Success", msg: "Item Updated" }) :
         res
