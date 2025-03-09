@@ -1,226 +1,131 @@
-const { dev, db } = require("../../../setup");
-const { NotFoundError, handleError } = require("../Utilities/error-handler");
-const { authenticate } = require("../Auth");
-const { checkRequiredParams, searchBarcode } = require("../Utilities");
+const { dev, db, logger } = require("../../../setup");
+const { NotFoundError } = require("../../Contracts/Errors");
+const Utilities = require("../Utilities");
 
+const itemsDB = "items_dev";
 
-const baseDB = "items_dev";
+// Create an item
+const createItem = async (name, price, image) => {
+  const itemRef = await db.collection(itemsDB).add({
+    name: name,
+    price: price,
+    image: image,
+  });
 
-// create an item
-dev.post("/api/items/create", authenticate, async (req, res) => {
-  try {
-    checkRequiredParams(["name", "image"], req.body);
+  return {
+    itemId: itemRef.id,
+  };
+};
 
-    let itemRef = null;
+// Get a single item
+const getItem = async (id) => {
+  const doc = await db.collection(itemsDB).doc(id).get();
 
-    if (req.body.id) {
-      await db
-        .collection(baseDB)
-        .doc(String(req.body.id))
-        .set({
-          name: req.body.name,
-          image: req.body.image,
-          amount: req.body.quantity ?? 1,
-        });
-      itemRef = db.collection(baseDB).doc(String(req.body.id));
-    } else {
-      itemRef = await db.collection(baseDB).add({
-        name: req.body.name,
-        image: req.body.image,
-        amount: req.body.quantity ?? 1,
-      });
-    }
-
-    const doc = await itemRef.get();
-
-    return res
-      .status(200)
-      .send({ status: "Success", msg: "Item Saved", itemId: doc.id });
-  } catch (error) {
-    handleError(res, error, `Failed to create item: ${req.body}`);
+  if (!doc.exists) {
+    throw new NotFoundError(`No item found with id: ${id}`);
   }
-});
 
-// get a single item using specific id
-dev.get("/api/items/get/:id", authenticate, async (req, res) => {
-  try {
-    checkRequiredParams(["id"], req.params);
+  return { id: doc.id, ...doc.data() };
+};
 
-    const id = req.params.id;
-    const itemRef = db.collection(baseDB).doc(id);
-    const doc = await itemRef.get(); // gets doc
-    const data = doc.data(); // the actual data of the item
+// Get all items
+const getAllItems = async () => {
+  const snapshot = await db.collection(itemsDB).get();
 
-    if (!data) {
-      throw new NotFoundError(`No item found with id: ${id}`);
-    }
+  if (snapshot.empty) {
+    logger.info("Get all items | No items found");
+    return { items: [] };
+  }
 
-    const item = {
+  return {
+    items: snapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  };
+};
+
+// Get batch of items
+const getBatchOfItems = async (itemsList) => {
+  const itemsRef = db.collection(itemsDB);
+  const snapshot = await itemsRef.get();
+
+  if (snapshot.empty) {
+    return { data: [] };
+  }
+
+  const items = snapshot.docs
+    .map((doc) => ({
       id: doc.id,
-      ...data,
+      ...doc.data(),
+    }))
+    .filter((item) => itemsList.includes(item.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    data: items,
+  };
+};
+
+// Update an item
+const updateItem = async (id, name, price, image) => {
+  try {
+    await db.collection(itemsDB).doc(id).update({
+      name: name,
+      price: price,
+      image: image,
+    });
+    return true;
+  } catch (error) {
+    logger.error(`Failed to update item: ${id}`, error);
+    return false;
+  }
+};
+
+// Delete an item
+const deleteItem = async (id) => {
+  try {
+    const batch = db.batch();
+
+    const docRef = db.collection(itemsDB).doc(id);
+    if (!(await docRef.get()).exists) {
+      throw new NotFoundError("Item not found");
+    }
+
+    batch.delete(docRef);
+    await batch.commit();
+
+    return true;
+  } catch (error) {
+    logger.error(`Failed to delete item: ${id}`, error);
+    return false;
+  }
+};
+
+const searchBarcode = async (barcode) => {
+  const results = await Utilities.searchBarcode(barcode);
+
+  if (!results || results.length === 0) {
+    return { data: [] };
+  }
+
+  const items = results.map((item) => {
+    return {
+      id: barcode,
+      name: item.title,
+      image: item.src,
     };
-    return res.status(200).send({ status: "Success", data: item });
-  } catch (error) {
-    handleError(res, error, `Failed to get item: ${req.params.id}`);
-  }
-});
+  });
 
-dev.get("/api/items/getAll", authenticate, async (req, res) => {
-  try {
-    const itemsRef = db.collection(baseDB);
-    const snapshot = await itemsRef.get();
+  return { data: items };
+};
 
-    if (snapshot.empty) {
-      return res.status(200).send({ status: "Success", data: [] });
-    }
-
-    const items = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    // Send the items as a response
-    return res.status(200).send({
-      status: "Success",
-      data: items,
-    });
-  } catch (error) {
-    handleError(res, error, `Failed to get all items`);
-  }
-});
-
-// get batch of items
-dev.post("/api/items/getBatch", authenticate, async (req, res) => {
-  try {
-    checkRequiredParams(["items"], req.body);
-    const itemsList = req.body.items;
-    const itemsRef = db.collection(baseDB);
-    const snapshot = await itemsRef.get();
-
-    if (snapshot.empty) {
-      return res.status(200).send({ status: "Success", data: [] });
-    }
-
-    const items = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      .filter((item) => itemsList.includes(item.id))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    // Send the items as a response
-    return res.status(200).send({
-      status: "Success",
-      data: items,
-    });
-  } catch (error) {
-    handleError(res, error, `Failed to get batch of items`);
-  }
-});
-
-// update items
-dev.put("/api/items/update/:id", authenticate, async (req, res) => {
-  try {
-    checkRequiredParams(["id"], req.params);
-    checkRequiredParams(["name", "image", "quantity"], req.body);
-
-    const reqDoc = db.collection(baseDB).doc(req.params.id);
-    await reqDoc.update({
-      name: req.body.name,
-      image: req.body.image,
-    });
-
-    return res.status(200).send({ status: "Success", msg: "Item Updated" });
-  } catch (error) {
-    handleError(res, error, `Failed to update item: ${req.params.id}`);
-  }
-});
-
-// update quantity of item
-dev.put("/api/items/quantity/update/:id", authenticate, async (req, res) => {
-  try {
-    checkRequiredParams(["id"], req.params);
-    checkRequiredParams(["quantity"], req.body);
-
-    const id = req.params.id;
-    const itemRef = db.collection(baseDB).doc(id);
-    const doc = await itemRef.get(); // gets doc
-    const data = doc.data(); // the actual data of the item
-
-    if (!data) {
-      throw new NotFoundError(`No item found with id: ${id}`);
-    }
-
-    const reqDoc = db.collection(baseDB).doc(req.params.id);
-    await reqDoc.update({
-      quantity: req.body.quantity,
-    });
-
-    return res
-      .status(200)
-      .send({ status: "Success", msg: "Item Quantity Updated" });
-  } catch (error) {
-    handleError(
-      res,
-      error,
-      `Failed to update item quantity: ${req.params.id}`,
-    );
-  }
-});
-
-// delete item
-dev.delete("/api/items/delete/:id", authenticate, async (req, res) => {
-  try {
-    checkRequiredParams(["id"], req.params);
-
-    const reqDoc = db.collection(baseDB).doc(req.params.id);
-    const doc = await reqDoc.get();
-
-    if (!doc.exists) {
-      throw new NotFoundError(`Item ${req.params.id} not found`);
-    }
-
-    await reqDoc.delete();
-
-    return res.status(200).send({ status: "Success", msg: "Item Deleted" });
-  } catch (error) {
-    handleError(res, error, `Failed to delete item: ${req.params.id}`);
-  }
-});
-
-dev.post(
-  "/api/items/searchBarcode/:barcode",
-  authenticate,
-  async (req, res) => {
-    try {
-      checkRequiredParams(["barcode"], req.params);
-      const barcode = Number(req.params.barcode);
-      const results = await searchBarcode(barcode);
-
-      if (!results || results.length === 0) {
-        return res.status(200).send({ status: "Success", data: [] });
-      }
-
-      const items = results.map((item) => {
-        return {
-          id: barcode,
-          name: item.title,
-          image: item.src,
-        };
-      });
-
-      return res.status(200).send({ status: "Success", data: items });
-    } catch (error) {
-      handleError(
-        res,
-        error,
-        `Failed to search for item: ${req.params.barcode}`,
-      );
-    }
-  },
-);
-
-module.exports = { dev };
+module.exports = {
+  dev,
+  createItem,
+  getItem,
+  getAllItems,
+  getBatchOfItems,
+  updateItem,
+  deleteItem,
+  searchBarcode,
+};

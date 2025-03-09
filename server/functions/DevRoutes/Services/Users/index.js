@@ -1,6 +1,4 @@
 const { dev, db } = require("../../../setup");
-const { authenticate } = require("../Auth");
-const { checkRequiredParams } = require("../Utilities");
 const { NotFoundError, handleError } = require("../Utilities/error-handler");
 const ContainerService = require("../Containers");
 
@@ -8,7 +6,7 @@ const usersDB = "users_dev";
 const userItemsDB = "userItems_dev";
 
 // Create a user
-const createUser = async (id, name, email, phone) => {
+const createUser = async (name, email, phone) => {
   const itemRef = await db.collection(usersDB).add({
       name: name,
       email: email,
@@ -79,6 +77,7 @@ const deleteUser = async (id) => {
       batch.delete(doc.ref);
     });
 
+    // delete all item relations of a user
     const items = await ItemService.getUserItems(id, true);
 
     items.forEach((doc) => {
