@@ -40,7 +40,7 @@ const HeaderLogo = ({ isSmallScreen }) => {
         >
           <img
             src={isHovered ? tongueLogo : logo}
-            alt="Amir's Portfolio"
+            alt="QRganize"
             height={55}
           />
         </Link>

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import Heading from "../../components/Heading";
-import Projects from "../../components/Projects";
 import AccessTokenExpiration from "../../components/AccessTokenExpiration";
 import Loading from "../../components/Loading";
 
@@ -14,17 +13,11 @@ const HomePage = ({ isSmallScreen }) => {
     setLoading(false);
   }, []);
 
-  const jumpToProjects = () => {
-    const projects = document.getElementById("projects");
-    projects.scrollIntoView({ behavior: "smooth" });
-  };
-
   return loading ? (
     <Loading />
   ) : (
     <Box flex={1} spacing={1} sx={{backgroundColor: "#e2e2e2"}}>
-      <Heading isSmallScreen={isSmallScreen} handleArrowClick={jumpToProjects}/>
-      <Projects isSmallScreen={isSmallScreen} filter={true} />
+      <Heading isSmallScreen={isSmallScreen} />
       <AccessTokenExpiration />
     </Box>
   );

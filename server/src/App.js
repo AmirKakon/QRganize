@@ -12,10 +12,6 @@ import {
 import { Box, Snackbar } from "@mui/material";
 import {
   HomePage,
-  ProjectsPage,
-  ProjectOverviewPage,
-  AboutPage,
-  TestPage,
 } from "./pages";
 import { Header, Footer } from "./layout";
 import { tryGetTokenOrLogin, getUuid } from "./utilities/auth";
@@ -89,22 +85,6 @@ const App = () => {
             <Loading />
           ) : (
             <Routes>
-              <Route
-                path="/test"
-                element={<TestPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/about"
-                element={<AboutPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/projects/:projectId"
-                element={<ProjectOverviewPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/projects/"
-                element={<ProjectsPage isSmallScreen={isSmallScreen} />}
-              />
               <Route
                 path="/"
                 element={<HomePage isSmallScreen={isSmallScreen} />}
