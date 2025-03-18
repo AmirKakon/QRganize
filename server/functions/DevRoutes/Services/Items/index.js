@@ -5,12 +5,26 @@ const Utilities = require("../Utilities");
 const itemsDB = "items_dev";
 
 // Create an item
-const createItem = async (name, price, image) => {
-  const itemRef = await db.collection(itemsDB).add({
-    name: name,
-    price: price,
-    image: image,
-  });
+const createItem = async (name, price, image, id = null) => {
+  let itemRef = null;
+
+  if (id) {
+    await db
+      .collection(itemsDB)
+      .doc(String(id))
+      .set({
+        name: name,
+        price: price,
+        image: image,
+      });
+    itemRef = db.collection(itemsDB).doc(String(id));
+  } else {
+    itemRef = await db.collection(itemsDB).add({
+      name: name,
+      price: price,
+      image: image,
+    });
+  }
 
   return {
     itemId: itemRef.id,
