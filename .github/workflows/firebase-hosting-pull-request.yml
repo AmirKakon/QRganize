@@ -22,10 +22,10 @@ jobs:
       - name: Set up default username
         run: echo "REACT_APP_DEFAULT_USERNAME=${{ secrets.DEFAULT_USERNAME }}" >> $GITHUB_ENV
 
-      - run: npm ci && npm run build
+      - run: npm ci && npm install @babel/plugin-proposal-private-property-in-object --save-dev && npm run build
       
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_QRGANIZE_F651B }}'
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_QRGANIZE_F651B }}
           projectId: qrganize-f651b
