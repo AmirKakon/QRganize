@@ -1,4 +1,4 @@
-const { dev, db, logger } = require("../../../setup");
+const { db, logger } = require("../../../setup");
 const { NotFoundError } = require("../../Contracts/Errors");
 const Utilities = require("../Utilities");
 
@@ -120,7 +120,6 @@ const searchBarcode = async (barcode) => {
 };
 
 module.exports = {
-  dev,
   createItem,
   getItem,
   getAllItems,

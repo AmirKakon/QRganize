@@ -1,4 +1,4 @@
-const { dev, db, logger } = require("../../../setup");
+const { db, logger } = require("../../../setup");
 const { NotFoundError } = require("../../Contracts/Errors");
 
 const containersDB = "containers_dev";
@@ -173,7 +173,6 @@ const getItemsByContainerId = async (containerId, asSnapshot = false) => {
 };
 
 module.exports = {
-  dev,
   createContainer,
   getContainer,
   getAllContainers,
