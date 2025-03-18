@@ -22,6 +22,7 @@ jobs:
       - name: Set up default username
         run: echo "REACT_APP_DEFAULT_USERNAME=${{ secrets.DEFAULT_USERNAME }}" >> $GITHUB_ENV
 
+      - run: cd ./server
       - run: npm ci && npm run build
       
       - uses: FirebaseExtended/action-hosting-deploy@v0
