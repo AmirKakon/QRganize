@@ -163,7 +163,7 @@ const getItemsByContainerId = async (containerId, asSnapshot = false) => {
     return { containerId, items: [] };
   }
 
-  if(asSnapshot){
+  if (asSnapshot) {
     return snapshot;
   }
 
