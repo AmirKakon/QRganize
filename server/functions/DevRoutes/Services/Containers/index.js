@@ -158,7 +158,7 @@ const getItemsByContainerId = async (containerId, asSnapshot = false) => {
 
   if (snapshot.empty) {
     logger.info(
-      `Get container items | No items found for contianer ${containerId}`,
+      `Get container items | No items found for container ${containerId}`,
     );
     return { containerId, items: [] };
   }

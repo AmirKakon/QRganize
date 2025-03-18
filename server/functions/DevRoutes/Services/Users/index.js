@@ -1,5 +1,5 @@
-const { dev, db } = require("../../../setup");
-const { NotFoundError, handleError } = require("../Utilities/error-handler");
+const { db, logger } = require("../../../setup");
+const { NotFoundError } = require("../Utilities/error-handler");
 const ContainerService = require("../Containers");
 
 const usersDB = "users_dev";
@@ -8,14 +8,14 @@ const userItemsDB = "userItems_dev";
 // Create a user
 const createUser = async (name, email, phone) => {
   const itemRef = await db.collection(usersDB).add({
-      name: name,
-      email: email,
-      phone: phone
-    });
-  
-    return {
-      userId: itemRef.id,
-    };
+    name: name,
+    email: email,
+    phone: phone,
+  });
+
+  return {
+    userId: itemRef.id,
+  };
 };
 
 // Get a single user
@@ -51,7 +51,7 @@ const updateUser = async (id, name, email, phone) => {
     await db.collection(usersDB).doc(id).update({
       name: name,
       email: email,
-      phone: phone
+      phone: phone,
     });
     return true;
   } catch (error) {
@@ -78,7 +78,7 @@ const deleteUser = async (id) => {
     });
 
     // delete all item relations of a user
-    const items = await ItemService.getUserItems(id, true);
+    const items = await getItemByUserId(id, true);
 
     items.forEach((doc) => {
       batch.delete(doc.ref);
@@ -94,5 +94,69 @@ const deleteUser = async (id) => {
   }
 };
 
+// add item to user
+const addItemToUser = async (userId, itemId, quantity) => {
+  const itemRef = db.collection(userItemsDB).doc(`${userId}_${itemId}`);
+  await itemRef.set({
+    userId,
+    itemId,
+    quantity,
+  });
 
-module.exports = { dev };
+  return {
+    id: itemRef.id,
+  };
+};
+
+// remove item from user
+const removeItemFromUser = async (userId, itemId) => {
+  await db.collection(userItemsDB).doc(`${userId}_${itemId}`).delete();
+  return true;
+};
+
+// update quantity of item of user
+const updateItemQuantity = async (userId, itemId, quantity) => {
+  const itemRef = db.collection(userItemsDB).doc(`${userId}_${itemId}`);
+
+  const itemDoc = await itemRef.get();
+  if (!itemDoc.exists) {
+    throw new NotFoundError(`Item ${itemId} not found for user ${userId}`);
+  }
+
+  await itemRef.update({ quantity });
+
+  return true;
+};
+
+// get all items of a user
+const getItemByUserId = async (userId, asSnapshot = false) => {
+  const snapshot = await db
+    .collection(userItemsDB)
+    .where("userId", "==", userId)
+    .get();
+
+  if (snapshot.empty) {
+    logger.info(`Get user items | No items found for user ${userId}`);
+    return { userId, items: [] };
+  }
+
+  if (asSnapshot) {
+    return snapshot;
+  }
+
+  const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  return { userId, items };
+};
+
+module.exports = {
+  createUser,
+  getUser,
+  getAllUsers,
+  updateUser,
+  deleteUser,
+  addItemToUser,
+  removeItemFromUser,
+  updateItemQuantity,
+  getItemByUserId,
+};

@@ -142,7 +142,7 @@ dev.delete(
       return handleError(
         res,
         error,
-        `Failed to add item to container: ${req.params.id}`,
+        `Failed to remove item from container: ${req.params.containerId}`,
       );
     }
   },
@@ -178,7 +178,7 @@ dev.put(
 
 // get all items in a container
 dev.get(
-  "/api/containers/getItemsByContainerId/:containerId",
+  "/api/containers/getItems/:containerId",
   authenticate,
   async (req, res) => {
     try {
