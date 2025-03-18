@@ -1,4 +1,4 @@
-const { functions } = require("../../setup");
+const { functions } = require("../../../setup");
 const { NotFoundError, MissingArgumentError } = require("./error-handler");
 const axios = require("axios");
 const cheerio = require("cheerio");

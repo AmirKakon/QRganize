@@ -1,9 +1,9 @@
-const { dev, logger, admin, functions, db } = require("../../setup");
+const { dev, logger, admin, functions, db } = require("../../../setup");
 const jwt = require("jsonwebtoken");
 const dayjs = require("dayjs");
 const util = require("util");
 const jwtVerify = util.promisify(jwt.verify);
-const { checkRequiredParams } = require("../Utilities");
+const { checkRequiredParams } = require("../../Utilities");
 
 const baseDB = "refresh-tokens_dev";
 

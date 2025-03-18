@@ -7,10 +7,10 @@ const { app, dev, functions } = require("./setup");
 // require("./Routes/CopyFromDev");
 
 // dev routes
-require("./DevRoutes/Auth");
-require("./DevRoutes/Containers");
-require("./DevRoutes/Items");
-require("./DevRoutes/Users");
+require("./DevRoutes/Controllers/Auth");
+require("./DevRoutes/Controllers/Containers");
+require("./DevRoutes/Controllers/Items");
+require("./DevRoutes/Controllers/Users");
 
 // Export the main app
 exports.app = functions.https.onRequest(app);
