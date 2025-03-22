@@ -15,7 +15,7 @@ const Heading = ({ isSmallScreen }) => {
             height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
           }}
         >
-          <h3>Hello World</h3>
+          <h3>Hello NEW World</h3>
         </Box>
       )}
 
