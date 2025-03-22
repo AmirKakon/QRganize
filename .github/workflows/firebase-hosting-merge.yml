@@ -13,7 +13,7 @@ jobs:
       name: prod
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up API base URL
         run: echo "REACT_APP_API_BASE_URL=${{ secrets.API_BASE_URL }}" >> $GITHUB_ENV
