@@ -15,6 +15,9 @@ const checkRequiredParams = (requiredParams, params) => {
 const apifyToken = functions.config().apify_api.token;
 const apifyGoogleSearchActor = functions.config().apify_googlesearch.actor;
 
+const googleCustomSearchId = functions.config().google_customsearch.id;
+const googleCustomSearchKey = functions.config().google_customsearch.key;
+
 const searchBarcodeApify = async (barcode) => {
   // Initialize the ApifyClient with API token
   const client = new ApifyClient({
@@ -85,15 +88,49 @@ const searchBarcodeChp = async (barcode) => {
   return null;
 };
 
+const searchGoogleCustomSearch = async (barcode) => {
+  try {
+    const url = `https://www.googleapis.com/customsearch/v1?q=${barcode}&searchType=image&key=${googleCustomSearchKey}&cx=${googleCustomSearchId}`;
+
+    const response = await axios.get(url);
+    const searchResults = response.data.items;
+
+    // Step 2: Get the first 3 item results
+    const items = [];
+    for (let i = 0; i < 3; i++) {
+      if (searchResults[i]) {
+        const imageUrl = searchResults[i].link;
+        const title = searchResults[i].title;
+
+        // Save item  data
+        items.push({
+          name: title,
+          imageBase64: imageUrl,
+        });
+      }
+    }
+
+    return items;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return null;
+  }
+};
+
 const searchBarcode = async (barcode) => {
   let items = await searchBarcodeChp(barcode);
 
   if (!items) {
-    items = await searchBarcodeApify(barcode);
+    items = await searchGoogleCustomSearch(barcode);
+  }
 
-    if (!items) {
-      throw new NotFoundError(`No item was found for barcode ${barcode}`);
-    }
+  if (!items || items.length == 0) {
+    const tit = await searchBarcodeApify(barcode);
+    console.log("using apify", tit);
+  }
+
+  if (!items || items.length == 0) {
+    throw new NotFoundError(`No item was found for barcode ${barcode}`);
   }
 
   return items;
