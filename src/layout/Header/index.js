@@ -54,7 +54,7 @@ const HeaderLogo = ({ isSmallScreen }) => {
           ml: isSmallScreen ? -5 : 1,
         }}
       >
-        Amir's Portfolio
+        QRganize
       </Typography>
     </>
   );
@@ -94,20 +94,8 @@ const Header = ({ isSmallScreen }) => {
 
   const headerIcons = [
     { title: "Home", link: "/", icon: <HomeIcon /> },
-    { title: "Projects", link: "/projects", icon: <ConstructionIcon /> },
     { title: "About", link: "/about", icon: <InfoIcon /> },
   ];
-
-  const viewResume = (
-    <a
-      href="https://firebasestorage.googleapis.com/v0/b/amir-portfolio-9fe8a.appspot.com/o/resume%2FAmir%20Kakon%202023.pdf?alt=media&token=af9724e1-a212-4bb4-9728-30620a3733a1"
-      style={{ textDecoration: "none" }}
-    >
-      <Button color={isSmallScreen ? "primary" : "secondary"}>
-        <Typography variant="button">View Resume</Typography>
-      </Button>
-    </a>
-  );
 
   return (
     <Box sx={{ flexGrow: 1, marginBottom: 7 }}>
@@ -123,7 +111,7 @@ const Header = ({ isSmallScreen }) => {
             >
               <img
                 src={isDrawerOpen ? tongueLogo : logo}
-                alt="Amir's Portfolio"
+                alt="QRganize"
                 height={50}
               />
             </IconButton>
@@ -141,7 +129,6 @@ const Header = ({ isSmallScreen }) => {
                   icon={item.icon}
                 />
               ))}
-              {viewResume}
             </>
           )}
         </Toolbar>
@@ -159,7 +146,6 @@ const Header = ({ isSmallScreen }) => {
                 handleDrawerClose={handleDrawerClose}
               />
             ))}
-            <ListItem> {viewResume} </ListItem>
           </List>
         </Drawer>
       )}
