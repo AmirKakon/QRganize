@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, useMediaQuery } from "@mui/material";
+import BarcodeScanner from "../BarcodeScanner";
 
 const Heading = ({ isSmallScreen }) => {
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
@@ -16,6 +17,7 @@ const Heading = ({ isSmallScreen }) => {
           }}
         >
           <h3>Hello NEW World</h3>
+          <BarcodeScanner />
         </Box>
       )}
 
@@ -26,9 +28,10 @@ const Heading = ({ isSmallScreen }) => {
           alignContent="center"
           justifyContent="center"
           flexDirection="column"
-          sx={{ backgroundColor: "#010101", height: "90vh" }}
+          sx={{ height: "90vh" }}
         >
           <h3>Hello World</h3>
+          <BarcodeScanner />
         </Box>
       )}
     </>
