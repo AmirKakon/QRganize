@@ -1,0 +1,35 @@
+name: Deploy to Firebase Hosting on PR
+'on': pull_request
+
+jobs:
+  build_and_preview:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write  # Ensure this is included
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up API base URL
+        run: echo "REACT_APP_API_BASE_URL=${{ secrets.API_BASE_URL }}" >> $GITHUB_ENV
+
+      - name: Set up Google Analytics tracking ID
+        run: echo "REACT_APP_GA_TRACKING_ID=${{ secrets.GA_TRACKING_ID }}" >> $GITHUB_ENV
+
+      - name: Set up default username
+        run: echo "REACT_APP_DEFAULT_USERNAME=${{ secrets.DEFAULT_USERNAME }}" >> $GITHUB_ENV
+
+      - run: npm ci && npm install @babel/plugin-proposal-private-property-in-object --save-dev && npm run build
+      
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_QRGANIZE_F651B }}
+          channelId: live
+          projectId: qrganize-f651b
