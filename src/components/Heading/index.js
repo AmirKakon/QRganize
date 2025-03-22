@@ -11,27 +11,33 @@ const Heading = ({ isSmallScreen }) => {
       {!isSmallScreen && (
         <Box
           sx={{
-            position: "relative",
-            overflow: "hidden",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
             height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
           }}
         >
-          <h3>Hello NEW World</h3>
-          <BarcodeScanner />
+          <Box>
+            <h3>Hello NEW World</h3>
+            <BarcodeScanner isSmallScreen={isSmallScreen} />
+          </Box>
         </Box>
       )}
 
       {isSmallScreen && (
         <Box
-          flex={1}
-          display="flex"
-          alignContent="center"
-          justifyContent="center"
-          flexDirection="column"
-          sx={{ height: "90vh" }}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+            height: "90vh",
+          }}
         >
           <h3>Hello World</h3>
-          <BarcodeScanner />
+          <BarcodeScanner isSmallScreen={isSmallScreen} />
         </Box>
       )}
     </>
