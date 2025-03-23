@@ -1,15 +1,12 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+const functions = require("firebase-functions/v1");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 const express = require("express");
 const cors = require("cors");
 
 const logger = functions.logger;
 
-const serviceAccount = require("./serviceAccountKey.json");
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+initializeApp();
 
 const app = express();
 const dev = express();
@@ -22,6 +19,6 @@ dev.use(express.json());
 app.use(cors({ origin: true }));
 dev.use(cors({ origin: true }));
 
-const db = admin.firestore();
+const db = getFirestore();
 
-module.exports = { app, dev, functions, logger, db, admin };
+module.exports = { app, dev, functions, logger, db, Timestamp };

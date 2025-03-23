@@ -1,5 +1,3 @@
-
-
 const { app, dev, functions } = require("./setup");
 
 // app routes
