@@ -26,6 +26,10 @@ const ItemPage = ({ isSmallScreen }) => {
   }, [id]);
 
   const getImageSrc = (image) => {
+    if(image && image.startsWith("http")) {
+      return image;
+    }
+    
     // Check if the image is a valid base64 string
     if (image && !image.startsWith("data:image")) {
       return `data:iamge/png;base64,${image}`;
