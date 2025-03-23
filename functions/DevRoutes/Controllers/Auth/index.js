@@ -1,4 +1,4 @@
-const { dev, logger, admin, functions, db } = require("../../../setup");
+const { dev, logger, Timestamp, functions, db } = require("../../../setup");
 const jwt = require("jsonwebtoken");
 const dayjs = require("dayjs");
 const util = require("util");
@@ -47,7 +47,7 @@ const addRefreshToken = async (refreshToken, userId) => {
     .doc(userId)
     .set({
       token: refreshToken,
-      timestamp: admin.firestore.Timestamp.fromDate(dayjs().toDate()),
+      timestamp: Timestamp.fromDate(dayjs().toDate()),
     });
 
   return { status: "Success", msg: "Token Added" };
