@@ -1,19 +1,15 @@
+const { logger } = require("firebase-functions");
 const { functions } = require("../../../setup");
-const { NotFoundError, MissingArgumentError } = require("./error-handler");
+const { NotFoundError } = require("./error-handler");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const ApifyClient = require("apify-client").ApifyClient;
 
-const checkRequiredParams = (requiredParams, params) => {
-  for (const param of requiredParams) {
-    if (!params[param]) {
-      throw new MissingArgumentError(`Missing parameter: ${param}`);
-    }
-  }
-};
-
 const apifyToken = functions.config().apify_api.token;
 const apifyGoogleSearchActor = functions.config().apify_googlesearch.actor;
+
+const googleCustomSearchId = functions.config().google_customsearch.id;
+const googleCustomSearchKey = functions.config().google_customsearch.key;
 
 const searchBarcodeApify = async (barcode) => {
   // Initialize the ApifyClient with API token
@@ -85,18 +81,53 @@ const searchBarcodeChp = async (barcode) => {
   return null;
 };
 
+const searchGoogleCustomSearch = async (barcode) => {
+  try {
+    const url = `https://www.googleapis.com/customsearch/v1?q=${barcode}&searchType=image&key=${googleCustomSearchKey}&cx=${googleCustomSearchId}`;
+
+    const response = await axios.get(url);
+    const searchResults = response.data.items;
+
+    // Step 2: Get the first 3 item results
+    const items = [];
+    for (let i = 0; i < 3; i++) {
+      if (searchResults[i]) {
+        const src = searchResults[i].link;
+        const title = searchResults[i].title;
+
+        // Save item  data
+        items.push({
+          title, src,
+        });
+      }
+    }
+
+    return items;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return null;
+  }
+};
+
 const searchBarcode = async (barcode) => {
   let items = await searchBarcodeChp(barcode);
 
-  if (!items) {
-    items = await searchBarcodeApify(barcode);
-
-    if (!items) {
-      throw new NotFoundError(`No item was found for barcode ${barcode}`);
-    }
+  if (!items || items.length == 0) {
+    logger.info("using google", items);
+    items = await searchGoogleCustomSearch(barcode);
   }
 
+  if (!items || items.length == 0) {
+    logger.info("using apify", items);
+    items = await searchBarcodeApify(barcode);
+  }
+
+  if (!items || items.length == 0) {
+    throw new NotFoundError(`No item was found for barcode ${barcode}`);
+  }
+
+  logger.info("search for items", items);
   return items;
 };
 
-module.exports = { checkRequiredParams, searchBarcode };
+module.exports = { searchBarcode };
