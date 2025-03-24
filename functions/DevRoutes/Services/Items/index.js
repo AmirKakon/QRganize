@@ -42,6 +42,23 @@ const getItem = async (id) => {
   return { id: doc.id, ...doc.data() };
 };
 
+// find an item in db or online
+const findItem = async (id) => {
+  const doc = await db.collection(itemsDB).doc(id).get();
+
+  if (!doc.exists) {
+    const barcodeResponse = await searchBarcode(id);
+
+    if (barcodeResponse.data.length > 0) {
+      return barcodeResponse.data[0];
+    }
+
+    throw new NotFoundError(`No item found with id: ${id}`);
+  }
+
+  return { id: doc.id, ...doc.data() };
+};
+
 // Get all items
 const getAllItems = async () => {
   const snapshot = await db.collection(itemsDB).get();
@@ -136,6 +153,7 @@ const searchBarcode = async (barcode) => {
 module.exports = {
   createItem,
   getItem,
+  findItem,
   getAllItems,
   getBatchOfItems,
   updateItem,

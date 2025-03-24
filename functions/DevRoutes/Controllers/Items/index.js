@@ -29,11 +29,26 @@ dev.get("/api/items/get/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
 
-    const item = await ItemService.getItem(req.params.id);
+    const id = req.params.id.replace(/^0+/, "");
+    const item = await ItemService.getItem(id);
 
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
     handleError(res, error, `Failed to get item: ${req.params.id}`);
+  }
+});
+
+// find a single item in db or online
+dev.get("/api/items/find/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+
+    const id = req.params.id.replace(/^0+/, "");
+    const item = await ItemService.findItem(id);
+
+    return res.status(200).send({ status: "Success", data: item });
+  } catch (error) {
+    handleError(res, error, `Failed to find item: ${req.params.id}`);
   }
 });
 
