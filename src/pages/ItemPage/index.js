@@ -14,7 +14,6 @@ const ItemPage = ({ isSmallScreen }) => {
 
     searchForBarcode(id)
       .then((res) => {
-        console.log(res);
         setItem(res[0]);
       })
       .catch((error) => {

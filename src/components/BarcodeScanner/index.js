@@ -1,24 +1,52 @@
-import React from "react";
-import { Box, useMediaQuery } from "@mui/material";
+import React, { useEffect, useRef, useState } from "react";
+import { Box, useMediaQuery, Snackbar, Button, Alert } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import BarcodeScannerComponent from "react-qr-barcode-scanner";
+import { BrowserMultiFormatReader } from "@zxing/library";
 
 const BarcodeScanner = ({ isSmallScreen }) => {
   const navigate = useNavigate();
+  const videoRef = useRef(null);
+  const [message, setMessage] = useState("");
+
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
-  const videoConstraints = {
-    facingMode: "environment", // Use back camera
-    focusMode: "continuous", // Autofocus (if supported)
-  };
+  useEffect(() => {
+    const codeReader = new BrowserMultiFormatReader();
+    let stopScanning = false;
 
-  const onUpdateOfBarcode = (err, result) => {
-    if (result) {
-      const url = `/item/${result.text}`;
-      navigate(url);
-    }
-  };
+    const startScanner = async () => {
+      try {
+        const videoElement = videoRef.current;
+
+        if (videoElement) {
+          await codeReader.decodeFromVideoDevice(
+            null,
+            videoElement,
+            (result, error) => {
+              if (result) {
+                navigate(`/item/${result.getText()}`);
+                stopScanning = true; // Stop after successful detection
+                codeReader.reset();
+              }
+
+              if (error && !(error.name === "NotFoundException")) {
+                setMessage("Failed to detect barcode. Please try again.");
+              }
+            }
+          );
+        }
+      } catch (err) {
+        setMessage("Camera access error. Please check permissions.");
+      }
+    };
+
+    if (!stopScanning) startScanner();
+
+    return () => {
+      codeReader.reset();
+    };
+  }, [navigate]);
 
   return (
     <>
@@ -30,16 +58,13 @@ const BarcodeScanner = ({ isSmallScreen }) => {
             alignItems: "center",
             textAlign: "center",
             height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
+            overflow: "visible",
           }}
         >
           <Box>
             <h2>Barcode Scanner</h2>
-            <BarcodeScannerComponent
-              width={500}
-              height={500}
-              videoConstraints={videoConstraints}
-              onUpdate={onUpdateOfBarcode}
-            />
+            <video ref={videoRef} style={{ width: 500, height: 500 }} />
+            <Button onClick={() => setMessage("TEST")}>Open Snackbar</Button>
           </Box>
         </Box>
       )}
@@ -56,14 +81,30 @@ const BarcodeScanner = ({ isSmallScreen }) => {
           }}
         >
           <h2>Barcode Scanner</h2>
-          <BarcodeScannerComponent
-            width={500}
-            height={500}
-            videoConstraints={videoConstraints}
-            onUpdate={onUpdateOfBarcode}
-          />
+          <video ref={videoRef} style={{ width: 500, height: 500 }} />
         </Box>
       )}
+
+      <Snackbar
+        anchorOrigin={{
+          vertical: isSmallScreen ? "bottom" : "top",
+          horizontal: "center",
+        }}
+        open={message !== ""}
+        onClose={() => {
+          setMessage("");
+        }}
+        key={"barcode-snackbar"}
+        autoHideDuration={6000}
+      >
+        <Alert
+          severity="error"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
