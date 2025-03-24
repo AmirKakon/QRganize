@@ -24,13 +24,26 @@ const BarcodeScanner = ({ isSmallScreen }) => {
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
   useEffect(() => {
-    // Fetch available cameras
     const fetchCameras = async () => {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter((device) => device.kind === "videoinput");
-        setCameras(videoDevices);
-        if (videoDevices.length > 0) setSelectedCamera(videoDevices[0].deviceId); // Set default to first camera
+
+        if (videoDevices.length > 0) {
+          // Try to auto-select the best back-facing camera (commonly labeled "back" or "camera2")
+          const backFacingCamera = videoDevices.find((device) =>
+            device.label.toLowerCase().includes("back") ||
+            device.label.toLowerCase().includes("environment")
+          );
+
+          const bestDefaultCamera =
+            backFacingCamera ||
+            videoDevices.find((device) => device.label.toLowerCase().includes("camera2")) ||
+            videoDevices[0]; // Fallback to the first camera
+
+          setCameras(videoDevices);
+          setSelectedCamera(bestDefaultCamera.deviceId); // Set the best option as default
+        }
       } catch (error) {
         setMessage("Error accessing cameras. Please check permissions.");
       }
@@ -53,6 +66,7 @@ const BarcodeScanner = ({ isSmallScreen }) => {
             videoElement,
             (result, error) => {
               if (result) {
+                navigator.vibrate(200);
                 navigate(`/item/${result.getText()}`);
                 stopScanning = true;
                 codeReader.reset();
@@ -125,7 +139,6 @@ const BarcodeScanner = ({ isSmallScreen }) => {
         >
           <h2>Barcode Scanner</h2>
           <video ref={videoRef} style={{ width: 500, height: 500 }} />
-          <Button onClick={() => setMessage("TEST")}>Open Snackbar</Button>
         </Box>
       )}
 
