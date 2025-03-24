@@ -27,18 +27,25 @@ const BarcodeScanner = ({ isSmallScreen }) => {
     const fetchCameras = async () => {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter((device) => device.kind === "videoinput");
+        const videoDevices = devices.filter(
+          (device) => device.kind === "videoinput"
+        );
 
         if (videoDevices.length > 0) {
           // Try to auto-select the best back-facing camera (commonly labeled "back" or "camera2")
-          const backFacingCamera = videoDevices.find((device) =>
-            device.label.toLowerCase().includes("back") ||
-            device.label.toLowerCase().includes("environment")
-          );
+          const backFacingCamera = videoDevices
+            .sort((a, b) => a.label.localeCompare(b.label))
+            .find(
+              (device) =>
+                device.label.toLowerCase().includes("back") ||
+                device.label.toLowerCase().includes("environment")
+            );
 
           const bestDefaultCamera =
             backFacingCamera ||
-            videoDevices.find((device) => device.label.toLowerCase().includes("camera2")) ||
+            videoDevices.find((device) =>
+              device.label.toLowerCase().includes("camera2")
+            ) ||
             videoDevices[0]; // Fallback to the first camera
 
           setCameras(videoDevices);
