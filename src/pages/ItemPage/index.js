@@ -36,7 +36,40 @@ const ItemPage = ({ isSmallScreen }) => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setItem((prev) => ({ ...prev, image: reader.result })); // Convert to base64
+        const img = new Image();
+        img.src = reader.result;
+  
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxWidth = 800; // Set a maximum width for the image
+          const maxHeight = 800; // Set a maximum height for the image
+  
+          let width = img.width;
+          let height = img.height;
+  
+          // Resize the image while maintaining aspect ratio
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+  
+          canvas.width = width;
+          canvas.height = height;
+  
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+  
+          // Convert the resized image to Base64
+          const resizedImage = canvas.toDataURL("image/jpeg", 0.8); // Adjust quality (0.8 = 80%)
+          setItem((prev) => ({ ...prev, image: resizedImage }));
+        };
       };
       reader.readAsDataURL(file);
     }
@@ -117,7 +150,6 @@ const ItemPage = ({ isSmallScreen }) => {
             <input
               hidden
               accept="image/*"
-              capture="environment"
               type="file"
               onChange={handleImageChange}
             />
