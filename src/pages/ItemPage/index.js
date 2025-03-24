@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, TextField, Button, CircularProgress } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { searchForBarcode, updateItemDetails } from "../../utilities/api"; // New API call for saving
+import { searchForBarcode, updateItemDetails } from "../../utilities/api";
 import Loading from "../../components/Loading";
 
 const ItemPage = ({ isSmallScreen }) => {
@@ -117,6 +117,7 @@ const ItemPage = ({ isSmallScreen }) => {
             <input
               hidden
               accept="image/*"
+              capture="environment"
               type="file"
               onChange={handleImageChange}
             />
