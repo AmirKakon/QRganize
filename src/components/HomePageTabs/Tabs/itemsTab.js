@@ -2,20 +2,25 @@ import React from "react";
 import {
   Box,
   useMediaQuery,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  Button,
+  ImageList,
+  ImageListItem,
+  ImageListItemBar,
 } from "@mui/material";
+import { getImageSrc } from "../../../utilities/helpers";
 
 const ItemsTab = ({ isSmallScreen, items }) => {
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
   return (
-    <>
+    <Box
+      sx={{
+        padding: 2, 
+        overflow: "hidden",
+      }}
+    >
+      <h2 style={{ textAlign: "center", marginBottom: "16px" }}>Items List</h2>
+
       {!isSmallScreen && (
         <Box
           sx={{
@@ -24,24 +29,34 @@ const ItemsTab = ({ isSmallScreen, items }) => {
             alignItems: "center",
             textAlign: "center",
             height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
+            padding: 2,
+            boxSizing: "border-box",
           }}
         >
-          <Box>
-            <h2>Items List is here</h2>
-            <List>
-              {items.map((item) => (
-                <ListItem key={item.id}>
-                  <ListItemAvatar>
-                    <Avatar src={item.image} alt={item.name} />
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={item.name}
-                    secondary={`Price: ${item.price}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Box>
+          <ImageList
+            cols={isMediumScreen ? 2 : isLargeScreen ? 3 : 4}
+            gap={16}
+            sx={{
+              width: "100%",
+              maxWidth: "1200px",
+              margin: "0 auto",
+            }}
+          >
+            {items.map((item) => (
+              <ImageListItem key={item.id}>
+                <img
+                  src={getImageSrc(item.image)}
+                  alt={item.name}
+                  loading="lazy"
+                  style={{ objectFit: "cover" }}
+                />
+                <ImageListItemBar
+                  title={item.name}
+                  subtitle={`Price: ${item.price}`}
+                />
+              </ImageListItem>
+            ))}
+          </ImageList>
         </Box>
       )}
 
@@ -54,25 +69,37 @@ const ItemsTab = ({ isSmallScreen, items }) => {
             alignItems: "center",
             textAlign: "center",
             height: "90vh",
+            padding: 2,
+            boxSizing: "border-box",
           }}
         >
-          <h2>Items List is here</h2>
-          <List>
+          <ImageList
+            cols={1}
+            gap={16}
+            sx={{
+              width: "100%",
+              maxWidth: "600px",
+              margin: "0 auto",
+            }}
+          >
             {items.map((item) => (
-              <ListItem key={item.id}>
-                <ListItemAvatar>
-                  <Avatar src={item.image} alt={item.name} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={item.name}
-                  secondary={`Price: ${item.price}`}
+              <ImageListItem key={item.id} onClick={() => console.log(item)}>
+                <img
+                  src={getImageSrc(item.image)}
+                  alt={item.name}
+                  loading="lazy"
+                  style={{ objectFit: "cover" }}
                 />
-              </ListItem>
+                <ImageListItemBar
+                  title={item.name}
+                  subtitle={`Price: ${item.price}`}
+                />
+              </ImageListItem>
             ))}
-          </List>
+          </ImageList>
         </Box>
       )}
-    </>
+    </Box>
   );
 };
 

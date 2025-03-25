@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Tabs, Tab } from "@mui/material";
+import { Tabs, Tab, Paper } from "@mui/material";
 import { BarcodeTab, ItemsTab } from "./Tabs";
 import { getAllItems } from "../../utilities/api";
 
@@ -32,14 +32,14 @@ const HomePageTabs = ({ isSmallScreen }) => {
   ];
 
   return (
-    <>
+    <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
       <Tabs value={tabIndex} onChange={handleTabChange} centered>
         {tabs.map((tab, index) => (
           <Tab key={index} label={tab.label} />
         ))}
       </Tabs>
       {tabs[tabIndex]?.component}
-    </>
+    </Paper>
   );
 };
 
