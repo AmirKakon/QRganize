@@ -11,7 +11,7 @@ import {
 } from "react-router-dom";
 import { Box, Snackbar } from "@mui/material";
 import {
-  HomePage,
+  HomePage, ItemPage
 } from "./pages";
 import { Header, Footer } from "./layout";
 import { tryGetTokenOrLogin, getUuid } from "./utilities/auth";
@@ -85,6 +85,10 @@ const App = () => {
             <Loading />
           ) : (
             <Routes>
+              <Route
+                path="/item/:id"
+                element={<ItemPage isSmallScreen={isSmallScreen} />}
+              />
               <Route
                 path="/"
                 element={<HomePage isSmallScreen={isSmallScreen} />}
