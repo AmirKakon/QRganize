@@ -35,7 +35,6 @@ const Heading = ({ isSmallScreen }) => {
             height: "90vh",
           }}
         >
-          <h3>Hello World</h3>
           <BarcodeScanner isSmallScreen={isSmallScreen} />
         </Box>
       )}
