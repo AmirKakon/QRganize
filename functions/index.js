@@ -1,6 +1,10 @@
 const { app, dev, functions } = require("./setup");
 
 // app routes
+require("./Routes/Controllers/Auth");
+require("./Routes/Controllers/Containers");
+require("./Routes/Controllers/Items");
+require("./Routes/Controllers/Users");
 
 // require("./Routes/CopyFromDev");
 
