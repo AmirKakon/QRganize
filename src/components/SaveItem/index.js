@@ -1,10 +1,15 @@
 import React, { useState } from "react";
-import { Box, Paper, TextField, Button, CircularProgress } from "@mui/material";
+import { Box, Paper, TextField, Button, CircularProgress, Snackbar, Alert } from "@mui/material";
 import { updateItemDetails } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 
 const SaveItem = ({ item, setItem }) => {
   const [saving, setSaving] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -60,54 +65,54 @@ const SaveItem = ({ item, setItem }) => {
     try {
       const response = await updateItemDetails(item);
       if (response) {
-        alert("Item details updated successfully!");
+        setSnackbar({ open: true, message: "Item details updated successfully!", severity: "success" });
       } else {
-        alert("Failed to save item details.");
+        setSnackbar({ open: true, message: "Failed to save item details.", severity: "error" });
       }
     } catch (error) {
       console.error("Error saving item details:", error);
-      alert("Failed to save item details.");
+      setSnackbar({ open: true, message: "Failed to save item details.", severity: "error" });
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: 2,
-        gap: 2,
-      }}
-    >
-      
-        <TextField
-          label="Item ID"
-          name="id"
-          value={item.id || ""}
-          onChange={handleInputChange}
-          fullWidth
-          disabled
-        />
+    <>
+      <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            padding: 2,
+            gap: 2,
+          }}
+        >
+          <TextField
+            label="Item ID"
+            name="id"
+            value={item.id || ""}
+            onChange={handleInputChange}
+            fullWidth
+            disabled
+          />
 
-        <TextField
-          label="Item Name"
-          name="name"
-          value={item.name || ""}
-          onChange={handleInputChange}
-          fullWidth
-        />
+          <TextField
+            label="Item Name"
+            name="name"
+            value={item.name || ""}
+            onChange={handleInputChange}
+            fullWidth
+          />
 
-        <TextField
-          label="Item Price"
-          name="price"
-          value={item.price || ""}
-          onChange={handleInputChange}
-          fullWidth
-        />
+          <TextField
+            label="Item Price"
+            name="price"
+            value={item.price || ""}
+            onChange={handleInputChange}
+            fullWidth
+          />
 
           <label htmlFor="imageUpload">
             {item.image ? (
@@ -128,7 +133,7 @@ const SaveItem = ({ item, setItem }) => {
             />
           </label>
           <Button
-          color="secondary"
+            color="secondary"
             variant="contained"
             component="label"
           >
@@ -151,9 +156,19 @@ const SaveItem = ({ item, setItem }) => {
           >
             {saving ? <CircularProgress size={24} /> : "Save Item"}
           </Button>
-      
-    </Box>
-    </Paper>
+        </Box>
+      </Paper>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

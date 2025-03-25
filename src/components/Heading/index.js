@@ -19,7 +19,6 @@ const Heading = ({ isSmallScreen }) => {
           }}
         >
           <Box>
-            <h3>Hello NEW World</h3>
             <BarcodeScanner isSmallScreen={isSmallScreen} />
           </Box>
         </Box>

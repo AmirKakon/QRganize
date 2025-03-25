@@ -7,7 +7,7 @@ import SaveItem from "../../components/SaveItem";
 
 const ItemPage = ({ isSmallScreen }) => {
   const { id } = useParams();
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true);
   const [item, setItem] = useState({});
 
   useEffect(() => {
@@ -22,10 +22,17 @@ const ItemPage = ({ isSmallScreen }) => {
   return loading ? (
     <Loading />
   ) : (
-    <Box flex={1} spacing={1} sx={{ backgroundColor: "#e2e2e2", padding: 2 }}>
-      <h3>Item Details</h3>
+    <Box
+      flex={1}
+      spacing={1}
+      sx={{
+        backgroundColor: "#e2e2e2",
+        padding: 2,
+      }}
+    >
+      <h2 style={{ textAlign: "center" }} >Item Details</h2>
 
-        <SaveItem item={item} setItem={setItem} />
+      <SaveItem item={item} setItem={setItem} />
     </Box>
   );
 };
