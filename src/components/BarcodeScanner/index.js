@@ -3,7 +3,6 @@ import {
   Box,
   useMediaQuery,
   Snackbar,
-  Button,
   Alert,
   MenuItem,
   Select,
@@ -26,13 +25,17 @@ const BarcodeScanner = ({ isSmallScreen }) => {
   useEffect(() => {
     const fetchCameras = async () => {
       try {
+        // Request camera permissions
+        await navigator.mediaDevices.getUserMedia({ video: true });
+
+        // List available video input devices
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(
           (device) => device.kind === "videoinput"
         );
 
         if (videoDevices.length > 0) {
-          // Try to auto-select the best back-facing camera (commonly labeled "back" or "camera2")
+          // Try to auto-select the best back-facing camera
           const backFacingCamera = videoDevices
             .sort((a, b) => a.label.localeCompare(b.label))
             .find(
@@ -99,25 +102,11 @@ const BarcodeScanner = ({ isSmallScreen }) => {
 
   return (
     <>
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Select Camera</InputLabel>
-        <Select
-          value={selectedCamera}
-          onChange={(e) => setSelectedCamera(e.target.value)}
-          label="Select Camera"
-        >
-          {cameras.map((camera, index) => (
-            <MenuItem key={camera.deviceId} value={camera.deviceId}>
-              {camera.label || `Camera ${index + 1}`}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
       {!isSmallScreen && (
         <Box
           sx={{
             display: "flex",
+            flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
             textAlign: "center",
@@ -125,11 +114,24 @@ const BarcodeScanner = ({ isSmallScreen }) => {
             overflow: "visible",
           }}
         >
-          <Box>
-            <h2>Barcode Scanner</h2>
-            <video ref={videoRef} style={{ width: 500, height: 500 }} />
-            <Button onClick={() => setMessage("TEST")}>Open Snackbar</Button>
-          </Box>
+          <h2>Barcode Scanner</h2>
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Select Camera</InputLabel>
+            <Select
+              value={selectedCamera}
+              onChange={(e) => setSelectedCamera(e.target.value)}
+              label="Select Camera"
+            >
+              {cameras.map((camera, index) => (
+                <MenuItem key={camera.deviceId} value={camera.deviceId}>
+                  {camera.label || `Camera ${index + 1}`}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <video ref={videoRef} style={{ width: 500, height: 500 }} />
         </Box>
       )}
 
@@ -145,7 +147,22 @@ const BarcodeScanner = ({ isSmallScreen }) => {
           }}
         >
           <h2>Barcode Scanner</h2>
-          <video ref={videoRef} style={{ width: 500, height: 500 }} />
+
+          <FormControl sx={{ mb: 2 }}>
+            <InputLabel>Select Camera</InputLabel>
+            <Select
+              value={selectedCamera}
+              onChange={(e) => setSelectedCamera(e.target.value)}
+              label="Select Camera"
+            >
+              {cameras.map((camera, index) => (
+                <MenuItem key={camera.deviceId} value={camera.deviceId}>
+                  {camera.label || `Camera ${index + 1}`}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <video ref={videoRef} style={{ width: "95%", height: "40%" }} />
         </Box>
       )}
 
@@ -154,14 +171,17 @@ const BarcodeScanner = ({ isSmallScreen }) => {
           vertical: isSmallScreen ? "bottom" : "top",
           horizontal: "center",
         }}
-        open={message !== ""}
-        onClose={() => {
-          setMessage("");
-        }}
+        open={Boolean(message)}
+        onClose={() => setMessage("")}
         key={"barcode-snackbar"}
         autoHideDuration={6000}
       >
-        <Alert severity="error" variant="filled" sx={{ width: "100%" }}>
+        <Alert
+          onClose={() => setMessage("")}
+          severity="error"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
           {message}
         </Alert>
       </Snackbar>

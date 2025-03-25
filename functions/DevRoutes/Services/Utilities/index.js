@@ -112,17 +112,17 @@ const searchGoogleCustomSearch = async (barcode) => {
 const searchBarcode = async (barcode) => {
   let items = await searchBarcodeChp(barcode);
 
-  if (!items || items.length == 0) {
+  if (!items || items.length === 0) {
     logger.info("using google", items);
     items = await searchGoogleCustomSearch(barcode);
   }
 
-  if (!items || items.length == 0) {
+  if (!items || items.length === 0) {
     logger.info("using apify", items);
     items = await searchBarcodeApify(barcode);
   }
 
-  if (!items || items.length == 0) {
+  if (!items || items.length === 0) {
     throw new NotFoundError(`No item was found for barcode ${barcode}`);
   }
 
