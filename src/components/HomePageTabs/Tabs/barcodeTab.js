@@ -1,8 +1,8 @@
 import React from "react";
 import { Box, useMediaQuery } from "@mui/material";
-import BarcodeScanner from "../BarcodeScanner";
+import BarcodeScanner from "../../BarcodeScanner";
 
-const Heading = ({ isSmallScreen }) => {
+const BarcodeTab = ({ isSmallScreen }) => {
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
@@ -42,4 +42,4 @@ const Heading = ({ isSmallScreen }) => {
   );
 };
 
-export default Heading;
+export default BarcodeTab;

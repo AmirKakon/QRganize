@@ -29,3 +29,17 @@ export const updateItemDetails = async (item) => {
   const res = await response.json();
   return res.status === "Success";
 }
+
+export const getAllItems = async () => {
+  const response = await fetch(`${apiBaseUrl}/api/items/getAll`, {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.data. items;
+}
