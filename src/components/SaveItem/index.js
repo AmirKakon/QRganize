@@ -1,11 +1,26 @@
 import React, { useState } from "react";
-import { Box, Paper, TextField, Button, CircularProgress, Snackbar, Alert } from "@mui/material";
-import { updateItemDetails } from "../../utilities/api";
+import {
+  Box,
+  Paper,
+  TextField,
+  Button,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Switch,
+  FormControlLabel,
+} from "@mui/material";
+import { createItem, deleteItem } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 
 const SaveItem = ({ item, setItem }) => {
   const [saving, setSaving] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [deleting, setDeleting] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -60,20 +75,66 @@ const SaveItem = ({ item, setItem }) => {
     }
   };
 
+  const handleToggleShoppingList = (e) => {
+    const { checked } = e.target;
+    setItem((prev) => ({ ...prev, shoppingList: checked }));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await updateItemDetails(item);
+      const response = await createItem(item);
       if (response) {
-        setSnackbar({ open: true, message: "Item details updated successfully!", severity: "success" });
+        setSnackbar({
+          open: true,
+          message: "Item details updated successfully!",
+          severity: "success",
+        });
       } else {
-        setSnackbar({ open: true, message: "Failed to save item details.", severity: "error" });
+        setSnackbar({
+          open: true,
+          message: "Failed to save item details.",
+          severity: "error",
+        });
       }
     } catch (error) {
       console.error("Error saving item details:", error);
-      setSnackbar({ open: true, message: "Failed to save item details.", severity: "error" });
+      setSnackbar({
+        open: true,
+        message: "Failed to save item details.",
+        severity: "error",
+      });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const response = await deleteItem(item.id);
+      if (response) {
+        setSnackbar({
+          open: true,
+          message: "Item deleted successfully!",
+          severity: "success",
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: "Failed to delete item.",
+          severity: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to delete item.",
+        severity: "error",
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -132,11 +193,7 @@ const SaveItem = ({ item, setItem }) => {
               style={{ display: "none" }}
             />
           </label>
-          <Button
-            color="secondary"
-            variant="contained"
-            component="label"
-          >
+          <Button color="secondary" variant="contained" component="label">
             Upload / Take Picture
             <input
               hidden
@@ -146,16 +203,45 @@ const SaveItem = ({ item, setItem }) => {
             />
           </Button>
 
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSave}
-            disabled={saving}
-            fullWidth
-            sx={{ padding: "12px 24px", fontSize: "16px" }}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={item.shoppingList || false}
+                onChange={handleToggleShoppingList}
+                color="primary"
+              />
+            }
+            label="Add to Shopping List"
+            sx={{ alignSelf: "flex-start" }}
+          />
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              width: "100%",
+              gap: 2,
+            }}
           >
-            {saving ? <CircularProgress size={24} /> : "Save Item"}
-          </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSave}
+              disabled={saving}
+              sx={{ flex: 1 }}
+            >
+              {saving ? <CircularProgress size={24} /> : "Save Item"}
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDelete}
+              disabled={deleting}
+              sx={{ flex: 1 }}
+            >
+              {deleting ? <CircularProgress size={24} /> : "Delete Item"}
+            </Button>
+          </Box>
         </Box>
       </Paper>
       <Snackbar
@@ -164,7 +250,11 @@ const SaveItem = ({ item, setItem }) => {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

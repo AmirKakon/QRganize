@@ -14,7 +14,7 @@ export const searchForBarcode = async (id) => {
   return res.data;
 };
 
-export const updateItemDetails = async (item) => {
+export const createItem = async (item) => {
   const response = await fetch(`${apiBaseUrl}/api/items/create`, {
     method: "POST",
     headers: {
@@ -28,4 +28,32 @@ export const updateItemDetails = async (item) => {
   }
   const res = await response.json();
   return res.status === "Success";
+}
+
+export const getAllItems = async () => {
+  const response = await fetch(`${apiBaseUrl}/api/items/getAll`, {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.data.items;
+}
+
+export const deleteItem = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/delete/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success"; 
 }

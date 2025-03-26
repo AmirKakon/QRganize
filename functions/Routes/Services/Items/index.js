@@ -5,7 +5,7 @@ const Utilities = require("../Utilities");
 const itemsDB = "items";
 
 // Create an item
-const createItem = async (name, price, image, id = null) => {
+const createItem = async (name, price, image, shoppingList, id = null) => {
   let itemRef = null;
 
   if (id) {
@@ -16,6 +16,7 @@ const createItem = async (name, price, image, id = null) => {
         name: name,
         price: price,
         image: image,
+        shoppingList: shoppingList,
       });
     itemRef = db.collection(itemsDB).doc(String(id));
   } else {
@@ -23,6 +24,7 @@ const createItem = async (name, price, image, id = null) => {
       name: name,
       price: price,
       image: image,
+      shoppingList: shoppingList,
     });
   }
 
@@ -98,12 +100,13 @@ const getBatchOfItems = async (itemsList) => {
 };
 
 // Update an item
-const updateItem = async (id, name, price, image) => {
+const updateItem = async (id, name, price, image, shoppingList) => {
   try {
     await db.collection(itemsDB).doc(id).update({
       name: name,
       price: price,
       image: image,
+      shoppingList: shoppingList,
     });
     return true;
   } catch (error) {
