@@ -13,6 +13,7 @@ dev.post("/api/items/create", authenticate, async (req, res) => {
       req.body.name,
       req.body.price,
       req.body.image,
+      req.body.shoppingList,
       req.body.id ?? null,
     );
 
@@ -93,6 +94,7 @@ dev.put("/api/items/update/:id", authenticate, async (req, res) => {
       req.body.name,
       req.body.price,
       req.body.image,
+      req.body.shoppingList,
     );
 
     return updated ?
