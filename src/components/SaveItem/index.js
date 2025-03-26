@@ -83,7 +83,12 @@ const SaveItem = ({ item, setItem }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await createItem(item);
+      const updatedItem = {
+        ...item,
+        shoppingList: item.shoppingList || false,
+      };
+
+      const response = await createItem(updatedItem);
       if (response) {
         setSnackbar({
           open: true,
@@ -227,7 +232,7 @@ const SaveItem = ({ item, setItem }) => {
               variant="contained"
               color="primary"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !item.name || !item.price}
               sx={{ flex: 1 }}
             >
               {saving ? <CircularProgress size={24} /> : "Save Item"}
@@ -236,7 +241,7 @@ const SaveItem = ({ item, setItem }) => {
               variant="contained"
               color="error"
               onClick={handleDelete}
-              disabled={deleting}
+              disabled={deleting || !item.name || !item.price}
               sx={{ flex: 1 }}
             >
               {deleting ? <CircularProgress size={24} /> : "Delete Item"}
