@@ -13,7 +13,10 @@ import {
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
+import PostAddIcon from '@mui/icons-material/PostAdd';
 import InfoIcon from "@mui/icons-material/Info";
+import { generateRandomId } from "../../utilities/helpers";
+
 const logo =
   "https://firebasestorage.googleapis.com/v0/b/amir-portfolio-9fe8a.appspot.com/o/assets%2Famir-icon.png?alt=media&token=076c331b-7332-4ff6-b299-78e2d71a52ad";
 const tongueLogo =
@@ -92,6 +95,7 @@ const Header = ({ isSmallScreen }) => {
 
   const headerIcons = [
     { title: "Home", link: "/", icon: <HomeIcon /> },
+    { title: "Add Item", link: `/item/${generateRandomId()}`, icon: <PostAddIcon /> },
     { title: "About", link: "/about", icon: <InfoIcon /> },
   ];
 

@@ -7,7 +7,7 @@ const ItemService = require("../../Services/Items");
 // create an item
 app.post("/api/items/create", authenticate, async (req, res) => {
   try {
-    checkRequiredParams(["name", "price", "image", "shoppingList"], req.body);
+    checkRequiredParams(["name", "price", "image"], req.body);
 
     const item = await ItemService.createItem(
       req.body.name,
@@ -87,7 +87,7 @@ app.post("/api/items/getBatch", authenticate, async (req, res) => {
 app.put("/api/items/update/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
-    checkRequiredParams(["name", "price", "image", "shoppingList"], req.body);
+    checkRequiredParams(["name", "price", "image"], req.body);
 
     const updated = await ItemService.updateItem(
       req.params.id,

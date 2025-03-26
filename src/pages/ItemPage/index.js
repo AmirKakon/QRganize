@@ -15,7 +15,10 @@ const ItemPage = ({ isSmallScreen }) => {
 
     searchForBarcode(id)
       .then((res) => setItem(res))
-      .catch((error) => console.error("Error fetching data:", error))
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setItem({ id: id });
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -30,7 +33,7 @@ const ItemPage = ({ isSmallScreen }) => {
         padding: 2,
       }}
     >
-      <h2 style={{ textAlign: "center" }} >Item Details</h2>
+      <h2 style={{ textAlign: "center" }}>Item Details</h2>
 
       <SaveItem item={item} setItem={setItem} />
     </Box>
