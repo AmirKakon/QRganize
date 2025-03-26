@@ -41,5 +41,5 @@ export const getAllItems = async () => {
     throw new Error(`Error: ${response.status}`);
   }
   const res = await response.json();
-  return res.data. items;
+  return res.data.items;
 }
