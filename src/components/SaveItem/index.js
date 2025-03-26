@@ -7,8 +7,10 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
-import { updateItemDetails, deleteItem } from "../../utilities/api";
+import { createItem, deleteItem } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 
 const SaveItem = ({ item, setItem }) => {
@@ -73,10 +75,15 @@ const SaveItem = ({ item, setItem }) => {
     }
   };
 
+  const handleToggleShoppingList = (e) => {
+    const { checked } = e.target;
+    setItem((prev) => ({ ...prev, shoppingList: checked }));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await updateItemDetails(item);
+      const response = await createItem(item);
       if (response) {
         setSnackbar({
           open: true,
@@ -195,6 +202,18 @@ const SaveItem = ({ item, setItem }) => {
               onChange={handleImageChange}
             />
           </Button>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={item.shoppingList || false}
+                onChange={handleToggleShoppingList}
+                color="primary"
+              />
+            }
+            label="Add to Shopping List"
+            sx={{ alignSelf: "flex-start" }}
+          />
 
           <Box
             sx={{

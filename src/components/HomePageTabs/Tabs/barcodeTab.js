@@ -1,10 +1,8 @@
 import React from "react";
-import { Box, Typography, useMediaQuery } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import BarcodeScanner from "../../BarcodeScanner";
 
 const BarcodeTab = ({ isSmallScreen }) => {
-  const isMediumScreen = useMediaQuery("(max-width: 950px)");
-  const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
   return (
     <Box

@@ -14,7 +14,7 @@ export const searchForBarcode = async (id) => {
   return res.data;
 };
 
-export const updateItemDetails = async (item) => {
+export const createItem = async (item) => {
   const response = await fetch(`${apiBaseUrl}/api/items/create`, {
     method: "POST",
     headers: {
