@@ -107,14 +107,13 @@ const BarcodeScanner = ({ isSmallScreen }) => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             alignItems: "center",
             textAlign: "center",
             height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
             overflow: "visible",
           }}
         >
-          <h2>Barcode Scanner</h2>
 
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel>Select Camera</InputLabel>
@@ -140,13 +139,12 @@ const BarcodeScanner = ({ isSmallScreen }) => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             alignItems: "center",
             textAlign: "center",
             height: "90vh",
           }}
         >
-          <h2>Barcode Scanner</h2>
 
           <FormControl sx={{ mb: 2 }}>
             <InputLabel>Select Camera</InputLabel>

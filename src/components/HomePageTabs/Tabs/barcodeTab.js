@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, useMediaQuery } from "@mui/material";
+import { Box, Typography, useMediaQuery } from "@mui/material";
 import BarcodeScanner from "../../BarcodeScanner";
 
 const BarcodeTab = ({ isSmallScreen }) => {
@@ -7,38 +7,29 @@ const BarcodeTab = ({ isSmallScreen }) => {
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
   return (
-    <>
-      {!isSmallScreen && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            textAlign: "center",
-            height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
-          }}
-        >
-          <Box>
-            <BarcodeScanner isSmallScreen={isSmallScreen} />
-          </Box>
-        </Box>
-      )}
-
-      {isSmallScreen && (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            textAlign: "center",
-            height: "90vh",
-          }}
-        >
-          <BarcodeScanner isSmallScreen={isSmallScreen} />
-        </Box>
-      )}
-    </>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        textAlign: "center",
+        height: isSmallScreen ? "90vh" : "80vh",
+      }}
+    >
+      <Typography
+        variant="h5"
+        sx={{
+          marginTop: isSmallScreen ? 2 : 5,
+          mb: 2,
+          fontWeight: "bold",
+          textAlign: "center",
+        }}
+      >
+        Barcode Scanner
+      </Typography>
+      <BarcodeScanner isSmallScreen={isSmallScreen} />
+    </Box>
   );
 };
 
