@@ -13,7 +13,7 @@ import {
 import { createItem, deleteItem } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 
-const SaveItem = ({ item, setItem }) => {
+const ItemDetails = ({ item, setItem }) => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -267,4 +267,4 @@ const SaveItem = ({ item, setItem }) => {
   );
 };
 
-export default SaveItem;
+export default ItemDetails;

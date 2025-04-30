@@ -3,7 +3,7 @@ import { Box } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { searchForBarcode } from "../../utilities/api";
 import Loading from "../../components/Loading";
-import SaveItem from "../../components/SaveItem";
+import ItemDetails from "../../components/ItemDetails";
 
 const ItemPage = ({ isSmallScreen }) => {
   const { id } = useParams();
@@ -35,7 +35,7 @@ const ItemPage = ({ isSmallScreen }) => {
     >
       <h2 style={{ textAlign: "center" }}>Item Details</h2>
 
-      <SaveItem item={item} setItem={setItem} />
+      <ItemDetails item={item} setItem={setItem} />
     </Box>
   );
 };
