@@ -50,7 +50,7 @@ const ItemList = ({ items, isSmallScreen }) => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             alignItems: "center",
             textAlign: "center",
             height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
@@ -95,7 +95,7 @@ const ItemList = ({ items, isSmallScreen }) => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             alignItems: "center",
             textAlign: "center",
             height: "90vh",
