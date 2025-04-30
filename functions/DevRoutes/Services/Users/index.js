@@ -95,12 +95,13 @@ const deleteUser = async (id) => {
 };
 
 // add item to user
-const addItemToUser = async (userId, itemId, quantity) => {
+const addItemToUser = async (userId, itemId, quantity, expirationDate) => {
   const itemRef = db.collection(userItemsDB).doc(`${userId}_${itemId}`);
   await itemRef.set({
     userId,
     itemId,
     quantity,
+    expirationDate,
   });
 
   return {
@@ -124,6 +125,20 @@ const updateItemQuantity = async (userId, itemId, quantity) => {
   }
 
   await itemRef.update({ quantity });
+
+  return true;
+};
+
+// update expiration date of item of user
+const updateItemExpirationDate = async (userId, itemId, expirationDate) => {
+  const itemRef = db.collection(userItemsDB).doc(`${userId}_${itemId}`);
+
+  const itemDoc = await itemRef.get();
+  if (!itemDoc.exists) {
+    throw new NotFoundError(`Item ${itemId} not found for user ${userId}`);
+  }
+
+  await itemRef.update({ expirationDate });
 
   return true;
 };
@@ -158,5 +173,6 @@ module.exports = {
   addItemToUser,
   removeItemFromUser,
   updateItemQuantity,
+  updateItemExpirationDate,
   getItemByUserId,
 };

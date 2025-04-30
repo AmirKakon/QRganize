@@ -92,7 +92,7 @@ dev.post("/api/users/addItems/:userId", authenticate, async (req, res) => {
     checkRequiredParams(["userId"], req.params);
     checkRequiredParams(["itemId", "quantity"], req.body);
 
-    const item = await UsersService.addItemToUser(req.params.userId, req.body.itemId, req.body.quantity);
+    const item = await UsersService.addItemToUser(req.params.userId, req.body.itemId, req.body.quantity, req.body.expirationDate);
 
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
@@ -132,6 +132,28 @@ dev.put("/api/users/updateItemQuantity/:userId", authenticate, async (req, res) 
       req.params.userId,
       req.body.itemId,
       req.body.quantity,
+    );
+
+    return updated ?
+      res.status(200).send({ status: "Success", msg: "Item Updated" }) :
+      res
+        .status(400)
+        .send({ status: "Failed", msg: "Item failed to update" });
+  } catch (error) {
+    return handleError(res, error, `Failed to update item for user: ${req.params.userId}`);
+  }
+});
+
+// update expiraiton date of an item for a user
+dev.put("/api/users/updateItemExpirationDate/:userId", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["userId"], req.params);
+    checkRequiredParams(["itemId"], req.body);
+
+    const updated = await UsersService.updateItemExpirationDate(
+      req.params.userId,
+      req.body.itemId,
+      req.body.expirationDate,
     );
 
     return updated ?
