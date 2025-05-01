@@ -31,7 +31,7 @@ const HomePageTabs = ({ isSmallScreen }) => {
     },
     {
       label: "Shopping List",
-      component: <ItemsTab isSmallScreen={isSmallScreen} items={items.filter((a) => a.shoppingList)} />,
+      component: <ItemsTab isSmallScreen={isSmallScreen} items={items.filter((a) => a.shoppingList ?? false)} />,
     },
   ];
 

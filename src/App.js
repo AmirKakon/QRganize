@@ -9,6 +9,8 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Box, Snackbar } from "@mui/material";
 import {
   HomePage, ItemPage
@@ -77,7 +79,8 @@ const App = () => {
   }, [accessToken]);
 
   return (
-    <ThemeProvider theme={theme}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <ThemeProvider theme={theme}>
       <Router>
         <Header isSmallScreen={isSmallScreen} />
         <Box display="flex" flexDirection="column" minHeight="100vh">
@@ -110,6 +113,7 @@ const App = () => {
         </Box>
       </Router>
     </ThemeProvider>
+    </LocalizationProvider>
   );
 };
 

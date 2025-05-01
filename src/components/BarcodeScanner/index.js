@@ -81,10 +81,6 @@ const BarcodeScanner = ({ isSmallScreen }) => {
                 stopScanning = true;
                 codeReader.reset();
               }
-
-              if (error && !(error.name === "NotFoundException")) {
-                setMessage("Failed to detect barcode. Please try again.");
-              }
             }
           );
         }
