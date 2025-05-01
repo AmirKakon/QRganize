@@ -10,10 +10,15 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import IconButton from "@mui/material/IconButton";
 import { createItem, deleteItem } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
+import dayjs from "dayjs";
 
-const SaveItem = ({ item, setItem }) => {
+const ItemDetails = ({ item, setItem }) => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -22,6 +27,13 @@ const SaveItem = ({ item, setItem }) => {
     severity: "success",
   });
 
+  const setDateString = (date) => {
+    const d = dayjs(date);
+    const formatedDate = d.format("YYYY-MM-DD").concat("T00:00:00+00:00");
+    return formatedDate;
+  };
+
+
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
   };
@@ -29,7 +41,13 @@ const SaveItem = ({ item, setItem }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setItem((prev) => ({ ...prev, [name]: value }));
+    console.log("Item updated:", { ...item, [name]: value }); // Log the updated item
   };
+
+  const handleDateChange = (date) => {
+    const formattedDate = setDateString(date);
+    setItem((prev) => ({ ...prev, expirationDate: formattedDate }));
+  }
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -78,6 +96,12 @@ const SaveItem = ({ item, setItem }) => {
   const handleToggleShoppingList = (e) => {
     const { checked } = e.target;
     setItem((prev) => ({ ...prev, shoppingList: checked }));
+  };
+
+  const handleQuantityChange = (value) => {
+    if (value >= 1) {
+      setItem((prev) => ({ ...prev, quantity: value }));
+    }
   };
 
   const handleSave = async () => {
@@ -180,6 +204,32 @@ const SaveItem = ({ item, setItem }) => {
             fullWidth
           />
 
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 1, width: "100%" }}>
+            <IconButton onClick={() => handleQuantityChange((item.quantity || 1) - 1)}>
+              <RemoveIcon />
+            </IconButton>
+            <TextField
+              type="number"
+              label="Quantity"
+              value={item.quantity || 1}
+              onChange={(e) => handleQuantityChange(Number(e.target.value))}
+              inputProps={{ min: 1 }}
+              sx={{ width: "80px" }}
+            />
+            <IconButton onClick={() => handleQuantityChange((item.quantity || 1) + 1)}>
+              <AddIcon />
+            </IconButton>
+          </Box>
+
+          <DatePicker
+            label="Expiration Date"
+            name="expirationDate"
+            value={dayjs(item.expirationDate) || null}
+            onChange={handleDateChange}
+            disablePast
+            sx={{ width: "100%" }}
+          /> 
+
           <label htmlFor="imageUpload">
             {item.image ? (
               <img
@@ -267,4 +317,4 @@ const SaveItem = ({ item, setItem }) => {
   );
 };
 
-export default SaveItem;
+export default ItemDetails;

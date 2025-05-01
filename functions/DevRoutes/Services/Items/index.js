@@ -47,9 +47,9 @@ const getItem = async (id) => {
 
 // find an item in db or online
 const findItem = async (id) => {
-  const doc = await db.collection(itemsDB).doc(id).get();
+  const item = getItem(id);
 
-  if (!doc.exists) {
+  if (!item) {
     const barcodeResponse = await searchBarcode(id);
 
     if (barcodeResponse.data.length > 0) {
@@ -59,7 +59,7 @@ const findItem = async (id) => {
     throw new NotFoundError(`No item found with id: ${id}`);
   }
 
-  return { id: doc.id, ...doc.data() };
+  return item;
 };
 
 // Get all items
