@@ -78,7 +78,7 @@ const deleteUser = async (id) => {
     });
 
     // delete all item relations of a user
-    const items = await getItemByUserId(id, true);
+    const items = await getItemsByUserId(id, true);
 
     items.forEach((doc) => {
       batch.delete(doc.ref);
@@ -143,8 +143,20 @@ const updateItemExpirationDate = async (userId, itemId, expirationDate) => {
   return true;
 };
 
+// Get a single item of a user
+const getItemByUserId = async (userId, itemId) => {
+  const id = `${userId}_${itemId}`;
+  const doc = await db.collection(userItemsDB).doc(id).get();
+
+  if (!doc.exists) {
+    throw new NotFoundError(`No item found with id: ${id}`);
+  }
+
+  return { id: doc.id, ...doc.data() };
+};
+
 // get all items of a user
-const getItemByUserId = async (userId, asSnapshot = false) => {
+const getItemsByUserId = async (userId, asSnapshot = false) => {
   const snapshot = await db
     .collection(userItemsDB)
     .where("userId", "==", userId)
@@ -175,4 +187,5 @@ module.exports = {
   updateItemQuantity,
   updateItemExpirationDate,
   getItemByUserId,
+  getItemsByUserId,
 };

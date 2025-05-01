@@ -166,12 +166,27 @@ dev.put("/api/users/updateItemExpirationDate/:userId", authenticate, async (req,
   }
 });
 
+// Get a single user
+dev.get("/api/users/:userId/getItem/:itemId", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["userId", "itemId"], req.params);
+
+    const item = await UsersService.getItemByUserId(req.params.userId, req.params.itemId);
+
+    return res
+      .status(200)
+      .send({ status: "Success", data: item });
+  } catch (error) {
+    return handleError(res, error, `Failed to get item: ${req.params.itemId}`);
+  }
+});
+
 // get all items of a user
 dev.get("/api/users/getItems/:userId", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["userId"], req.params);
 
-    const items = await UsersService.getItemByUserId(req.params.userId);
+    const items = await UsersService.getItemsByUserId(req.params.userId);
 
     return res.status(200).send({ status: "Success", data: items });
   } catch (error) {

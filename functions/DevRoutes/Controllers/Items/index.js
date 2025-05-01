@@ -3,19 +3,23 @@ const { handleError } = require("../../Utilities/error-handler");
 const { authenticate } = require("../Auth");
 const { checkRequiredParams } = require("../../Utilities");
 const ItemService = require("../../Services/Items");
+const UsersService = require("../../Services/Users");
 
 // create an item
 dev.post("/api/items/create", authenticate, async (req, res) => {
   try {
-    checkRequiredParams(["name", "price", "image"], req.body);
+    checkRequiredParams(["name", "price", "image", "quantity"], req.body);
 
     const item = await ItemService.createItem(
       req.body.name,
       req.body.price,
       req.body.image,
-      req.body.shoppingList,
+      req.body.shoppingList ?? false,
       req.body.id ?? null,
     );
+
+    const userId = req.headers["uuid"];
+    await UsersService.addItemToUser(userId, item.itemId, req.body.quantity, req.body.expirationDate);
 
     return res
       .status(200)
@@ -30,8 +34,15 @@ dev.get("/api/items/get/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
 
-    const id = req.params.id.replace(/^0+/, "");
-    const item = await ItemService.getItem(id);
+    const itemId = req.params.id.replace(/^0+/, "");
+    let item = await ItemService.getItem(itemId);
+
+    const userId = req.headers["uuid"];
+    const userItem = await UsersService.getItemByUserId(userId, itemId);
+
+    item = {
+      ...item, quantity: userItem.quantity, expirationDate: userItem.expirationDate,
+    };
 
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
