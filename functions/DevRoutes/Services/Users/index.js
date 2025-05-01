@@ -144,11 +144,11 @@ const updateItemExpirationDate = async (userId, itemId, expirationDate) => {
 };
 
 // Get a single item of a user
-const getItemByUserId = async (userId, itemId) => {
+const getItemByUserId = async (userId, itemId, isNecessary = true) => {
   const id = `${userId}_${itemId}`;
   const doc = await db.collection(userItemsDB).doc(id).get();
 
-  if (!doc.exists) {
+  if (!doc.exists && isNecessary) {
     throw new NotFoundError(`No item found with id: ${id}`);
   }
 

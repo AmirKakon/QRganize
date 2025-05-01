@@ -59,7 +59,7 @@ dev.get("/api/items/find/:id", authenticate, async (req, res) => {
     let item = await ItemService.findItem(id);
 
     const userId = req.headers["uuid"];
-    const userItem = await UsersService.getItemByUserId(userId, id);
+    const userItem = await UsersService.getItemByUserId(userId, id, false);
 
     item = {
       ...item, quantity: userItem.quantity ?? 0, expirationDate: userItem.expirationDate ?? null,
