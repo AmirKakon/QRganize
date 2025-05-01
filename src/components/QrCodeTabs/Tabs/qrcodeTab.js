@@ -26,7 +26,7 @@ const QrCodeTab = ({ isSmallScreen }) => {
       >
         Barcode Scanner
       </Typography>
-      <BarcodeScanner isSmallScreen={isSmallScreen} />
+      <BarcodeScanner isSmallScreen={isSmallScreen} itemType={"container"} />
     </Box>
   );
 };

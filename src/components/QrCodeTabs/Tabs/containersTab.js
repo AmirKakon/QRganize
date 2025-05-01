@@ -1,8 +1,8 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import ItemList from "../../ItemList";
+import ContainerList from "../../ContainerList";
 
-const ItemsTab = ({ isSmallScreen, items }) => {
+const ContainersTab = ({ isSmallScreen, containers }) => {
   return (
     <Box
       sx={{
@@ -14,11 +14,11 @@ const ItemsTab = ({ isSmallScreen, items }) => {
         variant="h5"
         sx={{ marginY: 2, fontWeight: "bold", textAlign: "center" }}
       >
-        Items List
+        Containers List
       </Typography>
-      <ItemList items={items} isSmallScreen={isSmallScreen} />
+      <ContainerList containers={containers} isSmallScreen={isSmallScreen} />
     </Box>
   );
 };
 
-export default ItemsTab;
+export default ContainersTab;

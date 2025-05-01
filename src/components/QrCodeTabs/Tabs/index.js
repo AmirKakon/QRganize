@@ -1,4 +1,4 @@
 import QrCodeTab from "./qrcodeTab";
-import ItemsTab from "./itemsTab";
+import ContainersTab from "./containersTab";
 
-export { QrCodeTab, ItemsTab };
+export { QrCodeTab, ContainersTab };

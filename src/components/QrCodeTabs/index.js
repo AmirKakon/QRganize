@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
-import { QrCodeTab, ItemsTab } from "./Tabs";
-import { getAllItems } from "../../utilities/api";
+import { QrCodeTab, ContainersTab } from "./Tabs";
+import { getAllContainers } from "../../utilities/api";
 
 const QrCodeTabs = ({ isSmallScreen }) => {
   const [tabIndex, setTabIndex] = useState(0);
-  const [items, setItems] = useState([]);
+  const [containers, setContainers] = useState([]);
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
@@ -14,8 +14,8 @@ const QrCodeTabs = ({ isSmallScreen }) => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
 
-    getAllItems()
-      .then((res) => setItems(res))
+    getAllContainers()
+      .then((res) => setContainers(res))
       .catch((error) => console.error("Error fetching data:", error));
   }, []);
 
@@ -26,13 +26,9 @@ const QrCodeTabs = ({ isSmallScreen }) => {
       component: <QrCodeTab isSmallScreen={isSmallScreen} />,
     },
     {
-      label: "View Items",
-      component: <ItemsTab isSmallScreen={isSmallScreen} items={items} />,
-    },
-    {
-      label: "Shopping List",
-      component: <ItemsTab isSmallScreen={isSmallScreen} items={items.filter((a) => a.shoppingList ?? false)} />,
-    },
+      label: "View Containers",
+      component: <ContainersTab isSmallScreen={isSmallScreen} containers={containers} />,
+    }
   ];
 
   return (

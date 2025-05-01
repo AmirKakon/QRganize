@@ -26,7 +26,7 @@ const BarcodeTab = ({ isSmallScreen }) => {
       >
         Barcode Scanner
       </Typography>
-      <BarcodeScanner isSmallScreen={isSmallScreen} />
+      <BarcodeScanner isSmallScreen={isSmallScreen} itemType={"item"} />
     </Box>
   );
 };

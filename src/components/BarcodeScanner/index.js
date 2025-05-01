@@ -12,7 +12,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { BrowserMultiFormatReader } from "@zxing/library";
 
-const BarcodeScanner = ({ isSmallScreen }) => {
+const BarcodeScanner = ({ isSmallScreen, itemType }) => {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const [message, setMessage] = useState("");
@@ -77,7 +77,7 @@ const BarcodeScanner = ({ isSmallScreen }) => {
             (result, error) => {
               if (result) {
                 navigator.vibrate(200);
-                navigate(`/item/${result.getText()}`);
+                navigate(`/${itemType}/${result.getText()}`);
                 stopScanning = true;
                 codeReader.reset();
               }
