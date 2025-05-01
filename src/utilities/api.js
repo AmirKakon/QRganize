@@ -5,6 +5,7 @@ export const searchForBarcode = async (id) => {
     method: "GET",
     headers: {
       Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
     },
   });
   if (!response.ok) {
@@ -36,13 +37,14 @@ export const getAllItems = async () => {
     method: "GET",
     headers: {
       Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
     },
   });
   if (!response.ok) {
     throw new Error(`Error: ${response.status}`);
   }
   const res = await response.json();
-  return res.data.items;
+  return res.data;
 }
 
 export const deleteItem = async (id) => {
