@@ -7,9 +7,10 @@ const ContainerService = require("../../Services/Containers");
 // Create a container
 dev.post("/api/containers/create", authenticate, async (req, res) => {
   try {
-    checkRequiredParams(["name", "userId"], req.body);
+    checkRequiredParams(["name", "image", "userId"], req.body);
     const container = await ContainerService.createContainer(
       req.body.name,
+      req.body.image,
       req.body.userId,
     );
 
@@ -53,10 +54,11 @@ dev.get("/api/containers/getAll", authenticate, async (req, res) => {
 dev.put("/api/containers/update/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
-    checkRequiredParams(["name", "userId"], req.body);
+    checkRequiredParams(["name", "image", "userId"], req.body);
     const updated = await ContainerService.updateContainer(
       req.params.id,
       req.body.name,
+      req.body.image,
       req.body.userId,
     );
     return updated ?

@@ -5,9 +5,10 @@ const containersDB = "containers_dev";
 const containerItemsDB = "containerItems_dev";
 
 // Create a container
-const createContainer = async (name, userId) => {
+const createContainer = async (name, image, userId) => {
   const itemRef = await db.collection(containersDB).add({
     name: name,
+    iamge: image,
     userId: userId,
   });
 
@@ -67,10 +68,11 @@ const getUserContainers = async (userId, asSnapshot = false) => {
 };
 
 // Update a container
-const updateContainer = async (id, name, userId) => {
+const updateContainer = async (id, name, image, userId) => {
   try {
     await db.collection(containersDB).doc(id).update({
       name: name,
+      image: image,
       userId: userId,
     });
     return true;
