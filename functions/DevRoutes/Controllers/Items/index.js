@@ -56,7 +56,14 @@ dev.get("/api/items/find/:id", authenticate, async (req, res) => {
     checkRequiredParams(["id"], req.params);
 
     const id = req.params.id.replace(/^0+/, "");
-    const item = await ItemService.findItem(id);
+    let item = await ItemService.findItem(id);
+
+    const userId = req.headers["uuid"];
+    const userItem = await UsersService.getItemByUserId(userId, id);
+
+    item = {
+      ...item, quantity: userItem.quantity ?? 0, expirationDate: userItem.expirationDate ?? null,
+    };
 
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
