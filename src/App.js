@@ -13,7 +13,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Box, Snackbar } from "@mui/material";
 import {
-  HomePage, ItemPage, QrCodePage
+  HomePage, ItemPage, QrCodePage, ContainerPage
 } from "./pages";
 import { Header, Footer } from "./layout";
 import { tryGetTokenOrLogin, getUuid } from "./utilities/auth";
@@ -91,6 +91,10 @@ const App = () => {
               <Route
                 path="/item/:id"
                 element={<ItemPage isSmallScreen={isSmallScreen} />}
+              />
+              <Route
+                path="/container/:id"
+                element={<ContainerPage isSmallScreen={isSmallScreen} />}
               />
               <Route
                 path="/qrcode"

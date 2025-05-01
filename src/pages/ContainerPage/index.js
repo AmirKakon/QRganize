@@ -1,0 +1,43 @@
+import React, { useEffect, useState } from "react";
+import { Box } from "@mui/material";
+import { useParams } from "react-router-dom";
+import { getContainer } from "../../utilities/api";
+import Loading from "../../components/Loading";
+import ContainerDetails from "../../components/ContainerDetails";
+
+const ContainerPage = ({ isSmallScreen }) => {
+  const { id } = useParams();
+  const [loading, setLoading] = useState(true);
+  const [container, setContainer] = useState({});
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    getContainer(id)
+      .then((res) => setContainer(res))
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setContainer({ id: id });
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  return loading ? (
+    <Loading />
+  ) : (
+    <Box
+      flex={1}
+      spacing={1}
+      sx={{
+        backgroundColor: "#e2e2e2",
+        padding: 2,
+      }}
+    >
+      <h2 style={{ textAlign: "center" }}>Container Details</h2>
+
+      <ContainerDetails container={container} setContainer={setContainer} />
+    </Box>
+  );
+};
+
+export default ContainerPage;

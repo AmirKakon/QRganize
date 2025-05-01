@@ -61,6 +61,37 @@ export const deleteItem = async (id) => {
   return res.status === "Success"; 
 }
 
+export const createContainer = async (container) => {
+  const response = await fetch(`${apiBaseUrl}/api/containers/create`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(container),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+}
+
+export const deleteContainer = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/containers/delete/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success"; 
+}
+
 export const getAllContainers = async () => {
   const response = await fetch(`${apiBaseUrl}/api/containers/getAll`, {
     method: "GET",
@@ -74,4 +105,19 @@ export const getAllContainers = async () => {
   }
   const res = await response.json();
   return res.data.containers;
+}
+
+export const getContainer = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/containers/get/${id}`, {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.data;
 }
