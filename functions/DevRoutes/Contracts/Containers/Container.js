@@ -13,7 +13,7 @@ class Container {
   constructor(id, name, image, userId) {
     this.id = id;
     this.name = name;
-    this.image - image;
+    this.image = image;
     this.userId = userId;
   }
 }
