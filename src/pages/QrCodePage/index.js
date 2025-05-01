@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
-import HomePageTabs from "../../components/HomePageTabs";
+import QrCodeTabs from "../../components/QrCodeTabs";
 import AccessTokenExpiration from "../../components/AccessTokenExpiration";
 import Loading from "../../components/Loading";
 
@@ -16,7 +16,7 @@ const QrCode = ({ isSmallScreen }) => {
     <Loading />
   ) : (
     <Box flex={1} spacing={1} sx={{ backgroundColor: "#e2e2e2", padding: 2 }}>
-      <HomePageTabs isSmallScreen={isSmallScreen} />
+      <QrCodeTabs isSmallScreen={isSmallScreen} />
       <AccessTokenExpiration />
     </Box>
   );
