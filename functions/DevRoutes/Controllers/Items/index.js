@@ -67,11 +67,23 @@ dev.get("/api/items/find/:id", authenticate, async (req, res) => {
 // get all items
 dev.get("/api/items/getAll", authenticate, async (req, res) => {
   try {
-    const items = await ItemService.getAllItems();
+    const result = await ItemService.getAllItems();
+
+    const userId = req.headers["uuid"];
+    const userItems = await UsersService.getItemsByUserId(userId);
+
+    const itemsWithUserData = result.items.map((item) => {
+      const userItem = userItems.items.find((userItem) => userItem.itemId === item.id);
+      return {
+        ...item,
+        quantity: userItem ? userItem.quantity : 0,
+        expirationDate: userItem ? userItem.expirationDate : null,
+      };
+    });
 
     return res.status(200).send({
       status: "Success",
-      data: items,
+      data: itemsWithUserData,
     });
   } catch (error) {
     handleError(res, error, `Failed to get all items`);
