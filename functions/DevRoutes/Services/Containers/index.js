@@ -5,12 +5,27 @@ const containersDB = "containers_dev";
 const containerItemsDB = "containerItems_dev";
 
 // Create a container
-const createContainer = async (name, image, userId) => {
-  const itemRef = await db.collection(containersDB).add({
-    name: name,
-    iamge: image,
-    userId: userId,
-  });
+const createContainer = async (name, image, userId, id = null) => {
+  let itemRef = null;
+
+  if (id) {
+    await db
+      .collection(containersDB)
+      .doc(String(id))
+      .set({
+        name: name,
+        image: image,
+        userId: userId,
+
+      });
+    itemRef = db.collection(containersDB).doc(String(id));
+  } else {
+    itemRef = await db.collection(containersDB).add({
+      name: name,
+      image: image,
+      userId: userId,
+    });
+  }
 
   return {
     containerId: itemRef.id,

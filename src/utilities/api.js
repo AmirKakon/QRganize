@@ -116,7 +116,7 @@ export const getContainer = async (id) => {
     },
   });
   if (!response.ok) {
-    throw new Error(`Error: ${response.status}`);
+    return {id: id, name: "", image: null, items: []};
   }
   const res = await response.json();
   return res.data;

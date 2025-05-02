@@ -7,11 +7,13 @@ const ContainerService = require("../../Services/Containers");
 // Create a container
 dev.post("/api/containers/create", authenticate, async (req, res) => {
   try {
-    checkRequiredParams(["name", "image", "userId"], req.body);
+    checkRequiredParams(["name", "image"], req.body);
+    checkRequiredParams(["uuid"], req.headers);
     const container = await ContainerService.createContainer(
       req.body.name,
       req.body.image,
-      req.body.userId,
+      req.headers["uuid"],
+      req.body.id ?? null,
     );
 
     return res.status(200).send({

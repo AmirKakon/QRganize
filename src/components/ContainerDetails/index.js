@@ -22,10 +22,14 @@ const ContainerDetails = ({ container, setContainer }) => {
   });
 
   useEffect(() => {
-    QRCode.toDataURL(container.id)
-        .then((url) => setContainer({...container, image: url}))
+    if (container?.id && !container.image) {
+      QRCode.toDataURL(container.id)
+        .then((url) => {
+          setContainer((prev) => ({ ...prev, image: url })); // Update the container state with the QR code URL
+        })
         .catch((err) => console.error("Error generating QR code:", err));
-  }, [container.id]);
+    }
+  }, [container, setContainer]);
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
