@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import {
   Box,
   Paper,
@@ -8,9 +9,6 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
-import IconButton from "@mui/material/IconButton";
 import { createContainer, deleteContainer } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 
@@ -22,6 +20,12 @@ const ContainerDetails = ({ container, setContainer }) => {
     message: "",
     severity: "success",
   });
+
+  useEffect(() => {
+    QRCode.toDataURL(container.id)
+        .then((url) => setContainer({...container, image: url}))
+        .catch((err) => console.error("Error generating QR code:", err));
+  }, [container.id]);
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -74,12 +78,6 @@ const ContainerDetails = ({ container, setContainer }) => {
         };
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const handleQuantityChange = (value) => {
-    if (value >= 1) {
-      setContainer((prev) => ({ ...prev, quantity: value }));
     }
   };
 
@@ -173,23 +171,6 @@ const ContainerDetails = ({ container, setContainer }) => {
             onChange={handleInputChange}
             fullWidth
           />
-
-          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 1, width: "100%" }}>
-            <IconButton onClick={() => handleQuantityChange((container.quantity || 1) - 1)}>
-              <RemoveIcon />
-            </IconButton>
-            <TextField
-              type="number"
-              label="Quantity"
-              value={container.quantity || 1}
-              onChange={(e) => handleQuantityChange(Number(e.target.value))}
-              inputProps={{ min: 1 }}
-              sx={{ width: "80px" }}
-            />
-            <IconButton onClick={() => handleQuantityChange((container.quantity || 1) + 1)}>
-              <AddIcon />
-            </IconButton>
-          </Box>
 
           <label htmlFor="imageUpload">
             {container.image ? (
