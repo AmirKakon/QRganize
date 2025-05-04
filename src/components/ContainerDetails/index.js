@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
 import {
   Box,
@@ -8,11 +9,20 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Avatar,
+  IconButton,
 } from "@mui/material";
-import { createContainer, deleteContainer } from "../../utilities/api";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { createContainer, deleteContainer, deleteContainerItem } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 
-const ContainerDetails = ({ container, setContainer }) => {
+const ContainerDetails = ({ container, setContainer, items, setItems }) => {
+  const navigate = useNavigate();
+  
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -147,6 +157,34 @@ const ContainerDetails = ({ container, setContainer }) => {
     }
   };
 
+  const handleRemoveItem = async (itemId, event) => {
+    event.stopPropagation();
+
+    var result = await deleteContainerItem(container.id, itemId);
+    if (result) {
+      setItems((prev) => prev.filter((item) => item.itemId !== itemId));
+}
+  };
+
+  const handleItemClick = (item) => {
+    navigate(`/item/${item.itemId}`);
+  };
+
+  const styles = {
+    list: {
+      width: "100%",
+      border: "1px solid #ccc", // Add a border around the list
+      borderRadius: "8px", // Optional: Add rounded corners
+      padding: "8px", // Optional: Add padding inside the border
+    },
+    listItem: {
+      transition: "background-color 0.3s ease",
+      '&:hover': {
+        backgroundColor: "#f0f0f0", // Highlight color on hover
+      },
+    },
+  };
+
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
@@ -203,6 +241,33 @@ const ContainerDetails = ({ container, setContainer }) => {
               onChange={handleImageChange}
             />
           </Button>
+
+          <List sx={styles.list}>
+            {items?.map((item) => (
+              <ListItem
+                key={item.itemId}
+                sx={styles.listItem}
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    aria-label="delete"
+                    onClick={(event) => handleRemoveItem(item.itemId, event)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                }
+                onClick={() => handleItemClick(item)}
+              >
+                <ListItemAvatar>
+                  <Avatar src={getImageSrc(item.image)} alt={item.name} />
+                </ListItemAvatar>
+                <ListItemText
+                  primary={item.name}
+                  secondary={`Quantity: ${item.quantity}`}
+                />
+              </ListItem>
+            ))}
+          </List>
 
           <Box
             sx={{

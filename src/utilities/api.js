@@ -121,3 +121,32 @@ export const getContainer = async (id) => {
   const res = await response.json();
   return res.data;
 }
+
+export const getContainerItems = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/containers/getItems/${id}`, {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+    },
+  });
+  if (!response.ok) {
+    return [];
+  }
+  const res = await response.json();
+  return res.data;
+}
+
+export const deleteContainerItem = async (containerId, itemId) => {
+  const response = await fetch(`${apiBaseUrl}/api/containers/removeItems/${containerId}/${itemId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success"; 
+}

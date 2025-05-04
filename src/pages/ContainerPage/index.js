@@ -1,20 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { getContainer } from "../../utilities/api";
+import { getContainer, getContainerItems } from "../../utilities/api";
 import Loading from "../../components/Loading";
 import ContainerDetails from "../../components/ContainerDetails";
+import ItemList from "../../components/ItemList";
 
 const ContainerPage = ({ isSmallScreen }) => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [container, setContainer] = useState({});
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
 
     getContainer(id)
-      .then((res) => setContainer(res))
+      .then((res) => {
+        setContainer(res);
+        getContainerItems(id).then((itemRes) => {
+          setItems(itemRes);
+        });
+      })
       .catch((error) => {
         console.error("Error fetching data:", error);
         setContainer({ id: id });
@@ -35,7 +42,7 @@ const ContainerPage = ({ isSmallScreen }) => {
     >
       <h2 style={{ textAlign: "center" }}>Container Details</h2>
 
-      <ContainerDetails container={container} setContainer={setContainer} />
+      <ContainerDetails container={container} setContainer={setContainer} items={items} setItems={setItems}/>
     </Box>
   );
 };

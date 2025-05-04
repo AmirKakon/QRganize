@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
-  TextField,
   useMediaQuery,
   ImageList,
   ImageListItem,
@@ -14,43 +13,19 @@ const ItemList = ({ items, isSmallScreen }) => {
   const navigate = useNavigate();
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
-  const [searchQuery, setSearchQuery] = useState("");
 
   const handleItemClick = (item) => {
     navigate(`/item/${item.id}`);
   };
 
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
     <>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          marginBottom: 2,
-        }}
-      >
-        <TextField
-          type="text"
-          placeholder="Search for item..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            width: "100%",
-            maxWidth: "400px",
-          }}
-        />
-      </Box>
-
       {!isSmallScreen && (
         <Box
           sx={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "flex-start",
+            justifyContent: "center",
             alignItems: "center",
             textAlign: "center",
             height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
@@ -68,7 +43,7 @@ const ItemList = ({ items, isSmallScreen }) => {
               margin: "0 auto",
             }}
           >
-            {filteredItems.map((item) => (
+            {items.map((item) => (
               <ImageListItem
                 key={item.id}
                 onClick={() => handleItemClick(item)}
@@ -95,7 +70,7 @@ const ItemList = ({ items, isSmallScreen }) => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "flex-start",
+            justifyContent: "center",
             alignItems: "center",
             textAlign: "center",
             height: "90vh",
@@ -112,7 +87,7 @@ const ItemList = ({ items, isSmallScreen }) => {
               margin: "0 auto",
             }}
           >
-            {filteredItems.map((item) => (
+            {items.map((item) => (
               <ImageListItem
                 key={item.id}
                 onClick={() => handleItemClick(item)}
