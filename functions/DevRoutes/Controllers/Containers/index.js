@@ -3,6 +3,7 @@ const { authenticate } = require("../Auth");
 const { checkRequiredParams } = require("../../Utilities");
 const { handleError } = require("../../Utilities/error-handler");
 const ContainerService = require("../../Services/Containers");
+const ItemService = require("../../Services/Items");
 
 // Create a container
 dev.post("/api/containers/create", authenticate, async (req, res) => {
@@ -187,11 +188,22 @@ dev.get(
   async (req, res) => {
     try {
       checkRequiredParams(["containerId"], req.params);
-      const items = await ContainerService.getItemsByContainerId(
+      const list = await ContainerService.getItemsByContainerId(
         req.params.containerId,
       );
 
-      return res.status(200).send({ status: "Success", data: items });
+      const itemIds = list.items.map((item) => item.itemId);
+      const itemList = await ItemService.getBatchOfItems(itemIds);
+
+      const mergedList = list.items.map((item) => {
+        const fullData = itemList.data.find((fullItem) => fullItem.id === item.itemId);
+        return {
+          ...item,
+          ...fullData,
+        };
+      });
+
+      return res.status(200).send({ status: "Success", data: mergedList });
     } catch (error) {
       return handleError(
         res,
