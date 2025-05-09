@@ -89,7 +89,7 @@ const App = () => {
           ) : (
             <Routes>
               <Route
-                path="/item/:id"
+                path="/item"
                 element={<ItemPage isSmallScreen={isSmallScreen} />}
               />
               <Route

@@ -15,7 +15,7 @@ const ItemList = ({ items, isSmallScreen }) => {
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
   const handleItemClick = (item) => {
-    navigate(`/item/${item.id}`);
+    navigate(`/item?id=${item.id}`);
   };
 
   return (

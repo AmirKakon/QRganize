@@ -167,7 +167,7 @@ const ContainerDetails = ({ container, setContainer, items, setItems }) => {
   };
 
   const handleItemClick = (item) => {
-    navigate(`/item/${item.itemId}`);
+    navigate(`/item?id=${item.itemId}`);
   };
 
   const styles = {

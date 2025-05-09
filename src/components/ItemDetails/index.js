@@ -13,8 +13,9 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { createItem, deleteItem } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
+import SearchIcon from "@mui/icons-material/Search";
 
-const ItemDetails = ({ item, setItem }) => {
+const ItemDetails = ({ item, setItem, setBarcode }) => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -144,6 +145,15 @@ const ItemDetails = ({ item, setItem }) => {
     }
   };
 
+  const handleSearchForBarcode = () => {
+    setBarcode(item.id);
+    setSnackbar({
+      open: true,
+      message: "searching for barcode...",
+      severity: "info",
+    });
+  };
+
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
@@ -156,14 +166,23 @@ const ItemDetails = ({ item, setItem }) => {
             gap: 2,
           }}
         >
-          <TextField
-            label="Item ID"
-            name="id"
-            value={item.id || ""}
-            onChange={handleInputChange}
-            fullWidth
-            disabled
-          />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+            <TextField
+              label="Item ID"
+              name="id"
+              value={item.id || ""}
+              onChange={handleInputChange}
+              fullWidth
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSearchForBarcode}
+              sx={{ minWidth: "40px", padding: "8px" }}
+            >
+              <SearchIcon />
+            </Button>
+          </Box>
 
           <TextField
             label="Item Name"

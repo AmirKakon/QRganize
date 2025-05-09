@@ -77,7 +77,7 @@ const BarcodeScanner = ({ isSmallScreen, itemType }) => {
             (result, error) => {
               if (result) {
                 navigator.vibrate(200);
-                navigate(`/${itemType}/${result.getText()}`);
+                navigate(`/${itemType}?id=${result.getText()}`);
                 stopScanning = true;
                 codeReader.reset();
               }
