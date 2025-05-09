@@ -10,11 +10,15 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import IconButton from "@mui/material/IconButton";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { createItem, deleteItem } from "../../utilities/api";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
+import dayjs from "dayjs";
 
 const ItemDetails = ({ item, setItem, setBarcode }) => {
   const [saving, setSaving] = useState(false);
@@ -25,6 +29,12 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
     severity: "success",
   });
 
+  const setDateString = (date) => {
+    const d = dayjs(date);
+    const formatedDate = d.format("YYYY-MM-DD").concat("T00:00:00+00:00");
+    return formatedDate;
+  };
+
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
   };
@@ -33,6 +43,11 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
     const { name, value } = e.target;
     setItem((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handleDateChange = (date) => {
+    const formattedDate = setDateString(date);
+    setItem((prev) => ({ ...prev, expirationDate: formattedDate }));
+  }
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -75,6 +90,12 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
         };
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleQuantityChange = (value) => {
+    if (value >= 1) {
+      setItem((prev) => ({ ...prev, quantity: value }));
     }
   };
 
@@ -214,10 +235,28 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
             fullWidth
           />
 
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 1, width: "100%" }}>
+            <IconButton onClick={() => handleQuantityChange((item.quantity || 0) - 1)}>
+              <RemoveIcon />
+            </IconButton>
+            <TextField
+              type="number"
+              label="Quantity"
+              value={item.quantity || 0}
+              onChange={(e) => handleQuantityChange(Number(e.target.value))}
+              inputProps={{ min: 1 }}
+              sx={{ width: "80px" }}
+            />
+            <IconButton onClick={() => handleQuantityChange((item.quantity || 0) + 1)}>
+              <AddIcon />
+            </IconButton>
+          </Box>
+
           <DatePicker
             label="Expiration Date"
             name="expirationDate"
-            onChange={handleInputChange}
+            value={dayjs(item.expirationDate) || null}
+            onChange={handleDateChange}
             disablePast
             sx={{ width: "100%" }}
           /> 
