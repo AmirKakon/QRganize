@@ -12,8 +12,9 @@ import {
 } from "@mui/material";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { createItem, deleteItem } from "../../utilities/api";
-import { getImageSrc } from "../../utilities/helpers";
+import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
+import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
 
 const ItemDetails = ({ item, setItem, setBarcode }) => {
   const [saving, setSaving] = useState(false);
@@ -154,6 +155,11 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
     });
   };
 
+  const handleGenerateBarcode = () => {
+    const newBarcode = generateRandomId();
+    setItem((prev) => ({ ...prev, id: newBarcode }));
+  };
+
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
@@ -181,6 +187,14 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
               sx={{ minWidth: "40px", padding: "8px" }}
             >
               <SearchIcon />
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleGenerateBarcode}
+              sx={{ minWidth: "40px", padding: "8px" }}
+            >
+             <EmojiObjectsIcon />
             </Button>
           </Box>
 
