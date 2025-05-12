@@ -8,8 +8,16 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Checkbox,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
-import { createContainer, deleteContainer, updateContainerItemsQuantity } from "../../utilities/api";
+import { createContainer, deleteContainer, updateContainerItemsQuantity, getAllItems, addItemToContainer } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 import ItemsInContainerList from "../ItemsInContainerList";
 
@@ -22,6 +30,9 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
     message: "",
     severity: "success",
   });
+  const [allItems, setAllItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [itemDialogOpen, setItemDialogOpen] = useState(false);
 
   useEffect(() => {
     if (container?.id && !container.image) {
@@ -91,19 +102,6 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
 
     setSaving(true);
     try {
-      const itemQuantityList = items.map((item) => ({
-        itemId: item.itemId,
-        quantity: item.quantity,
-      }));
-
-      const itemQuantityResponse = await updateContainerItemsQuantity(container.id, itemQuantityList);
-      if (!itemQuantityResponse) {
-        setSnackbar({
-          open: true,
-          message: "Failed to update item quantities.",
-          severity: "error",
-        });
-      };
 
       const updatedItem = {
         ...container,
@@ -116,6 +114,22 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
           message: "Container details updated successfully!",
           severity: "success",
         });
+
+        await handleAddItemsToContainer(); 
+
+        const itemQuantityList = items.map((item) => ({
+          itemId: item.itemId,
+          quantity: item.quantity,
+        }));
+
+        const itemQuantityResponse = await updateContainerItemsQuantity(container.id, itemQuantityList);
+        if (!itemQuantityResponse) {
+          setSnackbar({
+            open: true,
+            message: "Failed to update item quantities.",
+            severity: "error",
+          });
+      };
       } else {
         setSnackbar({
           open: true,
@@ -161,6 +175,59 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
       });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const fetchItems = async () => {
+    try {
+      const response = await getAllItems(); // Fetch all items from the API
+      setAllItems(response || []);
+    } catch (error) {
+      console.error("Error fetching items:", error);
+    }
+  };
+
+  const handleOpenItemDialog = async () => {
+    await fetchItems();
+    setItemDialogOpen(true);
+  };
+
+  const handleCloseItemDialog = () => {
+    setItemDialogOpen(false);
+  };
+
+  const handleItemSelect = (itemId) => {
+    setSelectedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const handleAddItemsToContainer = async () => {
+    try {
+      for (const itemId of selectedItems) {
+        await addItemToContainer(container.id, itemId); // Add each selected item to the container
+      }
+      setSnackbar({
+        open: true,
+        message: "Items added to the container successfully!",
+        severity: "success",
+      });
+      // Optionally update the container's items list
+      setItems((prev) => [
+        ...prev,
+        ...allItems.filter((item) => selectedItems.includes(item.id)),
+      ]);
+    } catch (error) {
+      console.error("Error adding items to container:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to add items to the container.",
+        severity: "error",
+      });
+    } finally {
+      handleCloseItemDialog();
     }
   };
 
@@ -223,6 +290,15 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
 
           <ItemsInContainerList items={items} setItems={setItems} container={container} isSmallScreen={isSmallScreen}/>
 
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleOpenItemDialog}
+            sx={{ width: "100%" }}
+          >
+            Add Items to Container
+          </Button>
+
           <Box
             sx={{
               display: "flex",
@@ -252,6 +328,36 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
           </Box>
         </Box>
       </Paper>
+
+      <Dialog open={itemDialogOpen} onClose={handleCloseItemDialog}>
+        <DialogTitle>Select Items</DialogTitle>
+        <DialogContent>
+          <List>
+            {allItems.map((item) => (
+              <ListItem
+                key={item.id}
+                button
+                onClick={() => handleItemSelect(item.id)}
+              >
+                <Checkbox
+                  checked={selectedItems.includes(item.id)}
+                  onChange={() => handleItemSelect(item.id)}
+                />
+                <ListItemText primary={item.name} />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseItemDialog} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleCloseItemDialog} color="primary">
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
