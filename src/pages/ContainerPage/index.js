@@ -4,7 +4,6 @@ import { useParams } from "react-router-dom";
 import { getContainer, getContainerItems } from "../../utilities/api";
 import Loading from "../../components/Loading";
 import ContainerDetails from "../../components/ContainerDetails";
-import ItemList from "../../components/ItemList";
 
 const ContainerPage = ({ isSmallScreen }) => {
   const { id } = useParams();
@@ -42,7 +41,7 @@ const ContainerPage = ({ isSmallScreen }) => {
     >
       <h2 style={{ textAlign: "center" }}>Container Details</h2>
 
-      <ContainerDetails container={container} setContainer={setContainer} items={items} setItems={setItems}/>
+      <ContainerDetails container={container} setContainer={setContainer} items={items} setItems={setItems} isSmallScreen={isSmallScreen}/>
     </Box>
   );
 };

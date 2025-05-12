@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
 import {
   Box,
@@ -9,25 +8,15 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Avatar,
-  IconButton,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { createContainer, deleteContainer, deleteContainerItem } from "../../utilities/api";
+import { createContainer, deleteContainer } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
+import ItemsInContainerList from "../ItemsInContainerList";
 
-const ContainerDetails = ({ container, setContainer, items, setItems }) => {
-  const navigate = useNavigate();
+const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScreen }) => {
   
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [quantityChangeList, setQuantityChangeList] = useState([]);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -99,7 +88,7 @@ const ContainerDetails = ({ container, setContainer, items, setItems }) => {
   };
 
   const handleSave = async () => {
-    console.log("Saving container:", quantityChangeList);
+    console.log("Saving container:", items);
     return; 
 
     setSaving(true);
@@ -163,54 +152,6 @@ const ContainerDetails = ({ container, setContainer, items, setItems }) => {
     }
   };
 
-  const handleRemoveItem = async (itemId, event) => {
-    event.stopPropagation();
-
-    var result = await deleteContainerItem(container.id, itemId);
-    if (result) {
-      setItems((prev) => prev.filter((item) => item.itemId !== itemId));
-}
-  };
-
-  const handleItemClick = (item) => {
-    navigate(`/item?id=${item.itemId}`);
-  };
-
-  const handleQuantityChange = (itemId, newQuantity, event) => {
-    console.log("Quantity changed:", itemId, newQuantity);
-    event.stopPropagation();
-
-    if(quantityChangeList.some((item) => item.itemId === itemId)) {
-    setQuantityChangeList((prev) =>
-      prev.map((item) =>
-        item.itemId === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  } else {
-    setQuantityChangeList((prev) => [
-      ...prev,
-      { itemId, quantity: newQuantity },
-    ]);
-  }
-
-    console.log(quantityChangeList);
-  };
-
-  const styles = {
-    list: {
-      width: "100%",
-      border: "1px solid #ccc", // Add a border around the list
-      borderRadius: "8px", // Optional: Add rounded corners
-      padding: "8px", // Optional: Add padding inside the border
-    },
-    listItem: {
-      transition: "background-color 0.3s ease",
-      '&:hover': {
-        backgroundColor: "#f0f0f0", // Highlight color on hover
-      },
-    },
-  };
-
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
@@ -268,50 +209,7 @@ const ContainerDetails = ({ container, setContainer, items, setItems }) => {
             />
           </Button>
 
-          <List sx={styles.list}>
-            {items?.map((item) => (
-              <ListItem
-                key={item.itemId}
-                sx={styles.listItem}
-                secondaryAction={
-                  <>
-                    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 1, width: "100%" }}>
-                      <IconButton onClick={(event) => handleQuantityChange(item.itemId, (item.quantity || 1) - 1, event)}>
-                        <RemoveIcon />
-                      </IconButton>
-                      <TextField
-                        type="number"
-                        label="Quantity"
-                        value={item.quantity || 0}
-                        onChange={(event) => handleQuantityChange(item.itemId, Number(event.target.value), event)}
-                        inputProps={{ min: 1 }}
-                        sx={{ width: "80px" }}
-                      />
-                      <IconButton onClick={(event) => handleQuantityChange(item.itemId, (item.quantity || 0) + 1, event)}>
-                        <AddIcon />
-                      </IconButton>
-                    </Box>
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={(event) => handleRemoveItem(item.itemId, event)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </>
-                }
-                onClick={() => handleItemClick(item)}
-              >
-                <ListItemAvatar>
-                  <Avatar src={getImageSrc(item.image)} alt={item.name} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={item.name}
-                  secondary={`Quantity: ${item.quantity}`}
-                />
-              </ListItem>
-            ))}
-          </List>
+          <ItemsInContainerList items={items} setItems={setItems} container={container} isSmallScreen={isSmallScreen}/>
 
           <Box
             sx={{
