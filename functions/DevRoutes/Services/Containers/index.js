@@ -166,6 +166,27 @@ const updateItemQuantity = async ( containerId, itemId, quantity ) => {
   return true;
 };
 
+const updateItemQuantitiesBatch = async (containerId, items) => {
+  const batch = db.batch();
+
+  for (const { itemId, quantity } of items) {
+    const itemRef = db
+      .collection(containerItemsDB)
+      .doc(`${containerId}_${itemId}`);
+
+    const itemDoc = await itemRef.get();
+
+    if (!itemDoc.exists) {
+      throw new Error(`Item ${itemId} not found in container ${containerId}`);
+    }
+
+    batch.update(itemRef, { quantity });
+  }
+
+  await batch.commit();
+  return true;
+};
+
 // get all items in a container
 const getItemsByContainerId = async (containerId, asSnapshot = false) => {
   const snapshot = await db
@@ -199,5 +220,6 @@ module.exports = {
   addItemToContainer,
   removeItemFromContainer,
   updateItemQuantity,
+  updateItemQuantitiesBatch,
   getItemsByContainerId,
 };

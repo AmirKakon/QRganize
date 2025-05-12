@@ -181,6 +181,33 @@ dev.put(
   },
 );
 
+// update quantity of items in container
+dev.put(
+  "/api/containers/updateItemQuantitiesBatch/:containerId",
+  authenticate,
+  async (req, res) => {
+    try {
+      checkRequiredParams(["containerId"], req.params);
+      checkRequiredParams(["items"], req.body);
+      const updated = await ContainerService.updateItemQuantitiesBatch(
+        req.params.containerId,
+        req.body.items,
+      );
+      return updated ?
+        res.status(200).send({ status: "Success", msg: "Items Updated" }) :
+        res
+          .status(400)
+          .send({ status: "Failed", msg: "Items failed to update" });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        `Failed to update item quantity in container: ${req.params.containerId}`,
+      );
+    }
+  },
+);
+
 // get all items in a container
 dev.get(
   "/api/containers/getItems/:containerId",
