@@ -9,7 +9,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { createContainer, deleteContainer } from "../../utilities/api";
+import { createContainer, deleteContainer, updateContainerItemsQuantity } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 import ItemsInContainerList from "../ItemsInContainerList";
 
@@ -87,12 +87,24 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
     }
   };
 
-  const handleSave = async () => {
-    console.log("Saving container:", items);
-    return; 
+  const handleSave = async () => { 
 
     setSaving(true);
     try {
+      const itemQuantityList = items.map((item) => ({
+        itemId: item.itemId,
+        quantity: item.quantity,
+      }));
+
+      const itemQuantityResponse = await updateContainerItemsQuantity(container.id, itemQuantityList);
+      if (!itemQuantityResponse) {
+        setSnackbar({
+          open: true,
+          message: "Failed to update item quantities.",
+          severity: "error",
+        });
+      };
+
       const updatedItem = {
         ...container,
       };

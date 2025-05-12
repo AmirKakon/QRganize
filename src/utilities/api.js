@@ -150,3 +150,20 @@ export const deleteContainerItem = async (containerId, itemId) => {
   const res = await response.json();
   return res.status === "Success"; 
 }
+
+export const updateContainerItemsQuantity = async (containerId, items) => {
+  const response = await fetch(`${apiBaseUrl}/api/containers/updateItemQuantitiesBatch/${containerId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({items: items}),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+}
