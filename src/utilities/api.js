@@ -122,6 +122,23 @@ export const getContainer = async (id) => {
   return res.data;
 }
 
+export const addItemToContainer = async (containerId, item) => {
+  const response = await fetch(`${apiBaseUrl}/api/containers/addItems/${containerId}`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(item),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+}
+
 export const getContainerItems = async (id) => {
   const response = await fetch(`${apiBaseUrl}/api/containers/getItems/${id}`, {
     method: "GET",

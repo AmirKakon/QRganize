@@ -9,12 +9,20 @@ import {
   Alert,
   Switch,
   FormControlLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Checkbox,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import IconButton from "@mui/material/IconButton";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { createItem, deleteItem } from "../../utilities/api";
+import { createItem, deleteItem, getAllContainers, addItemToContainer } from "../../utilities/api";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
@@ -28,6 +36,9 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
     message: "",
     severity: "success",
   });
+  const [containers, setContainers] = useState([]);
+  const [selectedContainers, setSelectedContainers] = useState([]);
+  const [containerDialogOpen, setContainerDialogOpen] = useState(false);
 
   const setDateString = (date) => {
     const d = dayjs(date);
@@ -181,6 +192,55 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
     setItem((prev) => ({ ...prev, id: newBarcode }));
   };
 
+  const fetchContainers = async () => {
+    try {
+      const response = await getAllContainers(); // Fetch containers from the API
+      setContainers(response || []);
+    } catch (error) {
+      console.error("Error fetching containers:", error);
+    }
+  };
+
+  const handleOpenContainerDialog = async () => {
+    await fetchContainers();
+    setContainerDialogOpen(true);
+  };
+
+  const handleCloseContainerDialog = () => {
+    setContainerDialogOpen(false);
+    setSelectedContainers([]);
+  };
+
+  const handleContainerSelect = (containerId) => {
+    setSelectedContainers((prev) =>
+      prev.includes(containerId)
+        ? prev.filter((id) => id !== containerId)
+        : [...prev, containerId]
+    );
+  };
+
+  const handleAddToContainers = async () => {
+    try {
+      for (const containerId of selectedContainers) {
+        await addItemToContainer(containerId, {itemId: item.id, quantity: 1});
+      }
+      setSnackbar({
+        open: true,
+        message: "Item added to selected containers successfully!",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error adding item to containers:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to add item to containers.",
+        severity: "error",
+      });
+    } finally {
+      handleCloseContainerDialog();
+    }
+  };
+
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
@@ -301,6 +361,15 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
             sx={{ alignSelf: "flex-start" }}
           />
 
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleOpenContainerDialog}
+            sx={{ width: "100%" }}
+          >
+            Add to Containers
+          </Button>
+
           <Box
             sx={{
               display: "flex",
@@ -330,6 +399,36 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
           </Box>
         </Box>
       </Paper>
+
+      <Dialog open={containerDialogOpen} onClose={handleCloseContainerDialog}>
+        <DialogTitle>Select Containers</DialogTitle>
+        <DialogContent>
+          <List>
+            {containers.map((container) => (
+              <ListItem
+                key={container.id}
+                button
+                onClick={() => handleContainerSelect(container.id)}
+              >
+                <Checkbox
+                  checked={selectedContainers.includes(container.id)}
+                  onChange={() => handleContainerSelect(container.id)}
+                />
+                <ListItemText primary={container.name} />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseContainerDialog} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleAddToContainers} color="primary">
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
