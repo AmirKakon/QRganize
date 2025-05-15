@@ -24,7 +24,7 @@ const QrCodeTab = ({ isSmallScreen }) => {
           textAlign: "center",
         }}
       >
-        Barcode Scanner
+        QrCode Scanner
       </Typography>
       <BarcodeScanner isSmallScreen={isSmallScreen} itemType={"container"} />
     </Box>

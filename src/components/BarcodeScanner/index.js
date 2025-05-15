@@ -94,7 +94,7 @@ const BarcodeScanner = ({ isSmallScreen, itemType }) => {
     return () => {
       codeReader.reset();
     };
-  }, [navigate, selectedCamera]);
+  }, [navigate, selectedCamera, itemType]);
 
   return (
     <>
