@@ -27,6 +27,7 @@ import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
 import dayjs from "dayjs";
+import JsBarcode from "jsbarcode"; // Import JsBarcode library
 
 const ItemDetails = ({ item, setItem, setBarcode }) => {
   const [saving, setSaving] = useState(false);
@@ -256,6 +257,41 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
     }
   };
 
+  const handleDownloadBarcode = () => {
+    if (item?.id) {
+      const canvas = document.createElement("canvas");
+
+      try {
+        // Generate the barcode
+        JsBarcode(canvas, item.id, {
+          format: "CODE128",
+          width: 2,
+          height: 100,
+          displayValue: true,
+        });
+
+        // Trigger download
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = `${item.id}_Barcode.png`;
+        link.click();
+      } catch (error) {
+        console.error("Error generating barcode:", error);
+        setSnackbar({
+          open: true,
+          message: "Failed to generate barcode.",
+          severity: "error",
+        });
+      }
+    } else {
+      setSnackbar({
+        open: true,
+        message: "Item ID is not available.",
+        severity: "error",
+      });
+    }
+  };
+
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
@@ -383,6 +419,15 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
             sx={{ width: "100%" }}
           >
             Add to Containers
+          </Button>
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleDownloadBarcode}
+            sx={{ width: "100%" }}
+          >
+            Download Barcode
           </Button>
 
           <Box
