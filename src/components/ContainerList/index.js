@@ -21,7 +21,7 @@ const ContainerList = ({ containers, isSmallScreen }) => {
     navigate(`/container/${container.id}`);
   };
 
-  const filtereContainers = containers.filter((container) =>
+  const filteredContainers = containers.filter((container) =>
     container.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -69,7 +69,7 @@ const ContainerList = ({ containers, isSmallScreen }) => {
               margin: "0 auto",
             }}
           >
-            {filtereContainers.map((container) => (
+            {filteredContainers.map((container) => (
               <ImageListItem
                 key={container.id}
                 onClick={() => handleItemClick(container)}
@@ -112,7 +112,7 @@ const ContainerList = ({ containers, isSmallScreen }) => {
               margin: "0 auto",
             }}
           >
-            {filtereContainers.map((container) => (
+            {filteredContainers.map((container) => (
               <ImageListItem
                 key={container.id}
                 onClick={() => handleItemClick(container)}
