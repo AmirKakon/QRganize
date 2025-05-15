@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
+  TextField,
   useMediaQuery,
   ImageList,
   ImageListItem,
@@ -8,30 +9,55 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { getImageSrc } from "../../utilities/helpers";
+import defaultImage from "../../assets/qrcode-default-image.png";
 
-const ItemList = ({ items, isSmallScreen }) => {
+const ContainerList = ({ containers, isSmallScreen }) => {
   const navigate = useNavigate();
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleItemClick = (item) => {
-    navigate(`/item?id=${item.id}`);
+  const handleItemClick = (container) => {
+    navigate(`/container/${container.id}`);
   };
+
+  const filtereContainers = containers.filter((container) =>
+    container.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: 2,
+        }}
+      >
+        <TextField
+          type="text"
+          placeholder="Search for container..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            width: "100%",
+            maxWidth: "400px",
+          }}
+        />
+      </Box>
+
       {!isSmallScreen && (
         <Box
           sx={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             alignItems: "center",
             textAlign: "center",
             height: isMediumScreen ? "40vh" : isLargeScreen ? "60vh" : "80vh",
             padding: 2,
             boxSizing: "border-box",
-            overflowY: "auto", // Added to make the list scrollable
+            overflowY: "auto",
           }}
         >
           <ImageList
@@ -43,21 +69,20 @@ const ItemList = ({ items, isSmallScreen }) => {
               margin: "0 auto",
             }}
           >
-            {items.map((item) => (
+            {filtereContainers.map((container) => (
               <ImageListItem
-                key={item.id}
-                onClick={() => handleItemClick(item)}
+                key={container.id}
+                onClick={() => handleItemClick(container)}
                 sx={{ cursor: "pointer" }}
               >
                 <img
-                  src={getImageSrc(item.image)}
-                  alt={item.name}
+                  src={getImageSrc(container.image) ?? defaultImage}
+                  alt={container.name}
                   loading="lazy"
                   style={{ objectFit: "cover" }}
                 />
                 <ImageListItemBar
-                  title={item.name}
-                  subtitle={`Price: ${item.price}`}
+                  title={container.name}
                 />
               </ImageListItem>
             ))}
@@ -70,12 +95,12 @@ const ItemList = ({ items, isSmallScreen }) => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             alignItems: "center",
             textAlign: "center",
             height: "90vh",
             boxSizing: "border-box",
-            overflowY: "auto", // Added to make the list scrollable
+            overflowY: "auto",
           }}
         >
           <ImageList
@@ -87,21 +112,20 @@ const ItemList = ({ items, isSmallScreen }) => {
               margin: "0 auto",
             }}
           >
-            {items.map((item) => (
+            {filtereContainers.map((container) => (
               <ImageListItem
-                key={item.id}
-                onClick={() => handleItemClick(item)}
+                key={container.id}
+                onClick={() => handleItemClick(container)}
                 sx={{ cursor: "pointer" }}
               >
                 <img
-                  src={getImageSrc(item.image)}
-                  alt={item.name}
+                  src={getImageSrc(container.image) ?? defaultImage}
+                  alt={container.name}
                   loading="lazy"
                   style={{ objectFit: "cover" }}
                 />
                 <ImageListItemBar
-                  title={item.name}
-                  subtitle={`Price: ${item.price}`}
+                  title={container.name}
                 />
               </ImageListItem>
             ))}
@@ -112,4 +136,4 @@ const ItemList = ({ items, isSmallScreen }) => {
   );
 };
 
-export default ItemList;
+export default ContainerList;

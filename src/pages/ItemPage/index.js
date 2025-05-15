@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
-import { useParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { searchForBarcode } from "../../utilities/api";
 import Loading from "../../components/Loading";
 import ItemDetails from "../../components/ItemDetails";
 
 const ItemPage = ({ isSmallScreen }) => {
-  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const [id, setId] = useState(searchParams.get("id")); // Get 'id' from query parameters
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState({});
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
+
+    console.log("triggeredBarcode", id); // Log the barcode id
+    setLoading(true);
+    if (!id) {
+      setLoading(false); // Stop loading if no id is provided
+      return;
+    }
 
     searchForBarcode(id)
       .then((res) => setItem(res))
@@ -35,7 +43,7 @@ const ItemPage = ({ isSmallScreen }) => {
     >
       <h2 style={{ textAlign: "center" }}>Item Details</h2>
 
-      <ItemDetails item={item} setItem={setItem} />
+      <ItemDetails item={item} setItem={setItem} setBarcode={setId} />
     </Box>
   );
 };
