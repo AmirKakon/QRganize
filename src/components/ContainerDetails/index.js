@@ -240,6 +240,63 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
     }
   };
 
+  const handleDownloadQRCode = () => {
+    if (container?.id) {
+      QRCode.toDataURL(container.id)
+        .then((qrCodeUrl) => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          // Set canvas dimensions
+          const qrCodeSize = 300;
+          const textHeight = 30;
+          canvas.width = qrCodeSize;
+          canvas.height = qrCodeSize + textHeight;
+
+          // Fill the background with white
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Draw QR code
+          const qrImage = new Image();
+          qrImage.src = qrCodeUrl;
+          qrImage.onload = () => {
+            ctx.drawImage(qrImage, 0, 0, qrCodeSize, qrCodeSize);
+
+            // Add container name below the QR code
+            ctx.font = "20px Arial";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "black";
+            ctx.fillText(
+              container.name || "",
+              qrCodeSize / 2,
+              qrCodeSize + 5
+            );
+
+            // Trigger download
+            const link = document.createElement("a");
+            link.href = canvas.toDataURL("image/png");
+            link.download = `${container.id}_QRCode.png`;
+            link.click();
+          };
+        })
+        .catch((err) => {
+          console.error("Error generating QR code:", err);
+          setSnackbar({
+            open: true,
+            message: "Failed to generate QR code.",
+            severity: "error",
+          });
+        });
+    } else {
+      setSnackbar({
+        open: true,
+        message: "Container ID is not available.",
+        severity: "error",
+      });
+    }
+  };
+
   const filteredItems = allItems.filter((item) =>
     item.name.toLowerCase().includes(searchText.toLowerCase())
   );
@@ -310,6 +367,15 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
             sx={{ width: "100%" }}
           >
             Add Items to Container
+          </Button>
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleDownloadQRCode}
+            sx={{ width: "100%" }}
+          >
+            Download QR Code
           </Button>
 
           <Box
