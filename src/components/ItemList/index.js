@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
+  TextField,
   useMediaQuery,
   ImageList,
   ImageListItem,
@@ -14,12 +15,37 @@ const ItemList = ({ items, isSmallScreen }) => {
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredItems = items.filter((item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
   const handleItemClick = (item) => {
     navigate(`/item?id=${item.id}`);
   };
 
   return (
     <>
+      <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: 2,
+            }}
+          >
+            <TextField
+              type="text"
+              placeholder="Search for item..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%",
+                maxWidth: "400px",
+              }}
+            />
+      </Box>
+
       {!isSmallScreen && (
         <Box
           sx={{
@@ -43,7 +69,7 @@ const ItemList = ({ items, isSmallScreen }) => {
               margin: "0 auto",
             }}
           >
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <ImageListItem
                 key={item.id}
                 onClick={() => handleItemClick(item)}
@@ -87,7 +113,7 @@ const ItemList = ({ items, isSmallScreen }) => {
               margin: "0 auto",
             }}
           >
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <ImageListItem
                 key={item.id}
                 onClick={() => handleItemClick(item)}
