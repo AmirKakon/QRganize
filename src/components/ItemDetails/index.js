@@ -231,9 +231,14 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
 
   const handleAddToContainers = async () => {
     try {
-      for (const containerId of selectedContainers) {
-        await addItemToContainer(containerId, {itemId: item.id, quantity: 1});
+      const newContainers = selectedContainers.filter(
+        (containerId) => !existingContainers.includes(containerId) // Only include newly added containers
+      );
+
+      for (const containerId of newContainers) {
+        await addItemToContainer(containerId, { itemId: item.id, quantity: 1 });
       }
+
       setSnackbar({
         open: true,
         message: "Item added to selected containers successfully!",
