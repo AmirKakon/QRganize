@@ -84,7 +84,14 @@ const BarcodeScanner = ({ isSmallScreen, itemType }) => {
           // Apply constraints to the video stream
           const stream = await navigator.mediaDevices.getUserMedia(constraints);
           videoElement.srcObject = stream;
-          videoElement.play();
+
+          // Wait for the video element to load the stream before playing
+          videoElement.onloadedmetadata = () => {
+            videoElement.play().catch((err) => {
+              console.error("Error playing video:", err);
+              setMessage("Error starting video playback. Please try again.");
+            });
+          };
 
           // Start decoding with enhanced error logging
           await codeReader.decodeFromVideoDevice(
