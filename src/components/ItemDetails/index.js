@@ -9,16 +9,26 @@ import {
   Alert,
   Switch,
   FormControlLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Checkbox,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import IconButton from "@mui/material/IconButton";
-import { createItem, deleteItem } from "../../utilities/api";
-import { getImageSrc } from "../../utilities/helpers";
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { createItem, deleteItem, getAllContainers, addItemToContainer, getContainersOfItem } from "../../utilities/api";
+import { getImageSrc, generateRandomId } from "../../utilities/helpers";
+import SearchIcon from "@mui/icons-material/Search";
+import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
 import dayjs from "dayjs";
 
-const ItemDetails = ({ item, setItem }) => {
+const ItemDetails = ({ item, setItem, setBarcode }) => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -26,13 +36,21 @@ const ItemDetails = ({ item, setItem }) => {
     message: "",
     severity: "success",
   });
+  const [containers, setContainers] = useState([]);
+  const [selectedContainers, setSelectedContainers] = useState([]);
+  const [containerDialogOpen, setContainerDialogOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [existingContainers, setExistingContainers] = useState([]); // List of containers where the item already exists
+
+  const filteredContainers = containers.filter((container) =>
+    container.name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   const setDateString = (date) => {
     const d = dayjs(date);
     const formatedDate = d.format("YYYY-MM-DD").concat("T00:00:00+00:00");
     return formatedDate;
   };
-
 
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -41,7 +59,6 @@ const ItemDetails = ({ item, setItem }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setItem((prev) => ({ ...prev, [name]: value }));
-    console.log("Item updated:", { ...item, [name]: value }); // Log the updated item
   };
 
   const handleDateChange = (date) => {
@@ -93,15 +110,15 @@ const ItemDetails = ({ item, setItem }) => {
     }
   };
 
-  const handleToggleShoppingList = (e) => {
-    const { checked } = e.target;
-    setItem((prev) => ({ ...prev, shoppingList: checked }));
-  };
-
   const handleQuantityChange = (value) => {
     if (value >= 1) {
       setItem((prev) => ({ ...prev, quantity: value }));
     }
+  };
+
+  const handleToggleShoppingList = (e) => {
+    const { checked } = e.target;
+    setItem((prev) => ({ ...prev, shoppingList: checked }));
   };
 
   const handleSave = async () => {
@@ -167,6 +184,78 @@ const ItemDetails = ({ item, setItem }) => {
     }
   };
 
+  const handleSearchForBarcode = () => {
+    setBarcode(item.id);
+    setSnackbar({
+      open: true,
+      message: "searching for barcode...",
+      severity: "info",
+    });
+  };
+
+  const handleGenerateBarcode = () => {
+    const newBarcode = generateRandomId();
+    setItem((prev) => ({ ...prev, id: newBarcode }));
+  };
+
+  const fetchContainers = async () => {
+    try {
+      const response = await getAllContainers(); // Fetch containers from the API
+      setContainers(response || []);
+
+      const existingContainersResponse = await getContainersOfItem(item.id); // Fetch containers where the item already exists
+      setExistingContainers(existingContainersResponse || []); // Set existing containers
+    } catch (error) {
+      console.error("Error fetching containers:", error);
+    }
+  };
+
+  const handleOpenContainerDialog = async () => {
+    await fetchContainers();
+    setSelectedContainers(existingContainers);
+    setContainerDialogOpen(true);
+  };
+
+  const handleCloseContainerDialog = () => {
+    setContainerDialogOpen(false);
+    setSelectedContainers([]);
+  };
+
+  const handleContainerSelect = (containerId) => {
+    setSelectedContainers((prev) =>
+      prev.includes(containerId)
+        ? prev.filter((id) => id !== containerId)
+        : [...prev, containerId]
+    );
+  };
+
+  const handleAddToContainers = async () => {
+    try {
+      const newContainers = selectedContainers.filter(
+        (containerId) => !existingContainers.includes(containerId) // Only include newly added containers
+      );
+
+      for (const containerId of newContainers) {
+        await addItemToContainer(containerId, { itemId: item.id, quantity: 1 });
+      }
+
+      setSnackbar({
+        open: true,
+        message: "Item added to selected containers successfully!",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error adding item to containers:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to add item to containers.",
+        severity: "error",
+      });
+    } finally {
+      handleCloseContainerDialog();
+    }
+  };
+
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
@@ -179,14 +268,31 @@ const ItemDetails = ({ item, setItem }) => {
             gap: 2,
           }}
         >
-          <TextField
-            label="Item ID"
-            name="id"
-            value={item.id || ""}
-            onChange={handleInputChange}
-            fullWidth
-            disabled
-          />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+            <TextField
+              label="Item ID"
+              name="id"
+              value={item.id || ""}
+              onChange={handleInputChange}
+              fullWidth
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSearchForBarcode}
+              sx={{ minWidth: "40px", padding: "8px" }}
+            >
+              <SearchIcon />
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleGenerateBarcode}
+              sx={{ minWidth: "40px", padding: "8px" }}
+            >
+             <EmojiObjectsIcon />
+            </Button>
+          </Box>
 
           <TextField
             label="Item Name"
@@ -205,18 +311,18 @@ const ItemDetails = ({ item, setItem }) => {
           />
 
           <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 1, width: "100%" }}>
-            <IconButton onClick={() => handleQuantityChange((item.quantity || 1) - 1)}>
+            <IconButton onClick={() => handleQuantityChange((item.quantity || 0) - 1)}>
               <RemoveIcon />
             </IconButton>
             <TextField
               type="number"
               label="Quantity"
-              value={item.quantity || 1}
+              value={item.quantity || 0}
               onChange={(e) => handleQuantityChange(Number(e.target.value))}
               inputProps={{ min: 1 }}
               sx={{ width: "80px" }}
             />
-            <IconButton onClick={() => handleQuantityChange((item.quantity || 1) + 1)}>
+            <IconButton onClick={() => handleQuantityChange((item.quantity || 0) + 1)}>
               <AddIcon />
             </IconButton>
           </Box>
@@ -270,6 +376,15 @@ const ItemDetails = ({ item, setItem }) => {
             sx={{ alignSelf: "flex-start" }}
           />
 
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleOpenContainerDialog}
+            sx={{ width: "100%" }}
+          >
+            Add to Containers
+          </Button>
+
           <Box
             sx={{
               display: "flex",
@@ -299,6 +414,53 @@ const ItemDetails = ({ item, setItem }) => {
           </Box>
         </Box>
       </Paper>
+
+      <Dialog open={containerDialogOpen} onClose={handleCloseContainerDialog}>
+        <DialogTitle>Select Containers</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Search Containers"
+            variant="outlined"
+            fullWidth
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            sx={{ marginBottom: 2 }}
+          />
+          <List>
+            {filteredContainers.map((container) => {
+              const isExistingContainer = existingContainers.some(
+                (existingContainer) => existingContainer === container.id
+              );
+              return (
+                <ListItem
+                  key={container.id}
+                  button={!isExistingContainer} // Disable button if the container is already associated with the item
+                  onClick={() => !isExistingContainer && handleContainerSelect(container.id)}
+                >
+                  <Checkbox
+                    checked={selectedContainers.includes(container.id) || isExistingContainer} // Ensure checkbox is checked for existing containers
+                    disabled={isExistingContainer} // Disable checkbox for existing containers
+                    onChange={() => !isExistingContainer && handleContainerSelect(container.id)}
+                  />
+                  <ListItemText
+                    primary={container.name}
+                    secondary={isExistingContainer ? "Already contains this item" : ""}
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseContainerDialog} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleAddToContainers} color="primary">
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

@@ -47,18 +47,20 @@ const getItem = async (id) => {
 
 // find an item in db or online
 const findItem = async (id) => {
-  const item = getItem(id);
+  let item = null;
+  try {
+    item = await getItem(id);
+  } catch (error) {
+    if (!item) {
+      const barcodeResponse = await searchBarcode(id);
 
-  if (!item) {
-    const barcodeResponse = await searchBarcode(id);
+      if (barcodeResponse.data.length > 0) {
+        return barcodeResponse.data[0];
+      }
 
-    if (barcodeResponse.data.length > 0) {
-      return barcodeResponse.data[0];
+      throw new NotFoundError(`No item found with id: ${id}`);
     }
-
-    throw new NotFoundError(`No item found with id: ${id}`);
   }
-
   return item;
 };
 

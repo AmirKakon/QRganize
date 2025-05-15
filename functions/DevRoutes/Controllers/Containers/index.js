@@ -3,14 +3,18 @@ const { authenticate } = require("../Auth");
 const { checkRequiredParams } = require("../../Utilities");
 const { handleError } = require("../../Utilities/error-handler");
 const ContainerService = require("../../Services/Containers");
+const ItemService = require("../../Services/Items");
 
 // Create a container
 dev.post("/api/containers/create", authenticate, async (req, res) => {
   try {
-    checkRequiredParams(["name", "userId"], req.body);
+    checkRequiredParams(["name", "image"], req.body);
+    checkRequiredParams(["uuid"], req.headers);
     const container = await ContainerService.createContainer(
       req.body.name,
-      req.body.userId,
+      req.body.image,
+      req.headers["uuid"],
+      req.body.id ?? null,
     );
 
     return res.status(200).send({
@@ -53,10 +57,11 @@ dev.get("/api/containers/getAll", authenticate, async (req, res) => {
 dev.put("/api/containers/update/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
-    checkRequiredParams(["name", "userId"], req.body);
+    checkRequiredParams(["name", "image", "userId"], req.body);
     const updated = await ContainerService.updateContainer(
       req.params.id,
       req.body.name,
+      req.body.image,
       req.body.userId,
     );
     return updated ?
@@ -176,6 +181,33 @@ dev.put(
   },
 );
 
+// update quantity of items in container
+dev.put(
+  "/api/containers/updateItemQuantitiesBatch/:containerId",
+  authenticate,
+  async (req, res) => {
+    try {
+      checkRequiredParams(["containerId"], req.params);
+      checkRequiredParams(["items"], req.body);
+      const updated = await ContainerService.updateItemQuantitiesBatch(
+        req.params.containerId,
+        req.body.items,
+      );
+      return updated ?
+        res.status(200).send({ status: "Success", msg: "Items Updated" }) :
+        res
+          .status(400)
+          .send({ status: "Failed", msg: "Items failed to update" });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        `Failed to update item quantity in container: ${req.params.containerId}`,
+      );
+    }
+  },
+);
+
 // get all items in a container
 dev.get(
   "/api/containers/getItems/:containerId",
@@ -183,16 +215,51 @@ dev.get(
   async (req, res) => {
     try {
       checkRequiredParams(["containerId"], req.params);
-      const items = await ContainerService.getItemsByContainerId(
+      const list = await ContainerService.getItemsByContainerId(
         req.params.containerId,
       );
 
-      return res.status(200).send({ status: "Success", data: items });
+      const itemIds = list.items.map((item) => item.itemId);
+      const itemList = await ItemService.getBatchOfItems(itemIds);
+
+      const mergedList = list.items.map((item) => {
+        const fullData = itemList.data.find((fullItem) => fullItem.id === item.itemId);
+        return {
+          ...item,
+          ...fullData,
+        };
+      });
+
+      return res.status(200).send({ status: "Success", data: mergedList });
     } catch (error) {
       return handleError(
         res,
         error,
         `Failed to get items in container: ${req.params.containerId}`,
+      );
+    }
+  },
+);
+
+// get all containers that an item is in
+dev.get(
+  "/api/containers/getContainers/:itemId",
+  authenticate,
+  async (req, res) => {
+    try {
+      checkRequiredParams(["itemId"], req.params);
+      const list = await ContainerService.getContainersByItemId(
+        req.params.itemId,
+      );
+
+      const containerIds = list.containers.map((container) => container.containerId);
+
+      return res.status(200).send({ status: "Success", data: containerIds });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        `Failed to get containers for item: ${req.params.itemId}`,
       );
     }
   },

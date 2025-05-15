@@ -15,6 +15,8 @@ import { Link } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import InfoIcon from "@mui/icons-material/Info";
+import QrCodeIcon from '@mui/icons-material/QrCode';
+import WidgetsIcon from '@mui/icons-material/Widgets';
 import { generateRandomId } from "../../utilities/helpers";
 
 const logo =
@@ -95,7 +97,9 @@ const Header = ({ isSmallScreen }) => {
 
   const headerIcons = [
     { title: "Home", link: "/", icon: <HomeIcon /> },
-    { title: "Add Item", link: `/item/${generateRandomId()}`, icon: <PostAddIcon /> },
+    { title: "QrCode", link: "/qrcode", icon: <QrCodeIcon /> },
+    { title: "Add Item", link: `/item`, icon: <PostAddIcon /> },
+    { title: "Add Container", link: `/container/${generateRandomId()}`, icon: <WidgetsIcon /> },
     { title: "About", link: "/about", icon: <InfoIcon /> },
   ];
 

@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import BarcodeScanner from "../../BarcodeScanner";
 
-const BarcodeTab = ({ isSmallScreen }) => {
+const QrCodeTab = ({ isSmallScreen }) => {
 
   return (
     <Box
@@ -24,11 +24,11 @@ const BarcodeTab = ({ isSmallScreen }) => {
           textAlign: "center",
         }}
       >
-        Barcode Scanner
+        QrCode Scanner
       </Typography>
-      <BarcodeScanner isSmallScreen={isSmallScreen} itemType={"item"} />
+      <BarcodeScanner isSmallScreen={isSmallScreen} itemType={"container"} />
     </Box>
   );
 };
 
-export default BarcodeTab;
+export default QrCodeTab;
