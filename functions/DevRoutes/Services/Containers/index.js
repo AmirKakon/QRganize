@@ -210,6 +210,29 @@ const getItemsByContainerId = async (containerId, asSnapshot = false) => {
   return { containerId, items };
 };
 
+// get all containers that an item is in
+const getContainersByItemId = async (itemId, asSnapshot = false) => {
+  const snapshot = await db
+    .collection(containerItemsDB)
+    .where("itemId", "==", itemId)
+    .get();
+
+  if (snapshot.empty) {
+    logger.info(
+      `Get container items | No containers found for item ${itemId}`,
+    );
+    return asSnapshot ? [] : { itemId, containers: [] };
+  }
+
+  if (asSnapshot) {
+    return snapshot;
+  }
+
+  const containers = snapshot.docs.map((doc) => ({ ...doc.data() }));
+
+  return { itemId, containers };
+};
+
 module.exports = {
   createContainer,
   getContainer,
@@ -222,4 +245,5 @@ module.exports = {
   updateItemQuantity,
   updateItemQuantitiesBatch,
   getItemsByContainerId,
+  getContainersByItemId,
 };

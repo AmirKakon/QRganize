@@ -241,4 +241,28 @@ dev.get(
   },
 );
 
+// get all containers that an item is in
+dev.get(
+  "/api/containers/getContainers/:itemId",
+  authenticate,
+  async (req, res) => {
+    try {
+      checkRequiredParams(["itemId"], req.params);
+      const list = await ContainerService.getContainersByItemId(
+        req.params.itemId,
+      );
+
+      const containerIds = list.containers.map((container) => container.containerId);
+
+      return res.status(200).send({ status: "Success", data: containerIds });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        `Failed to get containers for item: ${req.params.itemId}`,
+      );
+    }
+  },
+);
+
 module.exports = { dev };
