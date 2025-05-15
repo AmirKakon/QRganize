@@ -184,3 +184,18 @@ export const updateContainerItemsQuantity = async (containerId, items) => {
   const res = await response.json();
   return res.status === "Success";
 }
+
+export const getContainersOfItem = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/containers/getContainers/${id}`, {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+    },
+  });
+  if (!response.ok) {
+    return [];
+  }
+  const res = await response.json();
+  return res.data;
+}

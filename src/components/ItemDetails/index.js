@@ -22,7 +22,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import IconButton from "@mui/material/IconButton";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { createItem, deleteItem, getAllContainers, addItemToContainer } from "../../utilities/api";
+import { createItem, deleteItem, getAllContainers, addItemToContainer, getContainersOfItem } from "../../utilities/api";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
@@ -39,6 +39,12 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
   const [containers, setContainers] = useState([]);
   const [selectedContainers, setSelectedContainers] = useState([]);
   const [containerDialogOpen, setContainerDialogOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [existingContainers, setExistingContainers] = useState([]); // List of containers where the item already exists
+
+  const filteredContainers = containers.filter((container) =>
+    container.name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   const setDateString = (date) => {
     const d = dayjs(date);
@@ -196,6 +202,9 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
     try {
       const response = await getAllContainers(); // Fetch containers from the API
       setContainers(response || []);
+
+      const existingContainersResponse = await getContainersOfItem(item.id); // Fetch containers where the item already exists
+      setExistingContainers(existingContainersResponse || []); // Set existing containers
     } catch (error) {
       console.error("Error fetching containers:", error);
     }
@@ -203,6 +212,7 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
 
   const handleOpenContainerDialog = async () => {
     await fetchContainers();
+    setSelectedContainers(existingContainers);
     setContainerDialogOpen(true);
   };
 
@@ -403,20 +413,37 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
       <Dialog open={containerDialogOpen} onClose={handleCloseContainerDialog}>
         <DialogTitle>Select Containers</DialogTitle>
         <DialogContent>
+          <TextField
+            label="Search Containers"
+            variant="outlined"
+            fullWidth
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            sx={{ marginBottom: 2 }}
+          />
           <List>
-            {containers.map((container) => (
-              <ListItem
-                key={container.id}
-                button
-                onClick={() => handleContainerSelect(container.id)}
-              >
-                <Checkbox
-                  checked={selectedContainers.includes(container.id)}
-                  onChange={() => handleContainerSelect(container.id)}
-                />
-                <ListItemText primary={container.name} />
-              </ListItem>
-            ))}
+            {filteredContainers.map((container) => {
+              const isExistingContainer = existingContainers.some(
+                (existingContainer) => existingContainer === container.id
+              );
+              return (
+                <ListItem
+                  key={container.id}
+                  button={!isExistingContainer} // Disable button if the container is already associated with the item
+                  onClick={() => !isExistingContainer && handleContainerSelect(container.id)}
+                >
+                  <Checkbox
+                    checked={selectedContainers.includes(container.id) || isExistingContainer} // Ensure checkbox is checked for existing containers
+                    disabled={isExistingContainer} // Disable checkbox for existing containers
+                    onChange={() => !isExistingContainer && handleContainerSelect(container.id)}
+                  />
+                  <ListItemText
+                    primary={container.name}
+                    secondary={isExistingContainer ? "Already contains this item" : ""}
+                  />
+                </ListItem>
+              );
+            })}
           </List>
         </DialogContent>
         <DialogActions>
