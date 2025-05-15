@@ -189,6 +189,8 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
 
   const handleOpenItemDialog = async () => {
     await fetchItems();
+    const existingItemIds = items.map((item) => item.itemId); // Get IDs of items already in the container
+    setSelectedItems(existingItemIds); // Pre-select these items
     setItemDialogOpen(true);
   };
 
@@ -206,18 +208,24 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
 
   const handleAddItemsToContainer = async () => {
     try {
-      for (const itemId of selectedItems) {
-        await addItemToContainer(container.id, itemId); // Add each selected item to the container
+      const newItems = allItems.filter(
+        (item) => selectedItems.includes(item.id) && !items.some((existingItem) => existingItem.itemId === item.id)
+      );
+
+      for (const newItem of newItems) {
+        await addItemToContainer(container.id, { itemId: newItem.id, quantity: 1 });
       }
+
       setSnackbar({
         open: true,
         message: "Items added to the container successfully!",
         severity: "success",
       });
-      // Optionally update the container's items list
+
+      // Update the container's items list with new items
       setItems((prev) => [
         ...prev,
-        ...allItems.filter((item) => selectedItems.includes(item.id)),
+        ...newItems.map((item) => ({ itemId: item.id, name: item.name, image:item.image, quantity: 1 })),
       ]);
     } catch (error) {
       console.error("Error adding items to container:", error);
@@ -333,26 +341,33 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
         <DialogTitle>Select Items</DialogTitle>
         <DialogContent>
           <List>
-            {allItems.map((item) => (
-              <ListItem
-                key={item.id}
-                button
-                onClick={() => handleItemSelect(item.id)}
-              >
-                <Checkbox
-                  checked={selectedItems.includes(item.id)}
-                  onChange={() => handleItemSelect(item.id)}
-                />
-                <ListItemText primary={item.name} />
-              </ListItem>
-            ))}
+            {allItems.map((item) => {
+              const isExistingItem = items.some((existingItem) => existingItem.itemId === item.id);
+              return (
+                <ListItem
+                  key={item.id}
+                  button={!isExistingItem} // Disable button if the item is already in the container
+                  onClick={() => !isExistingItem && handleItemSelect(item.id)}
+                >
+                  <Checkbox
+                    checked={selectedItems.includes(item.id)}
+                    disabled={isExistingItem} // Disable checkbox for existing items
+                    onChange={() => !isExistingItem && handleItemSelect(item.id)}
+                  />
+                  <ListItemText
+                    primary={item.name}
+                    secondary={isExistingItem ? "Already in container" : ""}
+                  />
+                </ListItem>
+              );
+            })}
           </List>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseItemDialog} color="secondary">
             Cancel
           </Button>
-          <Button onClick={handleCloseItemDialog} color="primary">
+          <Button onClick={handleAddItemsToContainer} color="primary">
             Add
           </Button>
         </DialogActions>
