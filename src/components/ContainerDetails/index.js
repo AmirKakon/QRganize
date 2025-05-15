@@ -33,6 +33,7 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
   const [allItems, setAllItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     if (container?.id && !container.image) {
@@ -239,6 +240,10 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
     }
   };
 
+  const filteredItems = allItems.filter((item) =>
+    item.name.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
@@ -340,8 +345,16 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
       <Dialog open={itemDialogOpen} onClose={handleCloseItemDialog}>
         <DialogTitle>Select Items</DialogTitle>
         <DialogContent>
+          <TextField
+            label="Search Items"
+            variant="outlined"
+            fullWidth
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            sx={{ marginBottom: 2 }}
+          />
           <List>
-            {allItems.map((item) => {
+            {filteredItems.map((item) => {
               const isExistingItem = items.some((existingItem) => existingItem.itemId === item.id);
               return (
                 <ListItem
