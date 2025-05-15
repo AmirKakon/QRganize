@@ -71,15 +71,39 @@ const BarcodeScanner = ({ isSmallScreen, itemType }) => {
         const videoElement = videoRef.current;
 
         if (videoElement && selectedCamera) {
+          // Adjust video constraints for iOS compatibility
+          const constraints = {
+            video: {
+              deviceId: { exact: selectedCamera },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              facingMode: "environment",
+            },
+          };
+
+          // Apply constraints to the video stream
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          videoElement.srcObject = stream;
+
+          // Wait for the video element to load the stream before playing
+          videoElement.onloadedmetadata = () => {
+            videoElement.play().catch((err) => {
+              console.error("Error playing video:", err);
+              setMessage("Error starting video playback. Please try again.");
+            });
+          };
+
+          // Start decoding with enhanced error logging
           await codeReader.decodeFromVideoDevice(
             selectedCamera,
             videoElement,
             (result, error) => {
               if (result) {
-                navigator.vibrate(200);
                 navigate(`/${itemType}?id=${result.getText()}`);
                 stopScanning = true;
                 codeReader.reset();
+              } else if (error) {
+                console.error("Decoding error:", error.message); // Log decoding errors
               }
             }
           );
