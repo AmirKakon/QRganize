@@ -175,4 +175,18 @@ dev.post(
   },
 );
 
+const GeminiService = require("../../Services/Items/gemini");
+
+dev.post("/api/items/scanReceipt", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["image"], req.body);
+
+    const items = await GeminiService.scanReceipt(req.body.image);
+
+    return res.status(200).send({ status: "Success", data: items });
+  } catch (error) {
+    handleError(res, error, `Failed to scan receipt`);
+  }
+});
+
 module.exports = { dev };

@@ -32,6 +32,20 @@ export const createItem = async (item) => {
   return res.status === "Success";
 }
 
+export const scanReceipt = async (image) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/scanReceipt`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ image }),
+  });
+  const result = await response.json();
+  return result.data;
+};
+
 export const getAllItems = async () => {
   const response = await fetch(`${apiBaseUrl}/api/items/getAll`, {
     method: "GET",
