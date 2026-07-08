@@ -44,10 +44,14 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
       orange = ≤30d, green = further out) and the formatted date; click an item to open it. Data
       already flows via `getAllItems` (stored per-user in `userItems`), so no backend change needed.
       Components: `components/ExpiringItemsList`, `HomePageTabs/Tabs/expiringTab`.
-- [ ] **🛒 Smarter shopping list** — Currently just a filtered view (`HomePageTabs`). Add:
-      - running total price
-      - check-off-as-bought
-      - auto-suggest items whose container quantity hit 0
+- [~] **🛒 Smarter shopping list** — Dedicated checklist view (`components/ShoppingList`) replacing
+      the old image grid. Done:
+      - [x] running total price ("List total") + "Left to buy" total that excludes checked items
+      - [x] check-off-as-bought (in-session): tap to tick, strikethrough, excluded from remaining
+      - [ ] persist check-off / remove-purchased — needs a backend endpoint to toggle `shoppingList`
+            by id only (the current create/update endpoints require a truthy `image`, so imageless
+            items can't be toggled safely). Requires a functions deploy.
+      - [ ] auto-suggest items whose container quantity hit 0 (needs container-quantity aggregation)
 
 ---
 
