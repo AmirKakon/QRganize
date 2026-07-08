@@ -139,18 +139,18 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
                   icon={item.icon}
                 />
               ))}
+
+              <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+                <IconButton
+                  color="inherit"
+                  onClick={onToggleTheme}
+                  aria-label="toggle light/dark theme"
+                >
+                  {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
+              </Tooltip>
             </>
           )}
-
-          <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
-            <IconButton
-              color="inherit"
-              onClick={onToggleTheme}
-              aria-label="toggle light/dark theme"
-            >
-              {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
-          </Tooltip>
         </Toolbar>
       </AppBar>
 
@@ -166,6 +166,19 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
                 handleDrawerClose={handleDrawerClose}
               />
             ))}
+
+            <ListItem
+              button
+              onClick={() => {
+                onToggleTheme();
+                handleDrawerClose();
+              }}
+            >
+              <IconButton color="inherit">
+                {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+              <ListItemText primary={mode === "dark" ? "Light mode" : "Dark mode"} />
+            </ListItem>
           </List>
         </Drawer>
       )}
