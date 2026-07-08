@@ -71,4 +71,36 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
 
 ---
 
+## 5. AI & MCP Integration
+
+### 5a. MCP Server (expose QRganize to an AI assistant)
+A thin MCP server wrapping the existing REST API, so Claude (or any MCP client) can query and
+manage the inventory conversationally. Tools map ~1:1 to existing endpoints — low effort.
+
+- [ ] **`find_item_location`** — "Where are the spare HDMI cables?" (wraps `getContainersOfItem`)
+- [ ] **`get_container_contents`** — "What's in the garage bin?" (wraps `getItems/:containerId`)
+- [ ] **`search_items` / `list_containers`** — browse inventory
+- [ ] **`get_expiring_soon`** — "What's expiring this week?"
+- [ ] **`get_shopping_list`** — read the current shopping list
+- [ ] **`create_item` / `add_to_container`** — "Add AA batteries to my shopping list"
+- [ ] Decide packaging: standalone Node package in the repo vs. bundled with `functions/`.
+
+### 5b. In-app AI features (LLM inside the app)
+- [ ] **📸 Photo → auto-fill item details** *(highest value)* — Item images are already captured as
+      base64. Send to a vision model to auto-populate name / category / rough price. Removes the
+      most tedious part of adding items.
+- [ ] **🔤 Natural-language search** — "show me all cables in the garage" instead of exact-name filter.
+- [ ] **🏷️ Auto-categorization / tagging** on save.
+- [ ] **🍳 Pantry / usage suggestions** — "what can I make from this bin?"; smart restock lists
+      combining low-stock + expiring-soon.
+
+### 5c. Architecture constraints (decide before building 5b)
+- [ ] **LLM calls go through Firebase Functions, never the React client** — otherwise the Anthropic
+      API key ships in the browser bundle. Add an `/api/ai/*` route that calls the API server-side.
+- [ ] **Cost gating** — the API is currently open; an AI endpoint has real per-call cost exposure.
+      Add auth/rate-limiting on AI routes before going live. (See security notes; can be scoped
+      narrowly to just the AI endpoints.)
+
+---
+
 _Last updated: 2026-07-08_
