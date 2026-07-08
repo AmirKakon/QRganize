@@ -9,22 +9,23 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
 
 ## 1. Quick Wins (low effort, high daily-use payoff)
 
-- [ ] **Confirmation before delete** — Item and container deletes fire immediately on one tap;
+- [x] **Confirmation before delete** — Item and container deletes fire immediately on one tap;
       container delete also cascades to all its item links. Add an "Are you sure?" dialog.
       - Item: `handleDelete` in `src/components/ItemDetails/index.js`
       - Container: `handleDelete` in `src/components/ContainerDetails/index.js`
-- [ ] **Fix empty expiration date showing "today"** — `value={dayjs(item.expirationDate)}` in
+- [x] **Fix empty expiration date showing "today"** — `value={dayjs(item.expirationDate)}` in
       `src/components/ItemDetails/index.js` resolves to *now* when the date is undefined, so every
       dateless item looks like it expires today. Use `item.expirationDate ? dayjs(...) : null` and
       add a "clear date" affordance.
-- [ ] **Empty states** — Item/container lists render blank when empty. Add friendly guidance
+- [x] **Empty states** — Item/container lists render blank when empty. Add friendly guidance
       ("No items yet — scan a barcode to add your first one") with a CTA.
       - `src/components/ItemList/index.js`, `src/components/ContainerList/index.js`
-- [ ] **Scan-miss feedback** — Scanning an unknown barcode silently drops the user into a blank
+- [x] **Scan-miss feedback** — Scanning an unknown barcode silently drops the user into a blank
       item form. Add a toast like "New barcode — let's create it" so it feels intentional.
       - `src/components/BarcodeScanner/index.js`, `src/pages/ItemPage/index.js`
-- [ ] **Enable dark mode** — Already written but commented out in `src/App.js` (lines ~26-37).
-      Re-enable the `prefersDarkMode` toggle (and consider a manual override switch in the header).
+- [x] **Enable dark mode** — Enabled OS-based dark mode (auto via `prefersDarkMode`). Added
+      `CssBaseline`, theme-aware page/footer backgrounds, and fixed the `darkThemeOptions` structure.
+      Follow-up idea: a manual override switch in the header.
 
 ---
 
