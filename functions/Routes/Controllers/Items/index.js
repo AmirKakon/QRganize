@@ -2,6 +2,7 @@ const { app } = require("../../../setup");
 const { handleError } = require("../../Utilities/error-handler");
 const { authenticate } = require("../Auth");
 const { checkRequiredParams } = require("../../Utilities");
+const { MissingArgumentError } = require("../../Contracts/Errors");
 const ItemService = require("../../Services/Items");
 const UsersService = require("../../Services/Users");
 
@@ -134,6 +135,34 @@ app.put("/api/items/update/:id", authenticate, async (req, res) => {
         .send({ status: "Failed", msg: "Item failed to update" });
   } catch (error) {
     handleError(res, error, `Failed to update item: ${req.params.id}`);
+  }
+});
+
+// toggle/set an item's shopping-list flag (id only, no other fields needed)
+app.put("/api/items/shoppingList/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+
+    if (typeof req.body.shoppingList !== "boolean") {
+      throw new MissingArgumentError("Missing boolean parameter: shoppingList");
+    }
+
+    const updated = await ItemService.setShoppingList(
+      req.params.id,
+      req.body.shoppingList,
+    );
+
+    return updated ?
+      res.status(200).send({ status: "Success", msg: "Shopping list updated" }) :
+      res
+        .status(400)
+        .send({ status: "Failed", msg: "Failed to update shopping list" });
+  } catch (error) {
+    return handleError(
+      res,
+      error,
+      `Failed to update shopping list for item: ${req.params.id}`,
+    );
   }
 });
 

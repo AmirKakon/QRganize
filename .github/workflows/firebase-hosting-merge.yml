@@ -32,3 +32,15 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_QRGANIZE_F651B }}'
           channelId: live
           projectId: qrganize-f651b
+
+      # Deploy the Cloud Functions backend (the hosting action above only ships
+      # the frontend). Requires the service account to have Cloud Functions
+      # deploy permissions (see note below).
+      - name: Install functions dependencies
+        run: npm --prefix functions ci
+
+      - name: Deploy Cloud Functions
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_QRGANIZE_F651B }}' > "$HOME/firebase-key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
+          npx firebase-tools deploy --only functions --project qrganize-f651b --non-interactive

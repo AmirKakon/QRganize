@@ -32,6 +32,23 @@ export const createItem = async (item) => {
   return res.status === "Success";
 }
 
+export const setItemShoppingList = async (id, shoppingList) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/shoppingList/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ shoppingList }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+};
+
 export const getAllItems = async () => {
   const response = await fetch(`${apiBaseUrl}/api/items/getAll`, {
     method: "GET",

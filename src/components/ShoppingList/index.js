@@ -7,8 +7,14 @@ import {
   ListItemButton,
   ListItemText,
   Checkbox,
+  Button,
+  CircularProgress,
+  Snackbar,
+  Alert,
   Typography,
 } from "@mui/material";
+import RemoveShoppingCartIcon from "@mui/icons-material/RemoveShoppingCart";
+import { setItemShoppingList } from "../../utilities/api";
 
 const money = (n) => `$${n.toFixed(2)}`;
 
@@ -23,13 +29,41 @@ const qtyOf = (item) => (item.quantity && item.quantity > 0 ? item.quantity : 1)
 const lineTotalOf = (item) => priceOf(item) * qtyOf(item);
 
 // Shopping list with per-item line totals, running totals, and in-cart check-off.
-const ShoppingList = ({ items }) => {
+const ShoppingList = ({ items, onListChanged }) => {
   const [checkedIds, setCheckedIds] = useState([]);
+  const [removing, setRemoving] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const toggle = (id) =>
     setCheckedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+
+  // Persist: take the checked ("bought") items off the shopping list.
+  const handleRemovePurchased = async () => {
+    setRemoving(true);
+    try {
+      for (const id of checkedIds) {
+        await setItemShoppingList(id, false);
+      }
+      setSnackbar({
+        open: true,
+        message: `Removed ${checkedIds.length} item${checkedIds.length === 1 ? "" : "s"} from the list.`,
+        severity: "success",
+      });
+      setCheckedIds([]);
+      onListChanged?.();
+    } catch (error) {
+      console.error("Error removing purchased items:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to update the list. Please try again.",
+        severity: "error",
+      });
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -65,6 +99,20 @@ const ShoppingList = ({ items }) => {
         </Box>
       </Paper>
 
+      {checkedIds.length > 0 && (
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          startIcon={removing ? <CircularProgress size={18} color="inherit" /> : <RemoveShoppingCartIcon />}
+          onClick={handleRemovePurchased}
+          disabled={removing}
+          sx={{ mb: 2 }}
+        >
+          Remove purchased ({checkedIds.length})
+        </Button>
+      )}
+
       <List>
         {items.map((item) => {
           const checked = checkedIds.includes(item.id);
@@ -97,6 +145,21 @@ const ShoppingList = ({ items }) => {
           );
         })}
       </List>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

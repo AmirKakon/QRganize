@@ -48,9 +48,9 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
       the old image grid. Done:
       - [x] running total price ("List total") + "Left to buy" total that excludes checked items
       - [x] check-off-as-bought (in-session): tap to tick, strikethrough, excluded from remaining
-      - [ ] persist check-off / remove-purchased — needs a backend endpoint to toggle `shoppingList`
-            by id only (the current create/update endpoints require a truthy `image`, so imageless
-            items can't be toggled safely). Requires a functions deploy.
+      - [x] persist check-off / remove-purchased — new backend endpoint
+            `PUT /api/items/shoppingList/:id` (id only, accepts a boolean; no image required).
+            "Remove purchased (N)" button calls it per checked item and refreshes the list.
       - [ ] auto-suggest items whose container quantity hit 0 (needs container-quantity aggregation)
 
 ---

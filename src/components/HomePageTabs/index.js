@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
 import { BarcodeTab, ItemsTab, ExpiringTab, ShoppingListTab } from "./Tabs";
 import { getAllItems } from "../../utilities/api";
@@ -11,13 +11,16 @@ const HomePageTabs = ({ isSmallScreen }) => {
     setTabIndex(newValue);
   };
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
-
-    getAllItems()
-      .then((res) => setItems(res))
+  const loadItems = useCallback(() => {
+    return getAllItems()
+      .then((res) => setItems(res || []))
       .catch((error) => console.error("Error fetching data:", error));
   }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    loadItems();
+  }, [loadItems]);
 
   // Define tab configurations
   const tabs = [
@@ -31,7 +34,7 @@ const HomePageTabs = ({ isSmallScreen }) => {
     },
     {
       label: "Shopping List",
-      component: <ShoppingListTab items={items.filter((a) => a.shoppingList ?? false)} />,
+      component: <ShoppingListTab items={items.filter((a) => a.shoppingList ?? false)} onListChanged={loadItems} />,
     },
     {
       label: "Expiring Soon",

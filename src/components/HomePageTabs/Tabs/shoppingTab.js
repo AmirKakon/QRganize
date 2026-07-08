@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import ShoppingList from "../../ShoppingList";
 
-const ShoppingListTab = ({ items }) => {
+const ShoppingListTab = ({ items, onListChanged }) => {
   return (
     <Box
       sx={{
@@ -17,7 +17,7 @@ const ShoppingListTab = ({ items }) => {
       >
         Shopping List
       </Typography>
-      <ShoppingList items={items} />
+      <ShoppingList items={items} onListChanged={onListChanged} />
     </Box>
   );
 };

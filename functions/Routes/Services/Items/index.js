@@ -119,6 +119,17 @@ const updateItem = async (id, name, price, image, shoppingList) => {
   }
 };
 
+// Set only the shopping-list flag of an item (no other fields required)
+const setShoppingList = async (id, shoppingList) => {
+  try {
+    await db.collection(itemsDB).doc(String(id)).update({ shoppingList });
+    return true;
+  } catch (error) {
+    logger.error(`Failed to update shoppingList for item: ${id}`, error);
+    return false;
+  }
+};
+
 // Delete an item
 const deleteItem = async (id) => {
   try {
@@ -164,6 +175,7 @@ module.exports = {
   getAllItems,
   getBatchOfItems,
   updateItem,
+  setShoppingList,
   deleteItem,
   searchBarcode,
 };
