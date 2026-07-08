@@ -7,22 +7,22 @@ import qrganizeLogo from "../../assets/QRganize-logo.png";
 const logo = qrganizeLogo;
 const logo_tongue = qrganizeLogo;
 
-// Define the animation
+// Define the animation — sway left to right so it reads as "loading"
 const sway = keyframes`
   0% {
-    transform: rotate(-20deg);
+    transform: translateX(-40px);
   }
   50% {
-    transform: rotate(20deg);
+    transform: translateX(40px);
   }
   100% {
-    transform: rotate(-20deg);
+    transform: translateX(-40px);
   }
 `;
 
 // Create a styled img component with the animation
 const SwayingImage = styled.img`
-  animation: ${sway} 2s ease-in-out infinite;
+  animation: ${sway} 1.5s ease-in-out infinite;
 `;
 
 const Loading = () => {
