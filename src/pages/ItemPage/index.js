@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Box, Snackbar, Alert } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
-import { searchForBarcode } from "../../utilities/api";
+import { searchForBarcode, getContainersOfItem, getAllContainers } from "../../utilities/api";
 import Loading from "../../components/Loading";
 import ItemDetails from "../../components/ItemDetails";
 
@@ -11,6 +11,32 @@ const ItemPage = ({ isSmallScreen }) => {
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState({});
   const [notFound, setNotFound] = useState(false);
+  const [itemContainers, setItemContainers] = useState([]); // Containers this item is in
+
+  // Resolve which containers hold this item (by barcode id), with their names
+  const loadItemContainers = useCallback(async () => {
+    if (!id) {
+      setItemContainers([]);
+      return;
+    }
+    try {
+      const [containerIds, allContainers] = await Promise.all([
+        getContainersOfItem(id),
+        getAllContainers(),
+      ]);
+      const nameById = new Map((allContainers || []).map((c) => [c.id, c.name]));
+      setItemContainers(
+        (containerIds || []).map((cid) => ({ id: cid, name: nameById.get(cid) || cid }))
+      );
+    } catch (error) {
+      console.error("Error fetching item containers:", error);
+      setItemContainers([]);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadItemContainers();
+  }, [loadItemContainers]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -54,7 +80,13 @@ const ItemPage = ({ isSmallScreen }) => {
     >
       <h2 style={{ textAlign: "center" }}>Item Details</h2>
 
-      <ItemDetails item={item} setItem={setItem} setBarcode={setId} />
+      <ItemDetails
+        item={item}
+        setItem={setItem}
+        setBarcode={setId}
+        itemContainers={itemContainers}
+        onContainersChanged={loadItemContainers}
+      />
 
       <Snackbar
         open={notFound}

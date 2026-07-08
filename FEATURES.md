@@ -31,10 +31,9 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
 
 ## 2. Standout Features (biggest jump in usefulness)
 
-- [ ] **🔎 "Where is this?" reverse lookup** *(recommended starting point)* — Show which containers
-      hold an item on the item page. The API already exists (`getContainersOfItem` in
-      `src/utilities/api.js`) but isn't surfaced. Turns the app from an inventory list into a real
-      find-my-stuff tool.
+- [x] **🔎 "Where is this?" reverse lookup** — The item page now shows which containers hold the
+      item as clickable chips (names resolved via `getAllContainers`, navigate to the container on
+      click). Fetched in `ItemPage` keyed on the barcode id; refreshes after "Add to Containers".
 - [ ] **🏷️ Batch label printing** — A printable sheet laying out multiple QR/barcodes at once.
       Today codes download one PNG at a time; labeling many boxes is painful. Killer feature for the
       physical-organizing use case.

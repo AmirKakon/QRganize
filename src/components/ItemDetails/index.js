@@ -14,10 +14,13 @@ import {
   DialogContent,
   DialogActions,
   Checkbox,
+  Chip,
+  Typography,
   List,
   ListItem,
   ListItemText,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import IconButton from "@mui/material/IconButton";
@@ -29,7 +32,8 @@ import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
 import dayjs from "dayjs";
 import JsBarcode from "jsbarcode"; // Import JsBarcode library
 
-const ItemDetails = ({ item, setItem, setBarcode }) => {
+const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContainersChanged }) => {
+  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -251,6 +255,9 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
         message: "Item added to selected containers successfully!",
         severity: "success",
       });
+
+      // Refresh the "in containers" list so the change is reflected immediately
+      onContainersChanged?.();
     } catch (error) {
       console.error("Error adding item to containers:", error);
       setSnackbar({
@@ -418,6 +425,29 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
             label="Add to Shopping List"
             sx={{ alignSelf: "flex-start" }}
           />
+
+          {item.id && (
+            <Box sx={{ width: "100%" }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                {itemContainers.length > 0
+                  ? "This item is in:"
+                  : "Not in any container yet."}
+              </Typography>
+              {itemContainers.length > 0 && (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {itemContainers.map((container) => (
+                    <Chip
+                      key={container.id}
+                      label={container.name}
+                      onClick={() => navigate(`/container/${container.id}`)}
+                      clickable
+                      color="secondary"
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          )}
 
           <Button
             variant="contained"
