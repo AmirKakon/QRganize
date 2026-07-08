@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   Box,
   TextField,
+  Typography,
   useMediaQuery,
   ImageList,
   ImageListItem,
@@ -24,6 +25,14 @@ const ItemList = ({ items, isSmallScreen }) => {
   const handleItemClick = (item) => {
     navigate(`/item?id=${item.id}`);
   };
+
+  const emptyState = (
+    <Typography sx={{ mt: 4, color: "text.secondary", textAlign: "center" }}>
+      {items.length === 0
+        ? "No items yet — scan a barcode to add your first one."
+        : "No items match your search."}
+    </Typography>
+  );
 
   return (
     <>
@@ -60,6 +69,7 @@ const ItemList = ({ items, isSmallScreen }) => {
             overflowY: "auto", // Added to make the list scrollable
           }}
         >
+          {filteredItems.length === 0 ? emptyState : (
           <ImageList
             cols={isMediumScreen ? 2 : isLargeScreen ? 3 : 4}
             gap={16}
@@ -88,6 +98,7 @@ const ItemList = ({ items, isSmallScreen }) => {
               </ImageListItem>
             ))}
           </ImageList>
+          )}
         </Box>
       )}
 
@@ -104,6 +115,7 @@ const ItemList = ({ items, isSmallScreen }) => {
             overflowY: "auto", // Added to make the list scrollable
           }}
         >
+          {filteredItems.length === 0 ? emptyState : (
           <ImageList
             cols={2}
             gap={5}
@@ -132,6 +144,7 @@ const ItemList = ({ items, isSmallScreen }) => {
               </ImageListItem>
             ))}
           </ImageList>
+          )}
         </Box>
       )}
     </>

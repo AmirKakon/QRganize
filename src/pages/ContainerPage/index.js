@@ -35,7 +35,7 @@ const ContainerPage = ({ isSmallScreen }) => {
       flex={1}
       spacing={1}
       sx={{
-        backgroundColor: "#e2e2e2",
+        backgroundColor: "background.default",
         padding: 2,
       }}
     >

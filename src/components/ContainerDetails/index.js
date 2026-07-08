@@ -33,6 +33,7 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
   const [allItems, setAllItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
@@ -151,6 +152,7 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
   };
 
   const handleDelete = async () => {
+    setConfirmDeleteOpen(false);
     setDeleting(true);
     try {
       const response = await deleteContainer(container.id);
@@ -398,7 +400,7 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
             <Button
               variant="contained"
               color="error"
-              onClick={handleDelete}
+              onClick={() => setConfirmDeleteOpen(true)}
               disabled={deleting || !container.name}
               sx={{ flex: 1 }}
             >
@@ -407,6 +409,23 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
           </Box>
         </Box>
       </Paper>
+
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
+        <DialogTitle>Delete this container?</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete{" "}
+          <strong>{container.name || "this container"}</strong>? This will also
+          remove all item associations inside it. This action cannot be undone.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={itemDialogOpen} onClose={handleCloseItemDialog}>
         <DialogTitle>Select Items</DialogTitle>

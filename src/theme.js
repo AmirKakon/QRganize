@@ -32,8 +32,18 @@ export const darkThemeOptions = {
     secondary: {
       main: "#9cbda6",
     },
-    typography: {
-      fontFamily: "Calibri",
+    background: {
+      default: "#121212",
+      paper: "#1e1e1e",
+    },
+    text: {
+      disabled: "#6e6e6e",
+      secondary: "#9cbda6",
+      primary: "#ffffff",
     },
   },
+  typography: {
+    fontFamily: "Calibri",
+  },
+  divider: "#ec2424",
 };

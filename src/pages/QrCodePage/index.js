@@ -15,7 +15,7 @@ const QrCode = ({ isSmallScreen }) => {
   return loading ? (
     <Loading />
   ) : (
-    <Box flex={1} spacing={1} sx={{ backgroundColor: "#e2e2e2", padding: 2 }}>
+    <Box flex={1} spacing={1} sx={{ backgroundColor: "background.default", padding: 2 }}>
       <QrCodeTabs isSmallScreen={isSmallScreen} />
       <AccessTokenExpiration />
     </Box>

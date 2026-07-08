@@ -98,7 +98,7 @@ const Footer = ({ isSmallScreen }) => {
 
   return (
     <footer>
-      <Box sx={{ bgcolor: "#eeeeee", padding: "10px 0" }}>
+      <Box sx={{ bgcolor: "background.paper", padding: "10px 0" }}>
         <Grid
           container
           direction={"row"}

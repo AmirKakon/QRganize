@@ -40,6 +40,7 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
   const [containers, setContainers] = useState([]);
   const [selectedContainers, setSelectedContainers] = useState([]);
   const [containerDialogOpen, setContainerDialogOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [existingContainers, setExistingContainers] = useState([]); // List of containers where the item already exists
 
@@ -63,6 +64,10 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
   };
 
   const handleDateChange = (date) => {
+    if (!date) {
+      setItem((prev) => ({ ...prev, expirationDate: null }));
+      return;
+    }
     const formattedDate = setDateString(date);
     setItem((prev) => ({ ...prev, expirationDate: formattedDate }));
   }
@@ -157,6 +162,7 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
   };
 
   const handleDelete = async () => {
+    setConfirmDeleteOpen(false);
     setDeleting(true);
     try {
       const response = await deleteItem(item.id);
@@ -366,11 +372,12 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
           <DatePicker
             label="Expiration Date"
             name="expirationDate"
-            value={dayjs(item.expirationDate) || null}
+            value={item.expirationDate ? dayjs(item.expirationDate) : null}
             onChange={handleDateChange}
             disablePast
+            slotProps={{ field: { clearable: true } }}
             sx={{ width: "100%" }}
-          /> 
+          />
 
           <label htmlFor="imageUpload">
             {item.image ? (
@@ -450,7 +457,7 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
             <Button
               variant="contained"
               color="error"
-              onClick={handleDelete}
+              onClick={() => setConfirmDeleteOpen(true)}
               disabled={deleting || !item.name || !item.price}
               sx={{ flex: 1 }}
             >
@@ -459,6 +466,23 @@ const ItemDetails = ({ item, setItem, setBarcode }) => {
           </Box>
         </Box>
       </Paper>
+
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
+        <DialogTitle>Delete this item?</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete{" "}
+          <strong>{item.name || "this item"}</strong>? This will also remove it
+          from any containers it&apos;s in. This action cannot be undone.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={containerDialogOpen} onClose={handleCloseContainerDialog}>
         <DialogTitle>Select Containers</DialogTitle>

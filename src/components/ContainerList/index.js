@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   Box,
   TextField,
+  Typography,
   useMediaQuery,
   ImageList,
   ImageListItem,
@@ -23,6 +24,14 @@ const ContainerList = ({ containers, isSmallScreen }) => {
 
   const filteredContainers = containers.filter((container) =>
     container.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const emptyState = (
+    <Typography sx={{ mt: 4, color: "text.secondary", textAlign: "center" }}>
+      {containers.length === 0
+        ? "No containers yet — add one from the menu to get started."
+        : "No containers match your search."}
+    </Typography>
   );
 
   return (
@@ -60,6 +69,7 @@ const ContainerList = ({ containers, isSmallScreen }) => {
             overflowY: "auto",
           }}
         >
+          {filteredContainers.length === 0 ? emptyState : (
           <ImageList
             cols={isMediumScreen ? 2 : isLargeScreen ? 3 : 4}
             gap={16}
@@ -87,6 +97,7 @@ const ContainerList = ({ containers, isSmallScreen }) => {
               </ImageListItem>
             ))}
           </ImageList>
+          )}
         </Box>
       )}
 
@@ -103,6 +114,7 @@ const ContainerList = ({ containers, isSmallScreen }) => {
             overflowY: "auto",
           }}
         >
+          {filteredContainers.length === 0 ? emptyState : (
           <ImageList
             cols={2}
             gap={5}
@@ -130,6 +142,7 @@ const ContainerList = ({ containers, isSmallScreen }) => {
               </ImageListItem>
             ))}
           </ImageList>
+          )}
         </Box>
       )}
     </>
