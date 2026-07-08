@@ -7,10 +7,16 @@ const { checkRequiredParams } = require("../../Utilities");
 
 const baseDB = "refresh-tokens";
 
-const jwtKey = functions.config().serviceaccount_privateid_jwt.key;
-const jwtKeyExpire = functions.config().serviceaccount_privateid_jwt.expire;
-const jwtRefresh = functions.config().serviceaccount_clientid_jwt.refresh;
-const jwtRefreshExpire = functions.config().serviceaccount_clientid_jwt.expire;
+// Read config defensively so loading this module never throws when the runtime
+// config is absent (e.g. during CI deploy source-analysis, which has no
+// .runtimeconfig.json). At runtime in production these values are populated.
+const config = functions.config();
+const privateIdJwt = config.serviceaccount_privateid_jwt || {};
+const clientIdJwt = config.serviceaccount_clientid_jwt || {};
+const jwtKey = privateIdJwt.key;
+const jwtKeyExpire = privateIdJwt.expire;
+const jwtRefresh = clientIdJwt.refresh;
+const jwtRefreshExpire = clientIdJwt.expire;
 
 const authenticate = async (req, res, next) => {
   try {

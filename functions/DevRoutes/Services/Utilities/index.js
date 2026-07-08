@@ -5,11 +5,18 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const ApifyClient = require("apify-client").ApifyClient;
 
-const apifyToken = functions.config().apify_api.token;
-const apifyGoogleSearchActor = functions.config().apify_googlesearch.actor;
+// Read config defensively so this module loads even when the runtime config is
+// absent (e.g. CI deploy source-analysis). Values are populated at runtime.
+const runtimeConfig = functions.config();
+const apifyApi = runtimeConfig.apify_api || {};
+const apifyGoogleSearch = runtimeConfig.apify_googlesearch || {};
+const googleCustomSearch = runtimeConfig.google_customsearch || {};
 
-const googleCustomSearchId = functions.config().google_customsearch.id;
-const googleCustomSearchKey = functions.config().google_customsearch.key;
+const apifyToken = apifyApi.token;
+const apifyGoogleSearchActor = apifyGoogleSearch.actor;
+
+const googleCustomSearchId = googleCustomSearch.id;
+const googleCustomSearchKey = googleCustomSearch.key;
 
 const searchBarcodeApify = async (barcode) => {
   // Initialize the ApifyClient with API token
