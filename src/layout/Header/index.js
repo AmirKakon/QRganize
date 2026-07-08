@@ -21,11 +21,10 @@ import PrintIcon from '@mui/icons-material/Print';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { generateRandomId } from "../../utilities/helpers";
+import qrganizeLogo from "../../assets/QRganize-logo.png";
 
-const logo =
-  "https://firebasestorage.googleapis.com/v0/b/amir-portfolio-9fe8a.appspot.com/o/assets%2Famir-icon.png?alt=media&token=076c331b-7332-4ff6-b299-78e2d71a52ad";
-const tongueLogo =
-  "https://firebasestorage.googleapis.com/v0/b/amir-portfolio-9fe8a.appspot.com/o/assets%2Famir-tongue-icon.png?alt=media&token=d44e04e1-ec1a-416c-84c4-0e917e4046ae";
+const logo = qrganizeLogo;
+const tongueLogo = qrganizeLogo;
 
 const HeaderLogo = ({ isSmallScreen }) => {
   const [isHovered, setHovered] = useState(false);

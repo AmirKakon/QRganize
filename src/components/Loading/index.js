@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
-const logo =
-  "https://firebasestorage.googleapis.com/v0/b/amir-portfolio-9fe8a.appspot.com/o/assets%2Famir-icon.png?alt=media&token=076c331b-7332-4ff6-b299-78e2d71a52ad";
-const logo_tongue =
-  "https://firebasestorage.googleapis.com/v0/b/amir-portfolio-9fe8a.appspot.com/o/assets%2Famir-tongue-icon.png?alt=media&token=d44e04e1-ec1a-416c-84c4-0e917e4046ae";
+import qrganizeLogo from "../../assets/QRganize-logo.png";
+
+const logo = qrganizeLogo;
+const logo_tongue = qrganizeLogo;
 
 // Define the animation
 const sway = keyframes`
