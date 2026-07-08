@@ -39,8 +39,11 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
       Containers (QR) and Items (barcode), search + multi-select with select-all/clear, live preview
       grid, and a Print button. Print CSS (`@media print`) shows only the label sheet and keeps
       labels from splitting across pages. Components: `pages/PrintLabelsPage`, `components/Label`.
-- [ ] **⏰ Expiration dashboard** — We already capture `expirationDate` but never use it. Add an
-      "expiring soon" view or a badge on the home tabs. Great for pantry/medicine/food bins.
+- [x] **⏰ Expiration dashboard** — New "Expiring Soon" tab on the home page. Lists items that have
+      an `expirationDate`, sorted soonest-first, with a color-coded status chip (red = expired/≤7d,
+      orange = ≤30d, green = further out) and the formatted date; click an item to open it. Data
+      already flows via `getAllItems` (stored per-user in `userItems`), so no backend change needed.
+      Components: `components/ExpiringItemsList`, `HomePageTabs/Tabs/expiringTab`.
 - [ ] **🛒 Smarter shopping list** — Currently just a filtered view (`HomePageTabs`). Add:
       - running total price
       - check-off-as-bought

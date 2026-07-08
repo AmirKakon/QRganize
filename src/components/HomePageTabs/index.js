@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
-import { BarcodeTab, ItemsTab } from "./Tabs";
+import { BarcodeTab, ItemsTab, ExpiringTab } from "./Tabs";
 import { getAllItems } from "../../utilities/api";
 
 const HomePageTabs = ({ isSmallScreen }) => {
@@ -33,11 +33,21 @@ const HomePageTabs = ({ isSmallScreen }) => {
       label: "Shopping List",
       component: <ItemsTab isSmallScreen={isSmallScreen} items={items.filter((a) => a.shoppingList ?? false)} />,
     },
+    {
+      label: "Expiring Soon",
+      component: <ExpiringTab items={items} />,
+    },
   ];
 
   return (
     <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
-      <Tabs value={tabIndex} onChange={handleTabChange} centered>
+      <Tabs
+        value={tabIndex}
+        onChange={handleTabChange}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+      >
         {tabs.map((tab, index) => (
           <Tab key={index} label={tab.label} />
         ))}
