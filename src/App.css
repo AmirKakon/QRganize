@@ -36,3 +36,31 @@
     transform: rotate(360deg);
   }
 }
+
+/* Batch label printing: print only the label sheet, hide app chrome */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .label-sheet,
+  .label-sheet * {
+    visibility: visible;
+  }
+
+  .label-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .label {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

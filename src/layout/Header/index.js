@@ -17,6 +17,7 @@ import PostAddIcon from '@mui/icons-material/PostAdd';
 import InfoIcon from "@mui/icons-material/Info";
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import WidgetsIcon from '@mui/icons-material/Widgets';
+import PrintIcon from '@mui/icons-material/Print';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { generateRandomId } from "../../utilities/helpers";
@@ -102,6 +103,7 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
     { title: "QrCode", link: "/qrcode", icon: <QrCodeIcon /> },
     { title: "Add Item", link: `/item`, icon: <PostAddIcon /> },
     { title: "Add Container", link: `/container/${generateRandomId()}`, icon: <WidgetsIcon /> },
+    { title: "Print Labels", link: "/labels", icon: <PrintIcon /> },
     { title: "About", link: "/about", icon: <InfoIcon /> },
   ];
 

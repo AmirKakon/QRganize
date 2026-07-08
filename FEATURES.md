@@ -35,9 +35,10 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
 - [x] **🔎 "Where is this?" reverse lookup** — The item page now shows which containers hold the
       item as clickable chips (names resolved via `getAllContainers`, navigate to the container on
       click). Fetched in `ItemPage` keyed on the barcode id; refreshes after "Add to Containers".
-- [ ] **🏷️ Batch label printing** — A printable sheet laying out multiple QR/barcodes at once.
-      Today codes download one PNG at a time; labeling many boxes is painful. Killer feature for the
-      physical-organizing use case.
+- [x] **🏷️ Batch label printing** — New `/labels` page (linked in the header). Toggle between
+      Containers (QR) and Items (barcode), search + multi-select with select-all/clear, live preview
+      grid, and a Print button. Print CSS (`@media print`) shows only the label sheet and keeps
+      labels from splitting across pages. Components: `pages/PrintLabelsPage`, `components/Label`.
 - [ ] **⏰ Expiration dashboard** — We already capture `expirationDate` but never use it. Add an
       "expiring soon" view or a badge on the home tabs. Great for pantry/medicine/food bins.
 - [ ] **🛒 Smarter shopping list** — Currently just a filtered view (`HomePageTabs`). Add:
