@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import ReactGA from "react-ga4";
 import { lightThemeOptions, darkThemeOptions } from "./theme";
@@ -22,17 +22,32 @@ import Loading from "./components/Loading";
 const App = () => {
   const isSmallScreen = useMediaQuery("(max-width: 600px)");
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const [theme, setTheme] = useState(
-    createTheme(prefersDarkMode ? darkThemeOptions : lightThemeOptions)
+  // Manual override wins if the user has picked one; otherwise follow the OS.
+  const [mode, setMode] = useState(
+    () => localStorage.getItem("themeMode") || (prefersDarkMode ? "dark" : "light")
   );
   const [accessToken, setAccessToken] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const theme = useMemo(
+    () => createTheme(mode === "dark" ? darkThemeOptions : lightThemeOptions),
+    [mode]
+  );
+
+  const toggleThemeMode = () => {
+    setMode((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      localStorage.setItem("themeMode", next);
+      return next;
+    });
+  };
+
+  // Follow OS changes only while the user hasn't set a manual preference.
   useEffect(() => {
-    setTheme(
-      createTheme(prefersDarkMode ? darkThemeOptions : lightThemeOptions)
-    );
+    if (!localStorage.getItem("themeMode")) {
+      setMode(prefersDarkMode ? "dark" : "light");
+    }
   }, [prefersDarkMode]);
 
   useEffect(() => {
@@ -81,7 +96,7 @@ const App = () => {
       <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Header isSmallScreen={isSmallScreen} />
+        <Header isSmallScreen={isSmallScreen} mode={mode} onToggleTheme={toggleThemeMode} />
         <Box display="flex" flexDirection="column" minHeight="100vh">
           {loading ? (
             <Loading />

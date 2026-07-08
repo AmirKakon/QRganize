@@ -17,6 +17,8 @@ import PostAddIcon from '@mui/icons-material/PostAdd';
 import InfoIcon from "@mui/icons-material/Info";
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import WidgetsIcon from '@mui/icons-material/Widgets';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { generateRandomId } from "../../utilities/helpers";
 
 const logo =
@@ -84,7 +86,7 @@ const SmallScreenIcon = ({ title, link, icon, handleDrawerClose }) => {
   );
 };
 
-const Header = ({ isSmallScreen }) => {
+const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
   const [isDrawerOpen, setDrawerOpen] = useState(false);
 
   const handleDrawerOpen = () => {
@@ -137,6 +139,16 @@ const Header = ({ isSmallScreen }) => {
               ))}
             </>
           )}
+
+          <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+            <IconButton
+              color="inherit"
+              onClick={onToggleTheme}
+              aria-label="toggle light/dark theme"
+            >
+              {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 

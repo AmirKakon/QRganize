@@ -25,7 +25,8 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
       - `src/components/BarcodeScanner/index.js`, `src/pages/ItemPage/index.js`
 - [x] **Enable dark mode** — Enabled OS-based dark mode (auto via `prefersDarkMode`). Added
       `CssBaseline`, theme-aware page/footer backgrounds, and fixed the `darkThemeOptions` structure.
-      Follow-up idea: a manual override switch in the header.
+      Added a manual sun/moon toggle in the header (persists to `localStorage`, overrides the OS
+      setting; falls back to following the OS until the user picks one).
 
 ---
 
