@@ -44,11 +44,15 @@ export const parseReceipt = async (image) => {
     },
     body: JSON.stringify({ image }),
   });
-  if (response.status === 429) {
-    throw new Error("Daily scan limit reached. Please try again tomorrow.");
-  }
   if (!response.ok) {
-    throw new Error(`Error: ${response.status}`);
+    let message = `Error: ${response.status}`;
+    try {
+      const body = await response.json();
+      if (body?.msg) message = body.msg;
+    } catch (e) {
+      // response had no JSON body; keep the status-based message
+    }
+    throw new Error(message);
   }
   const res = await response.json();
   return res.data?.items ?? [];

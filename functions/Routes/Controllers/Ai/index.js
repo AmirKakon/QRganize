@@ -1,7 +1,7 @@
-const { app } = require("../../../setup");
+const { app, logger } = require("../../../setup");
 const { authenticate } = require("../Auth");
 const { checkRequiredParams } = require("../../Utilities");
-const { handleError } = require("../../Utilities/error-handler");
+const { MissingArgumentError } = require("../../Contracts/Errors");
 const AiService = require("../../Services/Ai");
 
 // Parse a receipt photo into line items via Gemini vision.
@@ -22,7 +22,12 @@ app.post("/api/ai/parseReceipt", authenticate, async (req, res) => {
 
     return res.status(200).send({ status: "Success", data: result });
   } catch (error) {
-    return handleError(res, error, "Failed to parse receipt");
+    logger.error("Failed to parse receipt", error);
+    const status = error instanceof MissingArgumentError ? 400 : 500;
+    return res.status(status).send({
+      status: "Failed",
+      msg: error.message || "Failed to parse receipt",
+    });
   }
 });
 
