@@ -15,6 +15,7 @@ import {
   Checkbox,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
 } from "@mui/material";
 import { createContainer, deleteContainer, updateContainerItemsQuantity, getAllItems, addItemToContainer } from "../../utilities/api";
@@ -442,20 +443,24 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
             {filteredItems.map((item) => {
               const isExistingItem = items.some((existingItem) => existingItem.itemId === item.id);
               return (
-                <ListItem
-                  key={item.id}
-                  button={!isExistingItem} // Disable button if the item is already in the container
-                  onClick={() => !isExistingItem && handleItemSelect(item.id)}
-                >
-                  <Checkbox
-                    checked={selectedItems.includes(item.id)}
-                    disabled={isExistingItem} // Disable checkbox for existing items
-                    onChange={() => !isExistingItem && handleItemSelect(item.id)}
-                  />
-                  <ListItemText
-                    primary={item.name}
-                    secondary={isExistingItem ? "Already in container" : ""}
-                  />
+                <ListItem key={item.id} disablePadding>
+                  <ListItemButton
+                    onClick={() => !isExistingItem && handleItemSelect(item.id)}
+                    disabled={isExistingItem}
+                    dense
+                  >
+                    <Checkbox
+                      edge="start"
+                      checked={selectedItems.includes(item.id) || isExistingItem}
+                      disabled={isExistingItem}
+                      tabIndex={-1}
+                      disableRipple
+                    />
+                    <ListItemText
+                      primary={item.name}
+                      secondary={isExistingItem ? "Already in container" : ""}
+                    />
+                  </ListItemButton>
                 </ListItem>
               );
             })}
@@ -465,7 +470,7 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
           <Button onClick={handleCloseItemDialog} color="secondary">
             Cancel
           </Button>
-          <Button onClick={handleAddItemsToContainer} color="primary">
+          <Button onClick={handleAddItemsToContainer} color="primary" variant="contained">
             Add
           </Button>
         </DialogActions>

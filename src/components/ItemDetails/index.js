@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -18,6 +18,7 @@ import {
   Typography,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -51,6 +52,15 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
   const filteredContainers = containers.filter((container) =>
     container.name.toLowerCase().includes(searchText.toLowerCase())
   );
+
+  // Default a new item's quantity to 1; existing items keep their stored value.
+  useEffect(() => {
+    if (item.quantity == null) {
+      setItem((prev) =>
+        prev.quantity == null ? { ...prev, quantity: 1 } : prev
+      );
+    }
+  }, [item.quantity, setItem]);
 
   const setDateString = (date) => {
     const d = dayjs(date);
@@ -136,7 +146,9 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
     try {
       const updatedItem = {
         ...item,
+        quantity: item.quantity || 1,
         shoppingList: item.shoppingList || false,
+        expirationDate: item.expirationDate ?? null,
       };
 
       const response = await createItem(updatedItem);
@@ -214,16 +226,19 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
       const response = await getAllContainers(); // Fetch containers from the API
       setContainers(response || []);
 
-      const existingContainersResponse = await getContainersOfItem(item.id); // Fetch containers where the item already exists
-      setExistingContainers(existingContainersResponse || []); // Set existing containers
+      const existingContainersResponse =
+        (await getContainersOfItem(item.id)) || []; // Containers the item is already in
+      setExistingContainers(existingContainersResponse);
+      return existingContainersResponse;
     } catch (error) {
       console.error("Error fetching containers:", error);
+      return [];
     }
   };
 
   const handleOpenContainerDialog = async () => {
-    await fetchContainers();
-    setSelectedContainers(existingContainers);
+    const existing = await fetchContainers();
+    setSelectedContainers(existing);
     setContainerDialogOpen(true);
   };
 
@@ -241,18 +256,41 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
   };
 
   const handleAddToContainers = async () => {
+    if (!item.name || !item.price) {
+      setSnackbar({
+        open: true,
+        message: "Add a name and price before saving to a container.",
+        severity: "warning",
+      });
+      return;
+    }
     try {
+      // Persist the item first so we never link a container to an item that
+      // doesn't exist yet (previously an unsaved item created a phantom entry).
+      const savedId = await createItem({
+        ...item,
+        quantity: item.quantity || 1,
+        shoppingList: item.shoppingList || false,
+        expirationDate: item.expirationDate ?? null,
+      });
+      if (typeof savedId !== "string") {
+        throw new Error("Failed to save item");
+      }
+      if (savedId !== item.id) {
+        setItem((prev) => ({ ...prev, id: savedId }));
+      }
+
       const newContainers = selectedContainers.filter(
-        (containerId) => !existingContainers.includes(containerId) // Only include newly added containers
+        (containerId) => !existingContainers.includes(containerId) // Only newly added ones
       );
 
       for (const containerId of newContainers) {
-        await addItemToContainer(containerId, { itemId: item.id, quantity: 1 });
+        await addItemToContainer(containerId, { itemId: savedId, quantity: 1 });
       }
 
       setSnackbar({
         open: true,
-        message: "Item added to selected containers successfully!",
+        message: "Item saved and added to the selected containers!",
         severity: "success",
       });
 
@@ -386,7 +424,7 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
             sx={{ width: "100%" }}
           />
 
-          <label htmlFor="imageUpload">
+          <label htmlFor="imageUpload" style={{ cursor: "pointer" }}>
             {item.image ? (
               <img
                 src={getImageSrc(item.image)}
@@ -394,7 +432,7 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
                 style={{ width: 300, borderRadius: 8 }}
               />
             ) : (
-              <p>No image available</p>
+              <p>Tap to upload a photo</p>
             )}
             <input
               id="imageUpload"
@@ -404,15 +442,27 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
               style={{ display: "none" }}
             />
           </label>
-          <Button color="secondary" variant="contained" component="label">
-            Upload / Take Picture
-            <input
-              hidden
-              accept="image/*"
-              type="file"
-              onChange={handleImageChange}
-            />
-          </Button>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button color="secondary" variant="contained" component="label">
+              Take Photo
+              <input
+                hidden
+                accept="image/*"
+                capture="environment"
+                type="file"
+                onChange={handleImageChange}
+              />
+            </Button>
+            <Button color="secondary" variant="outlined" component="label">
+              Upload
+              <input
+                hidden
+                accept="image/*"
+                type="file"
+                onChange={handleImageChange}
+              />
+            </Button>
+          </Box>
 
           <FormControlLabel
             control={
@@ -453,6 +503,7 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
             variant="contained"
             color="primary"
             onClick={handleOpenContainerDialog}
+            disabled={!item.name || !item.price}
             sx={{ width: "100%" }}
           >
             Add to Containers
@@ -530,21 +581,31 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
               const isExistingContainer = existingContainers.some(
                 (existingContainer) => existingContainer === container.id
               );
+              const checked =
+                selectedContainers.includes(container.id) || isExistingContainer;
               return (
-                <ListItem
-                  key={container.id}
-                  button={!isExistingContainer} // Disable button if the container is already associated with the item
-                  onClick={() => !isExistingContainer && handleContainerSelect(container.id)}
-                >
-                  <Checkbox
-                    checked={selectedContainers.includes(container.id) || isExistingContainer} // Ensure checkbox is checked for existing containers
-                    disabled={isExistingContainer} // Disable checkbox for existing containers
-                    onChange={() => !isExistingContainer && handleContainerSelect(container.id)}
-                  />
-                  <ListItemText
-                    primary={container.name}
-                    secondary={isExistingContainer ? "Already contains this item" : ""}
-                  />
+                <ListItem key={container.id} disablePadding>
+                  <ListItemButton
+                    onClick={() =>
+                      !isExistingContainer && handleContainerSelect(container.id)
+                    }
+                    disabled={isExistingContainer}
+                    dense
+                  >
+                    <Checkbox
+                      edge="start"
+                      checked={checked}
+                      disabled={isExistingContainer}
+                      tabIndex={-1}
+                      disableRipple
+                    />
+                    <ListItemText
+                      primary={container.name}
+                      secondary={
+                        isExistingContainer ? "Already contains this item" : ""
+                      }
+                    />
+                  </ListItemButton>
                 </ListItem>
               );
             })}
@@ -554,7 +615,7 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
           <Button onClick={handleCloseContainerDialog} color="secondary">
             Cancel
           </Button>
-          <Button onClick={handleAddToContainers} color="primary">
+          <Button onClick={handleAddToContainers} color="primary" variant="contained">
             Add
           </Button>
         </DialogActions>
