@@ -32,6 +32,9 @@ const lineTotalOf = (item) => priceOf(item) * qtyOf(item);
 const ShoppingList = ({ items, onListChanged }) => {
   const [checkedIds, setCheckedIds] = useState([]);
   const [removing, setRemoving] = useState(false);
+  // Items removed locally but not yet gone from the (slow) refetch — hide them
+  // immediately so there's no window where a purchased item lingers un-crossed.
+  const [hiddenIds, setHiddenIds] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const toggle = (id) =>
@@ -41,18 +44,23 @@ const ShoppingList = ({ items, onListChanged }) => {
 
   // Persist: take the checked ("bought") items off the shopping list.
   const handleRemovePurchased = async () => {
+    const ids = [...checkedIds];
     setRemoving(true);
     try {
-      for (const id of checkedIds) {
+      for (const id of ids) {
         await setItemShoppingList(id, false);
       }
+      // Optimistically drop them from the view right away, then reconcile once
+      // the refetch returns.
+      setHiddenIds((prev) => [...prev, ...ids]);
+      setCheckedIds([]);
       setSnackbar({
         open: true,
-        message: `Removed ${checkedIds.length} item${checkedIds.length === 1 ? "" : "s"} from the list.`,
+        message: `Removed ${ids.length} item${ids.length === 1 ? "" : "s"} from the list.`,
         severity: "success",
       });
-      setCheckedIds([]);
-      onListChanged?.();
+      await onListChanged?.();
+      setHiddenIds([]);
     } catch (error) {
       console.error("Error removing purchased items:", error);
       setSnackbar({
@@ -65,7 +73,9 @@ const ShoppingList = ({ items, onListChanged }) => {
     }
   };
 
-  if (items.length === 0) {
+  const visibleItems = items.filter((item) => !hiddenIds.includes(item.id));
+
+  if (visibleItems.length === 0) {
     return (
       <Typography sx={{ mt: 4, color: "text.secondary", textAlign: "center" }}>
         Your shopping list is empty. Turn on &ldquo;Add to Shopping List&rdquo;
@@ -74,8 +84,8 @@ const ShoppingList = ({ items, onListChanged }) => {
     );
   }
 
-  const total = items.reduce((sum, item) => sum + lineTotalOf(item), 0);
-  const remaining = items
+  const total = visibleItems.reduce((sum, item) => sum + lineTotalOf(item), 0);
+  const remaining = visibleItems
     .filter((item) => !checkedIds.includes(item.id))
     .reduce((sum, item) => sum + lineTotalOf(item), 0);
 
@@ -114,7 +124,7 @@ const ShoppingList = ({ items, onListChanged }) => {
       )}
 
       <List>
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const checked = checkedIds.includes(item.id);
           return (
             <ListItem
