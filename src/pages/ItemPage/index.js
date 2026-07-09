@@ -1,60 +1,38 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Box, Snackbar, Alert } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
-import { searchForBarcode, getContainersOfItem, getAllContainers } from "../../utilities/api";
+import { searchForBarcode, getLotsByItem, getAllContainers } from "../../utilities/api";
 import Loading from "../../components/Loading";
 import ItemDetails from "../../components/ItemDetails";
 
 const ItemPage = ({ isSmallScreen }) => {
   const [searchParams] = useSearchParams();
-  const [id, setId] = useState(searchParams.get("id")); // Get 'id' from query parameters
+  const [id, setId] = useState(searchParams.get("id")); // barcode from query params
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState({});
   const [notFound, setNotFound] = useState(false);
-  const [itemContainers, setItemContainers] = useState([]); // Containers this item is in
-
-  // Resolve which containers hold this item (by barcode id), with their names
-  const loadItemContainers = useCallback(async () => {
-    if (!id) {
-      setItemContainers([]);
-      return;
-    }
-    try {
-      const [containerIds, allContainers] = await Promise.all([
-        getContainersOfItem(id),
-        getAllContainers(),
-      ]);
-      const nameById = new Map((allContainers || []).map((c) => [c.id, c.name]));
-      setItemContainers(
-        (containerIds || []).map((cid) => ({ id: cid, name: nameById.get(cid) || cid }))
-      );
-    } catch (error) {
-      console.error("Error fetching item containers:", error);
-      setItemContainers([]);
-    }
-  }, [id]);
+  const [lots, setLots] = useState([]);
+  const [containers, setContainers] = useState([]);
 
   useEffect(() => {
-    loadItemContainers();
-  }, [loadItemContainers]);
+    getAllContainers()
+      .then((res) => setContainers(res || []))
+      .catch((error) => console.error("Error fetching containers:", error));
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
-
-    console.log("triggeredBarcode", id); // Log the barcode id
     setLoading(true);
     setNotFound(false);
     if (!id) {
-      setLoading(false); // Stop loading if no id is provided
+      setLoading(false);
       return;
     }
-
     searchForBarcode(id)
       .then((res) => {
         if (res) {
           setItem(res);
         } else {
-          // Barcode scanned but no matching item — start a new one
           setItem({ id: id });
           setNotFound(true);
         }
@@ -66,6 +44,22 @@ const ItemPage = ({ isSmallScreen }) => {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Load the item's stock (lots), keyed on the current item id so it refreshes
+  // after a brand-new item is saved and gets an id.
+  const loadLots = useCallback(() => {
+    if (!item.id) {
+      setLots([]);
+      return Promise.resolve();
+    }
+    return getLotsByItem(item.id)
+      .then((res) => setLots(res || []))
+      .catch((error) => console.error("Error fetching lots:", error));
+  }, [item.id]);
+
+  useEffect(() => {
+    loadLots();
+  }, [loadLots]);
 
   return loading ? (
     <Loading />
@@ -84,8 +78,9 @@ const ItemPage = ({ isSmallScreen }) => {
         item={item}
         setItem={setItem}
         setBarcode={setId}
-        itemContainers={itemContainers}
-        onContainersChanged={loadItemContainers}
+        lots={lots}
+        containers={containers}
+        onLotsChanged={loadLots}
       />
 
       <Snackbar

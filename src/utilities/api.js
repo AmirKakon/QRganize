@@ -75,6 +75,85 @@ export const setItemShoppingList = async (id, shoppingList) => {
   return res.status === "Success";
 };
 
+// ---- Lots (stock batches) ----
+
+export const getLotsByItem = async (itemId) => {
+  const response = await fetch(`${apiBaseUrl}/api/lots/byItem/${itemId}`, {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+    },
+  });
+  if (!response.ok) {
+    return [];
+  }
+  const res = await response.json();
+  return res.data ?? [];
+};
+
+export const addLot = async (lot) => {
+  const response = await fetch(`${apiBaseUrl}/api/lots/add`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(lot),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  return (await response.json()).data;
+};
+
+export const updateLot = async (id, fields) => {
+  const response = await fetch(`${apiBaseUrl}/api/lots/update/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(fields),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  return (await response.json()).data;
+};
+
+export const consumeLot = async (id, amount = 1) => {
+  const response = await fetch(`${apiBaseUrl}/api/lots/use/${id}`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ amount }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  return (await response.json()).data;
+};
+
+export const deleteLot = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/lots/delete/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+};
+
 export const getAllItems = async () => {
   const response = await fetch(`${apiBaseUrl}/api/items/getAll`, {
     method: "GET",

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Paper,
@@ -13,78 +13,30 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Checkbox,
-  Chip,
-  Typography,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
-import IconButton from "@mui/material/IconButton";
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { createItem, deleteItem, getAllContainers, addItemToContainer, getContainersOfItem } from "../../utilities/api";
+import { createItem, deleteItem } from "../../utilities/api";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
-import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
-import dayjs from "dayjs";
-import JsBarcode from "jsbarcode"; // Import JsBarcode library
+import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
+import JsBarcode from "jsbarcode";
+import StockList from "../StockList";
 
-const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContainersChanged }) => {
-  const navigate = useNavigate();
+const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], onLotsChanged }) => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
-  const [containers, setContainers] = useState([]);
-  const [selectedContainers, setSelectedContainers] = useState([]);
-  const [containerDialogOpen, setContainerDialogOpen] = useState(false);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [existingContainers, setExistingContainers] = useState([]); // List of containers where the item already exists
 
-  const filteredContainers = containers.filter((container) =>
-    container.name.toLowerCase().includes(searchText.toLowerCase())
-  );
-
-  // Default a new item's quantity to 1; existing items keep their stored value.
-  useEffect(() => {
-    if (item.quantity == null) {
-      setItem((prev) =>
-        prev.quantity == null ? { ...prev, quantity: 1 } : prev
-      );
-    }
-  }, [item.quantity, setItem]);
-
-  const setDateString = (date) => {
-    const d = dayjs(date);
-    const formatedDate = d.format("YYYY-MM-DD").concat("T00:00:00+00:00");
-    return formatedDate;
-  };
-
-  const handleSnackbarClose = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+  const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setItem((prev) => ({ ...prev, [name]: value }));
   };
-
-  const handleDateChange = (date) => {
-    if (!date) {
-      setItem((prev) => ({ ...prev, expirationDate: null }));
-      return;
-    }
-    const formattedDate = setDateString(date);
-    setItem((prev) => ({ ...prev, expirationDate: formattedDate }));
-  }
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -93,85 +45,54 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
       reader.onloadend = () => {
         const img = new Image();
         img.src = reader.result;
-
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          const maxWidth = 800; // Set a maximum width for the image
-          const maxHeight = 800; // Set a maximum height for the image
-
+          const maxWidth = 800;
+          const maxHeight = 800;
           let width = img.width;
           let height = img.height;
-
-          // Resize the image while maintaining aspect ratio
           if (width > height) {
             if (width > maxWidth) {
               height = Math.round((height * maxWidth) / width);
               width = maxWidth;
             }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
+          } else if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
           }
-
           canvas.width = width;
           canvas.height = height;
-
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Convert the resized image to Base64
-          const resizedImage = canvas.toDataURL("image/jpeg", 0.8); // Adjust quality (0.8 = 80%)
-          setItem((prev) => ({ ...prev, image: resizedImage }));
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          setItem((prev) => ({ ...prev, image: canvas.toDataURL("image/jpeg", 0.8) }));
         };
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleQuantityChange = (value) => {
-    if (value >= 1) {
-      setItem((prev) => ({ ...prev, quantity: value }));
-    }
-  };
-
-  const handleToggleShoppingList = (e) => {
-    const { checked } = e.target;
-    setItem((prev) => ({ ...prev, shoppingList: checked }));
-  };
+  const handleToggleShoppingList = (e) =>
+    setItem((prev) => ({ ...prev, shoppingList: e.target.checked }));
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const updatedItem = {
+      const savedId = await createItem({
         ...item,
-        quantity: item.quantity || 1,
+        quantity: 1, // stock is tracked as lots now; this keeps the endpoint happy
         shoppingList: item.shoppingList || false,
-        expirationDate: item.expirationDate ?? null,
-      };
-
-      const response = await createItem(updatedItem);
-      if (response) {
-        setSnackbar({
-          open: true,
-          message: "Item details updated successfully!",
-          severity: "success",
-        });
+        expirationDate: null,
+      });
+      if (savedId) {
+        if (typeof savedId === "string" && savedId !== item.id) {
+          setItem((prev) => ({ ...prev, id: savedId }));
+        }
+        setSnackbar({ open: true, message: "Item saved.", severity: "success" });
       } else {
-        setSnackbar({
-          open: true,
-          message: "Failed to save item details.",
-          severity: "error",
-        });
+        setSnackbar({ open: true, message: "Failed to save item.", severity: "error" });
       }
     } catch (error) {
       console.error("Error saving item details:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to save item details.",
-        severity: "error",
-      });
+      setSnackbar({ open: true, message: "Failed to save item.", severity: "error" });
     } finally {
       setSaving(false);
     }
@@ -182,26 +103,14 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
     setDeleting(true);
     try {
       const response = await deleteItem(item.id);
-      if (response) {
-        setSnackbar({
-          open: true,
-          message: "Item deleted successfully!",
-          severity: "success",
-        });
-      } else {
-        setSnackbar({
-          open: true,
-          message: "Failed to delete item.",
-          severity: "error",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting item:", error);
       setSnackbar({
         open: true,
-        message: "Failed to delete item.",
-        severity: "error",
+        message: response ? "Item deleted." : "Failed to delete item.",
+        severity: response ? "success" : "error",
       });
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      setSnackbar({ open: true, message: "Failed to delete item.", severity: "error" });
     } finally {
       setDeleting(false);
     }
@@ -209,323 +118,84 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
 
   const handleSearchForBarcode = () => {
     setBarcode(item.id);
-    setSnackbar({
-      open: true,
-      message: "searching for barcode...",
-      severity: "info",
-    });
+    setSnackbar({ open: true, message: "searching for barcode...", severity: "info" });
   };
 
-  const handleGenerateBarcode = () => {
-    const newBarcode = generateRandomId();
-    setItem((prev) => ({ ...prev, id: newBarcode }));
-  };
+  const handleGenerateBarcode = () =>
+    setItem((prev) => ({ ...prev, id: generateRandomId() }));
 
-  const fetchContainers = async () => {
-    try {
-      const response = await getAllContainers(); // Fetch containers from the API
-      setContainers(response || []);
-
-      const existingContainersResponse =
-        (await getContainersOfItem(item.id)) || []; // Containers the item is already in
-      setExistingContainers(existingContainersResponse);
-      return existingContainersResponse;
-    } catch (error) {
-      console.error("Error fetching containers:", error);
-      return [];
-    }
-  };
-
-  const handleOpenContainerDialog = async () => {
-    const existing = await fetchContainers();
-    setSelectedContainers(existing);
-    setContainerDialogOpen(true);
-  };
-
-  const handleCloseContainerDialog = () => {
-    setContainerDialogOpen(false);
-    setSelectedContainers([]);
-  };
-
-  const handleContainerSelect = (containerId) => {
-    setSelectedContainers((prev) =>
-      prev.includes(containerId)
-        ? prev.filter((id) => id !== containerId)
-        : [...prev, containerId]
-    );
-  };
-
-  const handleAddToContainers = async () => {
-    if (!item.name || !item.price) {
-      setSnackbar({
-        open: true,
-        message: "Add a name and price before saving to a container.",
-        severity: "warning",
-      });
+  const handleDownloadBarcode = () => {
+    if (!item?.id) {
+      setSnackbar({ open: true, message: "Item ID is not available.", severity: "error" });
       return;
     }
     try {
-      // Persist the item first so we never link a container to an item that
-      // doesn't exist yet (previously an unsaved item created a phantom entry).
-      const savedId = await createItem({
-        ...item,
-        quantity: item.quantity || 1,
-        shoppingList: item.shoppingList || false,
-        expirationDate: item.expirationDate ?? null,
-      });
-      if (typeof savedId !== "string") {
-        throw new Error("Failed to save item");
-      }
-      if (savedId !== item.id) {
-        setItem((prev) => ({ ...prev, id: savedId }));
-      }
-
-      const newContainers = selectedContainers.filter(
-        (containerId) => !existingContainers.includes(containerId) // Only newly added ones
-      );
-
-      for (const containerId of newContainers) {
-        await addItemToContainer(containerId, { itemId: savedId, quantity: 1 });
-      }
-
-      setSnackbar({
-        open: true,
-        message: "Item saved and added to the selected containers!",
-        severity: "success",
-      });
-
-      // Refresh the "in containers" list so the change is reflected immediately
-      onContainersChanged?.();
-    } catch (error) {
-      console.error("Error adding item to containers:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to add item to containers.",
-        severity: "error",
-      });
-    } finally {
-      handleCloseContainerDialog();
-    }
-  };
-
-  const handleDownloadBarcode = () => {
-    if (item?.id) {
       const canvas = document.createElement("canvas");
-
-      try {
-        // Generate the barcode
-        JsBarcode(canvas, item.id, {
-          format: "CODE128",
-          width: 2,
-          height: 100,
-          displayValue: true,
-        });
-
-        // Trigger download
-        const link = document.createElement("a");
-        link.href = canvas.toDataURL("image/png");
-        link.download = `${item.id}_Barcode.png`;
-        link.click();
-      } catch (error) {
-        console.error("Error generating barcode:", error);
-        setSnackbar({
-          open: true,
-          message: "Failed to generate barcode.",
-          severity: "error",
-        });
-      }
-    } else {
-      setSnackbar({
-        open: true,
-        message: "Item ID is not available.",
-        severity: "error",
-      });
+      JsBarcode(canvas, item.id, { format: "CODE128", width: 2, height: 100, displayValue: true });
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = `${item.id}_Barcode.png`;
+      link.click();
+    } catch (error) {
+      console.error("Error generating barcode:", error);
+      setSnackbar({ open: true, message: "Failed to generate barcode.", severity: "error" });
     }
   };
 
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 2,
-            gap: 2,
-          }}
-        >
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 2, gap: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
-            <TextField
-              label="Item ID"
-              name="id"
-              value={item.id || ""}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSearchForBarcode}
-              sx={{ minWidth: "40px", padding: "8px" }}
-            >
+            <TextField label="Item ID" name="id" value={item.id || ""} onChange={handleInputChange} fullWidth />
+            <Button variant="contained" color="primary" onClick={handleSearchForBarcode} sx={{ minWidth: "40px", padding: "8px" }}>
               <SearchIcon />
             </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleGenerateBarcode}
-              sx={{ minWidth: "40px", padding: "8px" }}
-            >
-             <EmojiObjectsIcon />
+            <Button variant="contained" color="secondary" onClick={handleGenerateBarcode} sx={{ minWidth: "40px", padding: "8px" }}>
+              <EmojiObjectsIcon />
             </Button>
           </Box>
 
-          <TextField
-            label="Item Name"
-            name="name"
-            value={item.name || ""}
-            onChange={handleInputChange}
-            fullWidth
-          />
-
-          <TextField
-            label="Item Price"
-            name="price"
-            value={item.price || ""}
-            onChange={handleInputChange}
-            fullWidth
-          />
-
-          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 1, width: "100%" }}>
-            <IconButton onClick={() => handleQuantityChange((item.quantity || 0) - 1)}>
-              <RemoveIcon />
-            </IconButton>
-            <TextField
-              type="number"
-              label="Quantity"
-              value={item.quantity || 0}
-              onChange={(e) => handleQuantityChange(Number(e.target.value))}
-              inputProps={{ min: 1 }}
-              sx={{ width: "80px" }}
-            />
-            <IconButton onClick={() => handleQuantityChange((item.quantity || 0) + 1)}>
-              <AddIcon />
-            </IconButton>
-          </Box>
-
-          <DatePicker
-            label="Expiration Date"
-            name="expirationDate"
-            value={item.expirationDate ? dayjs(item.expirationDate) : null}
-            onChange={handleDateChange}
-            disablePast
-            slotProps={{ field: { clearable: true } }}
-            sx={{ width: "100%" }}
-          />
+          <TextField label="Item Name" name="name" value={item.name || ""} onChange={handleInputChange} fullWidth />
+          <TextField label="Item Price" name="price" value={item.price || ""} onChange={handleInputChange} fullWidth />
 
           <label htmlFor="imageUpload" style={{ cursor: "pointer" }}>
             {item.image ? (
-              <img
-                src={getImageSrc(item.image)}
-                alt="Item"
-                style={{ width: 300, borderRadius: 8 }}
-              />
+              <img src={getImageSrc(item.image)} alt="Item" style={{ width: 300, borderRadius: 8 }} />
             ) : (
               <p>Tap to upload a photo</p>
             )}
-            <input
-              id="imageUpload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              style={{ display: "none" }}
-            />
+            <input id="imageUpload" type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
           </label>
           <Box sx={{ display: "flex", gap: 2 }}>
             <Button color="secondary" variant="contained" component="label">
               Take Photo
-              <input
-                hidden
-                accept="image/*"
-                capture="environment"
-                type="file"
-                onChange={handleImageChange}
-              />
+              <input hidden accept="image/*" capture="environment" type="file" onChange={handleImageChange} />
             </Button>
             <Button color="secondary" variant="outlined" component="label">
               Upload
-              <input
-                hidden
-                accept="image/*"
-                type="file"
-                onChange={handleImageChange}
-              />
+              <input hidden accept="image/*" type="file" onChange={handleImageChange} />
             </Button>
           </Box>
 
           <FormControlLabel
-            control={
-              <Switch
-                checked={item.shoppingList || false}
-                onChange={handleToggleShoppingList}
-                color="primary"
-              />
-            }
+            control={<Switch checked={item.shoppingList || false} onChange={handleToggleShoppingList} color="primary" />}
             label="Add to Shopping List"
             sx={{ alignSelf: "flex-start" }}
           />
 
-          {item.id && (
-            <Box sx={{ width: "100%" }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                {itemContainers.length > 0
-                  ? "This item is in:"
-                  : "Not in any container yet."}
-              </Typography>
-              {itemContainers.length > 0 && (
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {itemContainers.map((container) => (
-                    <Chip
-                      key={container.id}
-                      label={container.name}
-                      onClick={() => navigate(`/container/${container.id}`)}
-                      clickable
-                      color="secondary"
-                    />
-                  ))}
-                </Box>
-              )}
-            </Box>
-          )}
+          <StockList
+            itemId={item.id}
+            lots={lots}
+            containers={containers}
+            onChanged={onLotsChanged}
+          />
 
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleOpenContainerDialog}
-            disabled={!item.name || !item.price}
-            sx={{ width: "100%" }}
-          >
-            Add to Containers
-          </Button>
-
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleDownloadBarcode}
-            sx={{ width: "100%" }}
-          >
+          <Button variant="contained" color="primary" onClick={handleDownloadBarcode} sx={{ width: "100%" }}>
             Download Barcode
           </Button>
 
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              width: "100%",
-              gap: 2,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 2 }}>
             <Button
               variant="contained"
               color="primary"
@@ -552,8 +222,8 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
         <DialogTitle>Delete this item?</DialogTitle>
         <DialogContent>
           Are you sure you want to delete{" "}
-          <strong>{item.name || "this item"}</strong>? This will also remove it
-          from any containers it&apos;s in. This action cannot be undone.
+          <strong>{item.name || "this item"}</strong>? This also removes its stock. This action
+          cannot be undone.
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmDeleteOpen(false)} color="secondary">
@@ -565,73 +235,13 @@ const ItemDetails = ({ item, setItem, setBarcode, itemContainers = [], onContain
         </DialogActions>
       </Dialog>
 
-      <Dialog open={containerDialogOpen} onClose={handleCloseContainerDialog}>
-        <DialogTitle>Select Containers</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Search Containers"
-            variant="outlined"
-            fullWidth
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            sx={{ marginBottom: 2 }}
-          />
-          <List>
-            {filteredContainers.map((container) => {
-              const isExistingContainer = existingContainers.some(
-                (existingContainer) => existingContainer === container.id
-              );
-              const checked =
-                selectedContainers.includes(container.id) || isExistingContainer;
-              return (
-                <ListItem key={container.id} disablePadding>
-                  <ListItemButton
-                    onClick={() =>
-                      !isExistingContainer && handleContainerSelect(container.id)
-                    }
-                    disabled={isExistingContainer}
-                    dense
-                  >
-                    <Checkbox
-                      edge="start"
-                      checked={checked}
-                      disabled={isExistingContainer}
-                      tabIndex={-1}
-                      disableRipple
-                    />
-                    <ListItemText
-                      primary={container.name}
-                      secondary={
-                        isExistingContainer ? "Already contains this item" : ""
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseContainerDialog} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleAddToContainers} color="primary" variant="contained">
-            Add
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

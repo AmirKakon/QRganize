@@ -140,7 +140,11 @@ Phases:
 - [x] **1. Backend lots** — `lots` collection + service/controller (`add`, `update`, `use`, `delete`,
       `byItem`, `byContainer`, `migrate`). Additive; `containerItems`/`userItems` untouched so the
       current UI keeps working. `POST /api/lots/migrate` seeds lots from containerItems (idempotent).
-- [ ] **2. Item-page stock list** — batches table with add / use (FEFO + per-lot) / toss / move.
+- [x] **2. Item-page stock list** — `components/StockList`: "In stock" total, Add stock (container +
+      qty + date, merges by container+date), Use one (FEFO), per-batch Use / Edit (move/qty/date) /
+      Toss. `getItems` now derives quantity + earliest expiry from lots (falls back to legacy fields
+      until an item has lots). `createItem` no longer requires quantity. Needs functions deploy +
+      one-time `POST /api/lots/migrate`.
 - [ ] **3. Container + Expiring views on lots**; shopping-list totals from lots.
 - [ ] **4. Receipt scanner + MCP** read/write lots.
 - [ ] **5. Cutover** — `getItems` derives quantity/expiries from lots; retire `userItems` qty/expiry

@@ -5,11 +5,12 @@ const { checkRequiredParams } = require("../../Utilities");
 const { MissingArgumentError } = require("../../Contracts/Errors");
 const ItemService = require("../../Services/Items");
 const UsersService = require("../../Services/Users");
+const LotService = require("../../Services/Lots");
 
 // create an item
 app.post("/api/items/create", authenticate, async (req, res) => {
   try {
-    checkRequiredParams(["name", "price", "quantity"], req.body);
+    checkRequiredParams(["name", "price"], req.body);
 
     const item = await ItemService.createItem(
       req.body.name,
@@ -20,7 +21,14 @@ app.post("/api/items/create", authenticate, async (req, res) => {
     );
 
     const userId = req.headers["uuid"];
-    await UsersService.addItemToUser(userId, item.itemId, req.body.quantity, req.body.expirationDate);
+    // quantity/expiration are legacy per-user fields; real stock is tracked as
+    // lots. Default them so the record is valid during the transition.
+    await UsersService.addItemToUser(
+      userId,
+      item.itemId,
+      req.body.quantity ?? 1,
+      req.body.expirationDate ?? null,
+    );
 
     return res
       .status(200)
@@ -80,12 +88,37 @@ app.get("/api/items/getAll", authenticate, async (req, res) => {
     const userId = req.headers["uuid"];
     const userItems = await UsersService.getItemsByUserId(userId);
 
+    // Group lots by item so quantity/expiry can be derived from batches.
+    const allLots = await LotService.getAllLots();
+    const lotsByItem = {};
+    for (const lot of allLots) {
+      (lotsByItem[lot.itemId] = lotsByItem[lot.itemId] || []).push(lot);
+    }
+
     const itemsWithUserData = result.items.map((item) => {
       const userItem = userItems.items.find((userItem) => userItem.itemId === item.id);
+      const lots = lotsByItem[item.id] || [];
+      // Prefer lot-derived stock; fall back to the legacy fields when an item
+      // has no lots yet (pre-migration / not-yet-restocked), so nothing regresses.
+      let quantity = 0;
+      if (lots.length) {
+        quantity = lots.reduce((sum, lot) => sum + (lot.quantity || 0), 0);
+      } else if (userItem) {
+        quantity = userItem.quantity;
+      }
+
+      const lotDates = lots
+        .map((lot) => lot.expirationDate)
+        .filter(Boolean)
+        .sort();
+      const expirationDate =
+        lotDates[0] || (userItem ? userItem.expirationDate : null);
+
       return {
         ...item,
-        quantity: userItem ? userItem.quantity : 0,
-        expirationDate: userItem ? userItem.expirationDate : null,
+        quantity,
+        expirationDate,
+        lots,
       };
     });
 
