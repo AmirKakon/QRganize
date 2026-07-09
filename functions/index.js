@@ -6,6 +6,7 @@ require("./Routes/Controllers/Containers");
 require("./Routes/Controllers/Items");
 require("./Routes/Controllers/Users");
 require("./Routes/Controllers/Ai");
+require("./Routes/Controllers/Lots");
 
 // require("./Routes/CopyFromDev");
 

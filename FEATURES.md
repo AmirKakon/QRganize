@@ -125,4 +125,27 @@ Tools:
 
 ---
 
-_Last updated: 2026-07-08_
+## 6. Lot / Batch Inventory Model (in progress)
+
+Replace the single per-item quantity + single expiration date with **lots** (batches). A lot is
+`{ itemId, containerId | null, quantity, expirationDate | null }`; an item is the sum of its lots.
+This lets the same item live in several containers with different amounts **and** carry several
+expiration dates (e.g. two milk bottles in the fridge expiring on different days = two lots).
+
+Decisions locked: expiry **tied to location** (a lot has both), **global** scope, migrate
+`containerItems` amounts as-is (drop the old single total, re-enter expiries), **FEFO** default for
+"use one", **Used vs Toss** are separate actions, **merge** lots by (container + date).
+
+Phases:
+- [x] **1. Backend lots** — `lots` collection + service/controller (`add`, `update`, `use`, `delete`,
+      `byItem`, `byContainer`, `migrate`). Additive; `containerItems`/`userItems` untouched so the
+      current UI keeps working. `POST /api/lots/migrate` seeds lots from containerItems (idempotent).
+- [ ] **2. Item-page stock list** — batches table with add / use (FEFO + per-lot) / toss / move.
+- [ ] **3. Container + Expiring views on lots**; shopping-list totals from lots.
+- [ ] **4. Receipt scanner + MCP** read/write lots.
+- [ ] **5. Cutover** — `getItems` derives quantity/expiries from lots; retire `userItems` qty/expiry
+      and `containerItems`.
+
+---
+
+_Last updated: 2026-07-09_
