@@ -5,6 +5,7 @@ require("./Routes/Controllers/Auth");
 require("./Routes/Controllers/Containers");
 require("./Routes/Controllers/Items");
 require("./Routes/Controllers/Users");
+require("./Routes/Controllers/Ai");
 
 // require("./Routes/CopyFromDev");
 

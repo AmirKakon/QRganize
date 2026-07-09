@@ -95,6 +95,15 @@ manage the inventory conversationally. Tools map ~1:1 to existing endpoints — 
 - [ ] Decide packaging: standalone Node package in the repo vs. bundled with `functions/`.
 
 ### 5b. In-app AI features (LLM inside the app)
+- [x] **🧾 Receipt scanner** — New `/scan-receipt` page (header link). Take/upload a receipt photo →
+      backend `POST /api/ai/parseReceipt` sends it to **Google Gemini** vision (`gemini-2.0-flash`
+      by default, configurable) with a structured-output `responseSchema` → returns `{name, price,
+      quantity}` line items. Review screen lets you edit each row, flags matches against existing
+      items (so no duplicates), and optionally files everything into a chosen container. Uses
+      `axios` (no new SDK). Provider chosen for its free tier — swap via config. Components:
+      `functions/Routes/{Services,Controllers}/Ai`, `pages/ScanReceiptPage`.
+      - Prereq: `firebase functions:config:set gemini.key="..."` (free key from Google AI Studio).
+      - Note: `createItem` now allows a null `image` (receipt items have no photo).
 - [ ] **📸 Photo → auto-fill item details** *(highest value)* — Item images are already captured as
       base64. Send to a vision model to auto-populate name / category / rough price. Removes the
       most tedious part of adding items.
@@ -104,11 +113,11 @@ manage the inventory conversationally. Tools map ~1:1 to existing endpoints — 
       combining low-stock + expiring-soon.
 
 ### 5c. Architecture constraints (decide before building 5b)
-- [ ] **LLM calls go through Firebase Functions, never the React client** — otherwise the Anthropic
-      API key ships in the browser bundle. Add an `/api/ai/*` route that calls the API server-side.
-- [ ] **Cost gating** — the API is currently open; an AI endpoint has real per-call cost exposure.
-      Add auth/rate-limiting on AI routes before going live. (See security notes; can be scoped
-      narrowly to just the AI endpoints.)
+- [x] **LLM calls go through Firebase Functions, never the React client** — the receipt scanner's
+      `/api/ai/parseReceipt` route calls Gemini server-side; the API key lives in functions config.
+- [x] **Cost gating** — the receipt endpoint enforces a per-uuid daily call cap (25/day) via a
+      Firestore `aiUsage` counter, returning 429 when exceeded. (The API is still otherwise open —
+      broader auth/rate-limiting remains a separate hardening task.)
 
 ---
 

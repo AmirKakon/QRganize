@@ -9,12 +9,12 @@ const UsersService = require("../../Services/Users");
 // create an item
 app.post("/api/items/create", authenticate, async (req, res) => {
   try {
-    checkRequiredParams(["name", "price", "image", "quantity"], req.body);
+    checkRequiredParams(["name", "price", "quantity"], req.body);
 
     const item = await ItemService.createItem(
       req.body.name,
       req.body.price,
-      req.body.image,
+      req.body.image ?? null,
       req.body.shoppingList ?? false,
       req.body.id ?? null,
     );

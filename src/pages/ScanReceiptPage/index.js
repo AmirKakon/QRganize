@@ -1,0 +1,320 @@
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Paper,
+  Button,
+  TextField,
+  Checkbox,
+  Chip,
+  Typography,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  List,
+  ListItem,
+  Divider,
+} from "@mui/material";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import {
+  parseReceipt,
+  getAllItems,
+  getAllContainers,
+  createItem,
+  addItemToContainer,
+} from "../../utilities/api";
+
+const money = (n) => `$${(Number(n) || 0).toFixed(2)}`;
+
+// Resize an uploaded image to a max dimension and return a base64 data URL.
+const resizeImage = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.src = reader.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const max = 1200;
+        let { width, height } = img;
+        if (width > height && width > max) {
+          height = Math.round((height * max) / width);
+          width = max;
+        } else if (height > max) {
+          width = Math.round((width * max) / height);
+          height = max;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      };
+    };
+    reader.readAsDataURL(file);
+  });
+
+// Find an existing item that matches an extracted name (case-insensitive).
+const matchExisting = (name, items) => {
+  const n = name.trim().toLowerCase();
+  if (!n) return null;
+  return (
+    items.find((i) => (i.name || "").trim().toLowerCase() === n) ||
+    items.find((i) => {
+      const existing = (i.name || "").trim().toLowerCase();
+      return existing && (existing.includes(n) || n.includes(existing));
+    }) ||
+    null
+  );
+};
+
+const ScanReceiptPage = () => {
+  const [image, setImage] = useState(null);
+  const [parsing, setParsing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [allItems, setAllItems] = useState([]);
+  const [containers, setContainers] = useState([]);
+  const [containerId, setContainerId] = useState("");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+  useEffect(() => {
+    getAllItems().then((res) => setAllItems(res || [])).catch(() => {});
+    getAllContainers().then((res) => setContainers(res || [])).catch(() => {});
+  }, []);
+
+  const notify = (message, severity = "success") =>
+    setSnackbar({ open: true, message, severity });
+
+  const handleImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setRows([]);
+    setParsing(true);
+    try {
+      const base64 = await resizeImage(file);
+      setImage(base64);
+      const items = await parseReceipt(base64);
+      if (items.length === 0) {
+        notify("No items found on that receipt. Try a clearer photo.", "warning");
+      }
+      setRows(
+        items.map((item) => {
+          const match = matchExisting(item.name, allItems);
+          return {
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            include: true,
+            matchedId: match ? match.id : null,
+            matchedName: match ? match.name : null,
+          };
+        })
+      );
+    } catch (error) {
+      console.error("Error parsing receipt:", error);
+      notify(error.message || "Failed to scan receipt.", "error");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const updateRow = (index, field, value) =>
+    setRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
+    );
+
+  const includedRows = rows.filter((row) => row.include);
+  const total = includedRows.reduce(
+    (sum, row) => sum + (Number(row.price) || 0) * (Number(row.quantity) || 1),
+    0
+  );
+
+  const handleSave = async () => {
+    setSaving(true);
+    let created = 0;
+    let added = 0;
+    try {
+      for (const row of includedRows) {
+        let itemId = row.matchedId;
+        if (!itemId) {
+          const result = await createItem({
+            name: row.name,
+            price: String(row.price),
+            quantity: Number(row.quantity) || 1,
+            image: null,
+            expirationDate: null,
+            shoppingList: false,
+          });
+          if (typeof result === "string") {
+            itemId = result;
+            created += 1;
+          }
+        }
+        if (containerId && typeof itemId === "string") {
+          await addItemToContainer(containerId, {
+            itemId,
+            quantity: Number(row.quantity) || 1,
+          });
+          added += 1;
+        }
+      }
+      const containerNote = containerId ? ` · ${added} added to container` : "";
+      notify(`Saved: ${created} new item${created === 1 ? "" : "s"}${containerNote}.`);
+      setRows([]);
+      setImage(null);
+      getAllItems().then((res) => setAllItems(res || [])).catch(() => {});
+    } catch (error) {
+      console.error("Error saving receipt items:", error);
+      notify("Failed to save some items. Please try again.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Box flex={1} sx={{ backgroundColor: "background.default", padding: 2 }}>
+      <h2 style={{ textAlign: "center" }}>Scan Receipt</h2>
+
+      <Paper elevation={2} sx={{ maxWidth: 700, mx: "auto", p: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+          <Button
+            variant="contained"
+            component="label"
+            startIcon={<ReceiptLongIcon />}
+            disabled={parsing}
+          >
+            {parsing ? "Scanning…" : "Take / Upload Receipt Photo"}
+            <input
+              hidden
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleImage}
+            />
+          </Button>
+        </Box>
+
+        {parsing && (
+          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+            <CircularProgress />
+          </Box>
+        )}
+
+        {image && !parsing && rows.length === 0 && (
+          <Typography sx={{ textAlign: "center", color: "text.secondary" }}>
+            No items to review.
+          </Typography>
+        )}
+
+        {rows.length > 0 && (
+          <>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Review {rows.length} item{rows.length === 1 ? "" : "s"}
+            </Typography>
+
+            <List>
+              {rows.map((row, index) => (
+                <ListItem
+                  key={index}
+                  disableGutters
+                  sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}
+                >
+                  <Checkbox
+                    checked={row.include}
+                    onChange={(e) => updateRow(index, "include", e.target.checked)}
+                  />
+                  <TextField
+                    label="Name"
+                    size="small"
+                    value={row.name}
+                    onChange={(e) => updateRow(index, "name", e.target.value)}
+                    sx={{ flex: 1, minWidth: 140 }}
+                  />
+                  <TextField
+                    label="Price"
+                    size="small"
+                    type="number"
+                    value={row.price}
+                    onChange={(e) => updateRow(index, "price", e.target.value)}
+                    sx={{ width: 90 }}
+                  />
+                  <TextField
+                    label="Qty"
+                    size="small"
+                    type="number"
+                    value={row.quantity}
+                    onChange={(e) => updateRow(index, "quantity", Number(e.target.value))}
+                    sx={{ width: 70 }}
+                  />
+                  <Chip
+                    size="small"
+                    label={row.matchedId ? `Matches: ${row.matchedName}` : "New item"}
+                    color={row.matchedId ? "success" : "secondary"}
+                    variant={row.matchedId ? "filled" : "outlined"}
+                  />
+                </ListItem>
+              ))}
+            </List>
+
+            <Divider sx={{ my: 2 }} />
+
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <InputLabel>Add all to container (optional)</InputLabel>
+              <Select
+                value={containerId}
+                label="Add all to container (optional)"
+                onChange={(e) => setContainerId(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>Don&apos;t add to a container</em>
+                </MenuItem>
+                {containers.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography sx={{ fontWeight: "bold" }}>
+                {includedRows.length} selected · {money(total)}
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSave}
+                disabled={saving || includedRows.length === 0}
+                startIcon={saving ? <CircularProgress size={18} color="inherit" /> : null}
+              >
+                Save items
+              </Button>
+            </Box>
+          </>
+        )}
+      </Paper>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default ScanReceiptPage;

@@ -29,7 +29,29 @@ export const createItem = async (item) => {
     throw new Error(`Error: ${response.status}`);
   }
   const res = await response.json();
-  return res.status === "Success";
+  // On success, return the item id (falls back to true) so callers that need
+  // to reference the new item — e.g. adding it to a container — can.
+  return res.status === "Success" ? (res.item?.itemId ?? true) : false;
+}
+
+export const parseReceipt = async (image) => {
+  const response = await fetch(`${apiBaseUrl}/api/ai/parseReceipt`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ image }),
+  });
+  if (response.status === 429) {
+    throw new Error("Daily scan limit reached. Please try again tomorrow.");
+  }
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.data?.items ?? [];
 }
 
 export const setItemShoppingList = async (id, shoppingList) => {

@@ -20,6 +20,7 @@ import WidgetsIcon from '@mui/icons-material/Widgets';
 import PrintIcon from '@mui/icons-material/Print';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import { generateRandomId } from "../../utilities/helpers";
 import qrganizeLogo from "../../assets/QRganize-logo.png";
 
@@ -103,6 +104,7 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
     { title: "Add Item", link: `/item`, icon: <PostAddIcon /> },
     { title: "Add Container", link: `/container/${generateRandomId()}`, icon: <WidgetsIcon /> },
     { title: "Print Labels", link: "/labels", icon: <PrintIcon /> },
+    { title: "Scan Receipt", link: "/scan-receipt", icon: <ReceiptLongIcon /> },
     { title: "About", link: "/about", icon: <InfoIcon /> },
   ];
 
