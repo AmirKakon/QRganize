@@ -39,11 +39,6 @@ jobs:
       - name: Install functions dependencies
         run: npm --prefix functions ci
 
-      # functions/.env is gitignored, so write it from a secret at deploy time —
-      # otherwise CI deploys ship without GEMINI_KEY and the AI endpoint 500s.
-      - name: Write functions environment
-        run: echo "GEMINI_KEY=${{ secrets.GEMINI_KEY }}" > functions/.env
-
       - name: Deploy Cloud Functions
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_QRGANIZE_F651B }}' > "$HOME/firebase-key.json"
