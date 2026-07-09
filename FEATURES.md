@@ -82,17 +82,18 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
 
 ## 5. AI & MCP Integration
 
-### 5a. MCP Server (expose QRganize to an AI assistant)
-A thin MCP server wrapping the existing REST API, so Claude (or any MCP client) can query and
-manage the inventory conversationally. Tools map ~1:1 to existing endpoints — low effort.
+### 5a. MCP Server (expose QRganize to an AI assistant) — [x] built
+Standalone Node MCP server in [`mcp/`](mcp/) (`@modelcontextprotocol/sdk`, stdio) that wraps the
+deployed REST API. Runs locally; register it with Claude Code / Desktop (see `mcp/README.md`).
+Tools:
 
-- [ ] **`find_item_location`** — "Where are the spare HDMI cables?" (wraps `getContainersOfItem`)
-- [ ] **`get_container_contents`** — "What's in the garage bin?" (wraps `getItems/:containerId`)
-- [ ] **`search_items` / `list_containers`** — browse inventory
-- [ ] **`get_expiring_soon`** — "What's expiring this week?"
-- [ ] **`get_shopping_list`** — read the current shopping list
-- [ ] **`create_item` / `add_to_container`** — "Add AA batteries to my shopping list"
-- [ ] Decide packaging: standalone Node package in the repo vs. bundled with `functions/`.
+- [x] **`find_item_location`** — "Where are the spare HDMI cables?" (wraps `getContainers/:itemId`)
+- [x] **`get_container_contents`** — "What's in the garage bin?" (wraps `getItems/:containerId`)
+- [x] **`search_items` / `list_containers`** — browse inventory
+- [x] **`get_expiring_soon`** — "What's expiring this week?"
+- [x] **`get_shopping_list`** — read the current shopping list + estimated total
+- [x] **`add_to_shopping_list` / `add_item_to_container`** — mutate the inventory
+- [x] Packaging: standalone Node package in the repo (`mcp/`), not bundled with `functions/`.
 
 ### 5b. In-app AI features (LLM inside the app)
 - [x] **🧾 Receipt scanner** *(live)* — New `/scan-receipt` page (header link). Take/upload a receipt
