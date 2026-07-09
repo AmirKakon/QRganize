@@ -102,10 +102,10 @@ manage the inventory conversationally. Tools map ~1:1 to existing endpoints — 
       items (so no duplicates), and optionally files everything into a chosen container. Uses
       `axios` (no new SDK). Provider chosen for its free tier — swap via config. Components:
       `functions/Routes/{Services,Controllers}/Ai`, `pages/ScanReceiptPage`.
-      - Prereq: `firebase functions:secrets:set GEMINI_KEY` (free key from Google AI Studio),
-        then deploy. Bound to the `app` function via `runWith({ secrets: ["GEMINI_KEY"] })` and
-        read as `process.env.GEMINI_KEY` — uses Secret Manager, not the deprecated
-        `functions.config()`.
+      - Prereq: `firebase functions:config:set gemini.key="..."` (free key from Google AI Studio),
+        then deploy. Read as `functions.config().gemini.key` — same mechanism as the rest of the
+        app (JWT, apify, google_customsearch). Note: `functions.config()` is deprecated
+        (retires ~March 2027); migrating the whole app to Secret Manager/params is a future task.
       - Note: `createItem` now allows a null `image` (receipt items have no photo).
 - [ ] **📸 Photo → auto-fill item details** *(highest value)* — Item images are already captured as
       base64. Send to a vision model to auto-populate name / category / rough price. Removes the
