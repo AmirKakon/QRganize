@@ -95,10 +95,10 @@ manage the inventory conversationally. Tools map ~1:1 to existing endpoints — 
 - [ ] Decide packaging: standalone Node package in the repo vs. bundled with `functions/`.
 
 ### 5b. In-app AI features (LLM inside the app)
-- [x] **🧾 Receipt scanner** — New `/scan-receipt` page (header link). Take/upload a receipt photo →
-      backend `POST /api/ai/parseReceipt` sends it to **Google Gemini** vision (`gemini-2.0-flash`
-      by default, configurable) with a structured-output `responseSchema` → returns `{name, price,
-      quantity}` line items. Review screen lets you edit each row, flags matches against existing
+- [x] **🧾 Receipt scanner** *(live)* — New `/scan-receipt` page (header link). Take/upload a receipt
+      photo → backend `POST /api/ai/parseReceipt` sends it to **Google Gemini** vision
+      (`gemini-2.5-flash` default, override via `functions.config().gemini.model`) with a
+      structured-output `responseSchema` → returns `{name, price, quantity}` line items. Review screen lets you edit each row, flags matches against existing
       items (so no duplicates), and optionally files everything into a chosen container. Uses
       `axios` (no new SDK). Provider chosen for its free tier — swap via config. Components:
       `functions/Routes/{Services,Controllers}/Ai`, `pages/ScanReceiptPage`.

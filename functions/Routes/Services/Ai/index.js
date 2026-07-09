@@ -5,7 +5,7 @@ const { MissingArgumentError } = require("../../Contracts/Errors");
 const usageDB = "aiUsage";
 const geminiBaseUrl =
   "https://generativelanguage.googleapis.com/v1beta/models";
-const defaultModel = "gemini-2.0-flash";
+const defaultModel = "gemini-2.5-flash";
 const dailyLimit = 25;
 
 // Gemini structured-output schema (OpenAPI subset — types are uppercase enums).
