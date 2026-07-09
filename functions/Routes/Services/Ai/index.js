@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { db, functions, logger } = require("../../../setup");
+const { db, logger } = require("../../../setup");
 const { MissingArgumentError } = require("../../Contracts/Errors");
 
 const usageDB = "aiUsage";
@@ -59,9 +59,8 @@ const checkAndIncrementUsage = async (userId) => {
 
 // Send the receipt image to Gemini and return normalized line items.
 const parseReceipt = async (image) => {
-  const cfg = functions.config().gemini || {};
-  const apiKey = cfg.key;
-  const model = cfg.model || defaultModel;
+  const apiKey = process.env.GEMINI_KEY;
+  const model = process.env.GEMINI_MODEL || defaultModel;
 
   if (!apiKey) {
     throw new Error("Gemini API key is not configured");
