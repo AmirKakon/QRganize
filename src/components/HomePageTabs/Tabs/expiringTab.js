@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import ExpiringItemsList from "../../ExpiringItemsList";
 
-const ExpiringTab = ({ items }) => {
+const ExpiringTab = ({ items, containers, onChanged }) => {
   return (
     <Box
       sx={{
@@ -17,7 +17,7 @@ const ExpiringTab = ({ items }) => {
       >
         Expiring Soon
       </Typography>
-      <ExpiringItemsList items={items} />
+      <ExpiringItemsList items={items} containers={containers} onChanged={onChanged} />
     </Box>
   );
 };

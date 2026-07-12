@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
 import { BarcodeTab, ItemsTab, ExpiringTab, ShoppingListTab } from "./Tabs";
-import { getAllItems } from "../../utilities/api";
+import { getAllItems, getAllContainers } from "../../utilities/api";
 
 const HomePageTabs = ({ isSmallScreen }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [items, setItems] = useState([]);
+  const [containers, setContainers] = useState([]);
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
@@ -20,6 +21,9 @@ const HomePageTabs = ({ isSmallScreen }) => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
     loadItems();
+    getAllContainers()
+      .then((res) => setContainers(res || []))
+      .catch((error) => console.error("Error fetching containers:", error));
   }, [loadItems]);
 
   // Define tab configurations
@@ -38,7 +42,7 @@ const HomePageTabs = ({ isSmallScreen }) => {
     },
     {
       label: "Expiring Soon",
-      component: <ExpiringTab items={items} />,
+      component: <ExpiringTab items={items} containers={containers} onChanged={loadItems} />,
     },
   ];
 

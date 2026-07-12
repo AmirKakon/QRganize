@@ -12,35 +12,21 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Checkbox,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
 } from "@mui/material";
-import { createContainer, deleteContainer, updateContainerItemsQuantity, getAllItems, addItemToContainer, getAllAreas } from "../../utilities/api";
+import { createContainer, deleteContainer, getAllAreas } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
-import ItemsInContainerList from "../ItemsInContainerList";
+import ContainerContents from "../ContainerContents";
 
-const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScreen }) => {
-  
+const ContainerDetails = ({ container, setContainer, lots = [], allItems = [], onLotsChanged }) => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
-  const [allItems, setAllItems] = useState([]);
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [searchText, setSearchText] = useState("");
   const [areas, setAreas] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   useEffect(() => {
     getAllAreas()
@@ -51,21 +37,16 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
   useEffect(() => {
     if (container?.id && !container.image) {
       QRCode.toDataURL(container.id)
-        .then((url) => {
-          setContainer((prev) => ({ ...prev, image: url })); // Update the container state with the QR code URL
-        })
+        .then((url) => setContainer((prev) => ({ ...prev, image: url })))
         .catch((err) => console.error("Error generating QR code:", err));
     }
   }, [container, setContainer]);
 
-  const handleSnackbarClose = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+  const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setContainer((prev) => ({ ...prev, [name]: value }));
-    console.log("Container updated:", { ...container, [name]: value });
   };
 
   const handleImageChange = (e) => {
@@ -75,89 +56,43 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
       reader.onloadend = () => {
         const img = new Image();
         img.src = reader.result;
-
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          const maxWidth = 800; // Set a maximum width for the image
-          const maxHeight = 800; // Set a maximum height for the image
-
+          const maxWidth = 800;
+          const maxHeight = 800;
           let width = img.width;
           let height = img.height;
-
-          // Resize the image while maintaining aspect ratio
           if (width > height) {
             if (width > maxWidth) {
               height = Math.round((height * maxWidth) / width);
               width = maxWidth;
             }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
+          } else if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
           }
-
           canvas.width = width;
           canvas.height = height;
-
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Convert the resized image to Base64
-          const resizedImage = canvas.toDataURL("image/jpeg", 0.8); // Adjust quality (0.8 = 80%)
-          setContainer((prev) => ({ ...prev, image: resizedImage }));
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          setContainer((prev) => ({ ...prev, image: canvas.toDataURL("image/jpeg", 0.8) }));
         };
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSave = async () => { 
-
+  const handleSave = async () => {
     setSaving(true);
     try {
-
-      const updatedItem = {
-        ...container,
-      };
-
-      const response = await createContainer(updatedItem);
-      if (response) {
-        setSnackbar({
-          open: true,
-          message: "Container details updated successfully!",
-          severity: "success",
-        });
-
-        await handleAddItemsToContainer(); 
-
-        const itemQuantityList = items.map((item) => ({
-          itemId: item.itemId,
-          quantity: item.quantity,
-        }));
-
-        const itemQuantityResponse = await updateContainerItemsQuantity(container.id, itemQuantityList);
-        if (!itemQuantityResponse) {
-          setSnackbar({
-            open: true,
-            message: "Failed to update item quantities.",
-            severity: "error",
-          });
-      };
-      } else {
-        setSnackbar({
-          open: true,
-          message: "Failed to save container details.",
-          severity: "error",
-        });
-      }
-    } catch (error) {
-      console.error("Error saving container details:", error);
+      const response = await createContainer({ ...container });
       setSnackbar({
         open: true,
-        message: "Failed to save container details.",
-        severity: "error",
+        message: response ? "Container saved." : "Failed to save container.",
+        severity: response ? "success" : "error",
       });
+    } catch (error) {
+      console.error("Error saving container details:", error);
+      setSnackbar({ open: true, message: "Failed to save container.", severity: "error" });
     } finally {
       setSaving(false);
     }
@@ -168,190 +103,67 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
     setDeleting(true);
     try {
       const response = await deleteContainer(container.id);
-      if (response) {
-        setSnackbar({
-          open: true,
-          message: "Container deleted successfully!",
-          severity: "success",
-        });
-      } else {
-        setSnackbar({
-          open: true,
-          message: "Failed to delete container.",
-          severity: "error",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting container:", error);
       setSnackbar({
         open: true,
-        message: "Failed to delete container.",
-        severity: "error",
+        message: response ? "Container deleted." : "Failed to delete container.",
+        severity: response ? "success" : "error",
       });
+    } catch (error) {
+      console.error("Error deleting container:", error);
+      setSnackbar({ open: true, message: "Failed to delete container.", severity: "error" });
     } finally {
       setDeleting(false);
     }
   };
 
-  const fetchItems = async () => {
-    try {
-      const response = await getAllItems(); // Fetch all items from the API
-      setAllItems(response || []);
-    } catch (error) {
-      console.error("Error fetching items:", error);
-    }
-  };
-
-  const handleOpenItemDialog = async () => {
-    await fetchItems();
-    const existingItemIds = items.map((item) => item.itemId); // Get IDs of items already in the container
-    setSelectedItems(existingItemIds); // Pre-select these items
-    setItemDialogOpen(true);
-  };
-
-  const handleCloseItemDialog = () => {
-    setItemDialogOpen(false);
-  };
-
-  const handleItemSelect = (itemId) => {
-    setSelectedItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
-  };
-
-  const handleAddItemsToContainer = async () => {
-    try {
-      const newItems = allItems.filter(
-        (item) => selectedItems.includes(item.id) && !items.some((existingItem) => existingItem.itemId === item.id)
-      );
-
-      for (const newItem of newItems) {
-        await addItemToContainer(container.id, { itemId: newItem.id, quantity: 1 });
-      }
-
-      setSnackbar({
-        open: true,
-        message: "Items added to the container successfully!",
-        severity: "success",
-      });
-
-      // Update the container's items list with new items
-      setItems((prev) => [
-        ...prev,
-        ...newItems.map((item) => ({ itemId: item.id, name: item.name, image:item.image, quantity: 1 })),
-      ]);
-    } catch (error) {
-      console.error("Error adding items to container:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to add items to the container.",
-        severity: "error",
-      });
-    } finally {
-      handleCloseItemDialog();
-    }
-  };
-
   const handleDownloadQRCode = () => {
-    if (container?.id) {
-      QRCode.toDataURL(container.id)
-        .then((qrCodeUrl) => {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-
-          // Set canvas dimensions
-          const qrCodeSize = 300;
-          const textHeight = 30;
-          canvas.width = qrCodeSize;
-          canvas.height = qrCodeSize + textHeight;
-
-          // Fill the background with white
-          ctx.fillStyle = "white";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-          // Draw QR code
-          const qrImage = new Image();
-          qrImage.src = qrCodeUrl;
-          qrImage.onload = () => {
-            ctx.drawImage(qrImage, 0, 0, qrCodeSize, qrCodeSize);
-
-            // Add container name below the QR code
-            ctx.font = "20px Arial";
-            ctx.textAlign = "center";
-            ctx.fillStyle = "black";
-            ctx.fillText(
-              container.name || "",
-              qrCodeSize / 2,
-              qrCodeSize + 5
-            );
-
-            // Trigger download
-            const link = document.createElement("a");
-            link.href = canvas.toDataURL("image/png");
-            link.download = `${container.id}_QRCode.png`;
-            link.click();
-          };
-        })
-        .catch((err) => {
-          console.error("Error generating QR code:", err);
-          setSnackbar({
-            open: true,
-            message: "Failed to generate QR code.",
-            severity: "error",
-          });
-        });
-    } else {
-      setSnackbar({
-        open: true,
-        message: "Container ID is not available.",
-        severity: "error",
-      });
+    if (!container?.id) {
+      setSnackbar({ open: true, message: "Container ID is not available.", severity: "error" });
+      return;
     }
+    QRCode.toDataURL(container.id)
+      .then((qrCodeUrl) => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const qrCodeSize = 300;
+        const textHeight = 30;
+        canvas.width = qrCodeSize;
+        canvas.height = qrCodeSize + textHeight;
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const qrImage = new Image();
+        qrImage.src = qrCodeUrl;
+        qrImage.onload = () => {
+          ctx.drawImage(qrImage, 0, 0, qrCodeSize, qrCodeSize);
+          ctx.font = "20px Arial";
+          ctx.textAlign = "center";
+          ctx.fillStyle = "black";
+          ctx.fillText(container.name || "", qrCodeSize / 2, qrCodeSize + 5);
+          const link = document.createElement("a");
+          link.href = canvas.toDataURL("image/png");
+          link.download = `${container.id}_QRCode.png`;
+          link.click();
+        };
+      })
+      .catch((err) => {
+        console.error("Error generating QR code:", err);
+        setSnackbar({ open: true, message: "Failed to generate QR code.", severity: "error" });
+      });
   };
-
-  const filteredItems = allItems.filter((item) =>
-    item.name.toLowerCase().includes(searchText.toLowerCase())
-  );
 
   return (
     <>
       <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 2,
-            gap: 2,
-          }}
-        >
-          <TextField
-            label="Container ID"
-            name="id"
-            value={container.id || ""}
-            onChange={handleInputChange}
-            fullWidth
-            disabled
-          />
-
-          <TextField
-            label="Container Name"
-            name="name"
-            value={container.name || ""}
-            onChange={handleInputChange}
-            fullWidth
-          />
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 2, gap: 2 }}>
+          <TextField label="Container ID" name="id" value={container.id || ""} onChange={handleInputChange} fullWidth disabled />
+          <TextField label="Container Name" name="name" value={container.name || ""} onChange={handleInputChange} fullWidth />
 
           <FormControl fullWidth>
             <InputLabel>Area</InputLabel>
             <Select
               label="Area"
               value={container.areaId || ""}
-              onChange={(e) =>
-                setContainer((prev) => ({ ...prev, areaId: e.target.value || null }))
-              }
+              onChange={(e) => setContainer((prev) => ({ ...prev, areaId: e.target.value || null }))}
             >
               <MenuItem value="">
                 <em>Unassigned</em>
@@ -366,67 +178,30 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
 
           <label htmlFor="imageUpload">
             {container.image ? (
-              <img
-                src={getImageSrc(container.image)}
-                alt="container"
-                style={{ width: 300, borderRadius: 8 }}
-              />
+              <img src={getImageSrc(container.image)} alt="container" style={{ width: 300, borderRadius: 8 }} />
             ) : (
               <p>No image available</p>
             )}
-            <input
-              id="imageUpload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              style={{ display: "none" }}
-            />
+            <input id="imageUpload" type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
           </label>
           <Button color="secondary" variant="contained" component="label">
             Upload / Take Picture
-            <input
-              hidden
-              accept="image/*"
-              type="file"
-              onChange={handleImageChange}
-            />
+            <input hidden accept="image/*" type="file" onChange={handleImageChange} />
           </Button>
 
-          <ItemsInContainerList items={items} setItems={setItems} container={container} isSmallScreen={isSmallScreen}/>
+          <ContainerContents
+            containerId={container.id}
+            lots={lots}
+            allItems={allItems}
+            onChanged={onLotsChanged}
+          />
 
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleOpenItemDialog}
-            sx={{ width: "100%" }}
-          >
-            Add Items to Container
-          </Button>
-
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleDownloadQRCode}
-            sx={{ width: "100%" }}
-          >
+          <Button variant="contained" color="primary" onClick={handleDownloadQRCode} sx={{ width: "100%" }}>
             Download QR Code
           </Button>
 
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              width: "100%",
-              gap: 2,
-            }}
-          >
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSave}
-              disabled={saving || !container.name}
-              sx={{ flex: 1 }}
-            >
+          <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 2 }}>
+            <Button variant="contained" color="primary" onClick={handleSave} disabled={saving || !container.name} sx={{ flex: 1 }}>
               {saving ? <CircularProgress size={24} /> : "Save Container"}
             </Button>
             <Button
@@ -446,8 +221,8 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
         <DialogTitle>Delete this container?</DialogTitle>
         <DialogContent>
           Are you sure you want to delete{" "}
-          <strong>{container.name || "this container"}</strong>? This will also
-          remove all item associations inside it. This action cannot be undone.
+          <strong>{container.name || "this container"}</strong>? Its stock records are removed too.
+          This action cannot be undone.
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmDeleteOpen(false)} color="secondary">
@@ -459,65 +234,13 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
         </DialogActions>
       </Dialog>
 
-      <Dialog open={itemDialogOpen} onClose={handleCloseItemDialog}>
-        <DialogTitle>Select Items</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Search Items"
-            variant="outlined"
-            fullWidth
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            sx={{ marginBottom: 2 }}
-          />
-          <List>
-            {filteredItems.map((item) => {
-              const isExistingItem = items.some((existingItem) => existingItem.itemId === item.id);
-              return (
-                <ListItem key={item.id} disablePadding>
-                  <ListItemButton
-                    onClick={() => !isExistingItem && handleItemSelect(item.id)}
-                    disabled={isExistingItem}
-                    dense
-                  >
-                    <Checkbox
-                      edge="start"
-                      checked={selectedItems.includes(item.id) || isExistingItem}
-                      disabled={isExistingItem}
-                      tabIndex={-1}
-                      disableRipple
-                    />
-                    <ListItemText
-                      primary={item.name}
-                      secondary={isExistingItem ? "Already in container" : ""}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseItemDialog} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleAddItemsToContainer} color="primary" variant="contained">
-            Add
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

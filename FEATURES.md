@@ -150,10 +150,15 @@ Phases:
       Toss. `getItems` now derives quantity + earliest expiry from lots (falls back to legacy fields
       until an item has lots). `createItem` no longer requires quantity. Needs functions deploy +
       one-time `POST /api/lots/migrate`.
-- [ ] **3. Container + Expiring views on lots**; shopping-list totals from lots.
-- [ ] **4. Receipt scanner + MCP** read/write lots.
-- [ ] **5. Cutover** — `getItems` derives quantity/expiries from lots; retire `userItems` qty/expiry
-      and `containerItems`.
+- [x] **3. Container + Expiring views on lots** — Expiring tab lists each expiring *batch*
+      (`components/ExpiringItemsList`) with inline Used/Toss; container page shows its lots via
+      `components/ContainerContents` (add item → lot, per-batch use/toss). Shopping-list totals come
+      from lot-derived `getItems.quantity`. Frontend-only (backend already deployed in phase 2).
+- [~] **4. Receipt scanner + MCP** read/write lots — receipt "add to container" now creates lots
+      (`addLot`). [ ] MCP tools still read the legacy `containerItems` join (find_item_location /
+      get_container_contents) — update them to lots.
+- [ ] **5. Cutover** — retire `userItems` qty/expiry and the `containerItems` collection (and the
+      now-unused `ItemsInContainerList` component / legacy container-item endpoints).
 
 ---
 

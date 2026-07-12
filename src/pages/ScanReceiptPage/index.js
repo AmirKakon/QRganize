@@ -24,7 +24,7 @@ import {
   getAllItems,
   getAllContainers,
   createItem,
-  addItemToContainer,
+  addLot,
 } from "../../utilities/api";
 
 const money = (n) => `$${(Number(n) || 0).toFixed(2)}`;
@@ -156,9 +156,11 @@ const ScanReceiptPage = () => {
           }
         }
         if (containerId && typeof itemId === "string") {
-          await addItemToContainer(containerId, {
+          await addLot({
             itemId,
+            containerId,
             quantity: Number(row.quantity) || 1,
+            expirationDate: null,
           });
           added += 1;
         }

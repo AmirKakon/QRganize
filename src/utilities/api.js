@@ -154,6 +154,21 @@ export const getLotsByItem = async (itemId) => {
   return res.data ?? [];
 };
 
+export const getLotsByContainer = async (containerId) => {
+  const response = await fetch(`${apiBaseUrl}/api/lots/byContainer/${containerId}`, {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+    },
+  });
+  if (!response.ok) {
+    return [];
+  }
+  const res = await response.json();
+  return res.data ?? [];
+};
+
 export const addLot = async (lot) => {
   const response = await fetch(`${apiBaseUrl}/api/lots/add`, {
     method: "POST",
