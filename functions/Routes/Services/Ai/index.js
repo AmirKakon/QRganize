@@ -72,11 +72,20 @@ const parseReceipt = async (image) => {
   const { mimeType, data } = parseImageData(image);
 
   const prompt =
-    "This is a photo of a store purchase receipt. Extract the purchased " +
-    "line items. For each item return its name, unit price as a number, " +
-    "and quantity as a number. Ignore store details, dates, subtotals, " +
-    "taxes, totals, discounts, and loyalty lines. If a quantity is not " +
-    "shown, use 1.";
+    "This is a photo of a store purchase receipt. Extract only the " +
+    "purchased product line items. Keep each product name in its " +
+    "original language.\n\n" +
+    "Pricing and quantity rules:\n" +
+    "- If an item is sold per unit (a discrete count), set price to the " +
+    "per-unit price and quantity to the number of units purchased.\n" +
+    "- If an item is sold by weight or volume (the receipt shows a " +
+    "per-kilogram or per-liter price times a fractional amount), set " +
+    "price to the total amount actually paid for that line and set " +
+    "quantity to 1. Never return fractional quantities.\n\n" +
+    "Ignore everything that is not a product you would stock: store " +
+    "details, dates, cashier lines, subtotals, taxes, totals, discounts, " +
+    "loyalty/points lines, shopping bags, bag fees, and bottle or " +
+    "container deposits. If a quantity cannot be determined, use 1.";
 
   const url = `${geminiBaseUrl}/${model}:generateContent?key=${apiKey}`;
   const body = {
@@ -121,7 +130,9 @@ const parseReceipt = async (image) => {
     .map((item) => ({
       name: String(item.name || "").trim(),
       price: Number(item.price) || 0,
-      quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
+      // Inventory counts are whole numbers; round up any fractional weight
+      // the model may still return, with a floor of 1.
+      quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
     }))
     .filter((item) => item.name);
 
