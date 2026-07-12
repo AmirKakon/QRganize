@@ -154,11 +154,14 @@ Phases:
       (`components/ExpiringItemsList`) with inline Used/Toss; container page shows its lots via
       `components/ContainerContents` (add item → lot, per-batch use/toss). Shopping-list totals come
       from lot-derived `getItems.quantity`. Frontend-only (backend already deployed in phase 2).
-- [~] **4. Receipt scanner + MCP** read/write lots — receipt "add to container" now creates lots
-      (`addLot`). [ ] MCP tools still read the legacy `containerItems` join (find_item_location /
-      get_container_contents) — update them to lots.
-- [ ] **5. Cutover** — retire `userItems` qty/expiry and the `containerItems` collection (and the
-      now-unused `ItemsInContainerList` component / legacy container-item endpoints).
+- [x] **4. Receipt scanner + MCP** read/write lots — receipt "add to container" creates lots; MCP
+      tools (`find_item_location`, `get_container_contents`, `get_expiring_soon`,
+      `add_item_to_container`) now derive from / write lots.
+- [x] **5. Cutover** — `getItems`/`find`/`get` derive quantity + expiries purely from lots (no more
+      `userItems` fallback); `createItem` no longer writes `userItems`; deleting an item or container
+      now cascades to its lots. Removed the dead `ItemsInContainerList` component. *(Left in place,
+      harmless: the legacy `containerItems`/`userItems` documents and the now-unused
+      container-item endpoints — safe to delete later.)*
 
 ---
 

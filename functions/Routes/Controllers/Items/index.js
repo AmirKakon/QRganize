@@ -4,7 +4,6 @@ const { authenticate } = require("../Auth");
 const { checkRequiredParams } = require("../../Utilities");
 const { MissingArgumentError } = require("../../Contracts/Errors");
 const ItemService = require("../../Services/Items");
-const UsersService = require("../../Services/Users");
 const LotService = require("../../Services/Lots");
 
 // create an item
@@ -18,16 +17,6 @@ app.post("/api/items/create", authenticate, async (req, res) => {
       req.body.image ?? null,
       req.body.shoppingList ?? false,
       req.body.id ?? null,
-    );
-
-    const userId = req.headers["uuid"];
-    // quantity/expiration are legacy per-user fields; real stock is tracked as
-    // lots. Default them so the record is valid during the transition.
-    await UsersService.addItemToUser(
-      userId,
-      item.itemId,
-      req.body.quantity ?? 1,
-      req.body.expirationDate ?? null,
     );
 
     return res
@@ -44,14 +33,7 @@ app.get("/api/items/get/:id", authenticate, async (req, res) => {
     checkRequiredParams(["id"], req.params);
 
     const itemId = req.params.id.replace(/^0+/, "");
-    let item = await ItemService.getItem(itemId);
-
-    const userId = req.headers["uuid"];
-    const userItem = await UsersService.getItemByUserId(userId, itemId);
-
-    item = {
-      ...item, quantity: userItem.quantity, expirationDate: userItem.expirationDate,
-    };
+    const item = await ItemService.getItem(itemId);
 
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
@@ -65,14 +47,7 @@ app.get("/api/items/find/:id", authenticate, async (req, res) => {
     checkRequiredParams(["id"], req.params);
 
     const id = req.params.id.replace(/^0+/, "");
-    let item = await ItemService.findItem(id);
-
-    const userId = req.headers["uuid"];
-    const userItem = await UsersService.getItemByUserId(userId, id, false);
-
-    item = {
-      ...item, quantity: userItem.quantity ?? 0, expirationDate: userItem.expirationDate ?? null,
-    };
+    const item = await ItemService.findItem(id);
 
     return res.status(200).send({ status: "Success", data: item });
   } catch (error) {
@@ -85,10 +60,7 @@ app.get("/api/items/getAll", authenticate, async (req, res) => {
   try {
     const result = await ItemService.getAllItems();
 
-    const userId = req.headers["uuid"];
-    const userItems = await UsersService.getItemsByUserId(userId);
-
-    // Group lots by item so quantity/expiry can be derived from batches.
+    // Quantity and expiries are derived purely from lots (batches).
     const allLots = await LotService.getAllLots();
     const lotsByItem = {};
     for (const lot of allLots) {
@@ -96,28 +68,17 @@ app.get("/api/items/getAll", authenticate, async (req, res) => {
     }
 
     const itemsWithUserData = result.items.map((item) => {
-      const userItem = userItems.items.find((userItem) => userItem.itemId === item.id);
       const lots = lotsByItem[item.id] || [];
-      // Prefer lot-derived stock; fall back to the legacy fields when an item
-      // has no lots yet (pre-migration / not-yet-restocked), so nothing regresses.
-      let quantity = 0;
-      if (lots.length) {
-        quantity = lots.reduce((sum, lot) => sum + (lot.quantity || 0), 0);
-      } else if (userItem) {
-        quantity = userItem.quantity;
-      }
-
+      const quantity = lots.reduce((sum, lot) => sum + (lot.quantity || 0), 0);
       const lotDates = lots
         .map((lot) => lot.expirationDate)
         .filter(Boolean)
         .sort();
-      const expirationDate =
-        lotDates[0] || (userItem ? userItem.expirationDate : null);
 
       return {
         ...item,
         quantity,
-        expirationDate,
+        expirationDate: lotDates[0] || null,
         lots,
       };
     });

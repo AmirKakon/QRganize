@@ -1,5 +1,6 @@
 const { db, logger } = require("../../../setup");
 const { NotFoundError } = require("../../Contracts/Errors");
+const LotService = require("../Lots");
 
 const containersDB = "containers";
 const containerItemsDB = "containerItems";
@@ -124,11 +125,8 @@ const deleteContainer = async (id) => {
       throw new NotFoundError("Container not found");
     }
 
-    const itemsSnapshot = await getItemsByContainerId(id, true);
-
-    itemsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
+    // Remove the stock batches stored in this container too.
+    await LotService.deleteLotsByContainer(id);
 
     batch.delete(docRef);
     await batch.commit();

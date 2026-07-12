@@ -122,6 +122,28 @@ const getAllLots = async () => {
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
 
+// Delete all lots for an item / container (cleanup on item / container delete).
+const deleteLotsByItem = async (itemId) => {
+  const snapshot = await db.collection(lotsDB).where("itemId", "==", itemId).get();
+  if (snapshot.empty) return 0;
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+  return snapshot.size;
+};
+
+const deleteLotsByContainer = async (containerId) => {
+  const snapshot = await db
+    .collection(lotsDB)
+    .where("containerId", "==", containerId)
+    .get();
+  if (snapshot.empty) return 0;
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+  return snapshot.size;
+};
+
 // One-time migration: seed `lots` from existing containerItems (per-container
 // amounts, no expiry). Idempotent — does nothing if lots already exist.
 const migrateFromContainerItems = async () => {
@@ -163,5 +185,7 @@ module.exports = {
   getLotsByItem,
   getLotsByContainer,
   getAllLots,
+  deleteLotsByItem,
+  deleteLotsByContainer,
   migrateFromContainerItems,
 };

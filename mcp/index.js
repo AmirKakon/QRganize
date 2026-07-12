@@ -39,10 +39,8 @@ async function api(path, { method = "GET", body } = {}) {
 const getItems = async () => (await api("/api/items/getAll")).data || [];
 const getContainers = async () =>
   ((await api("/api/containers/getAll")).data || {}).containers || [];
-const getContainerItems = async (id) =>
-  (await api(`/api/containers/getItems/${id}`)).data || [];
-const getItemContainers = async (id) =>
-  (await api(`/api/containers/getContainers/${id}`)).data || [];
+const addLot = async (lot) =>
+  (await api("/api/lots/add", { method: "POST", body: lot })).data;
 
 // ---- Matching ---------------------------------------------------------------
 const norm = (s) => (s || "").trim().toLowerCase();
@@ -115,15 +113,20 @@ const TOOLS = [
       const cs = await getContainers();
       const c = findByName(cs, container);
       if (!c) return text(`No container found matching "${container}".`);
-      const items = await getContainerItems(c.id);
-      return text({
-        container: c.name,
-        items: items.map((i) => ({
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price,
-        })),
-      });
+      const items = await getItems();
+      const contents = [];
+      for (const item of items) {
+        for (const lot of item.lots || []) {
+          if (lot.containerId === c.id) {
+            contents.push({
+              name: item.name,
+              quantity: lot.quantity,
+              expirationDate: lot.expirationDate,
+            });
+          }
+        }
+      }
+      return text({ container: c.name, contents });
     },
   },
   {
@@ -143,17 +146,22 @@ const TOOLS = [
         return text(`No item found matching "${item}".`);
       const cs = await getContainers();
       const nameById = new Map(cs.map((c) => [c.id, c.name]));
-      const results = [];
-      for (const m of matches) {
-        const containerIds = await getItemContainers(m.id);
-        results.push({
+      const results = matches.map((m) => {
+        const byContainer = {};
+        for (const lot of m.lots || []) {
+          const label = lot.containerId
+            ? nameById.get(lot.containerId) || lot.containerId
+            : "Unassigned";
+          byContainer[label] = (byContainer[label] || 0) + (lot.quantity || 0);
+        }
+        const locations = Object.entries(byContainer).map(
+          ([c, q]) => `${c} (${q})`
+        );
+        return {
           item: m.name,
-          locations:
-            containerIds.length > 0
-              ? containerIds.map((id) => nameById.get(id) || id)
-              : ["(not in any container)"],
-        });
-      }
+          locations: locations.length ? locations : ["(no stock)"],
+        };
+      });
       return text(results);
     },
   },
@@ -172,17 +180,29 @@ const TOOLS = [
       const window = typeof days === "number" ? days : 30;
       const now = Date.now();
       const cutoff = now + window * 86400000;
-      const soon = (await getItems())
-        .filter((i) => i.expirationDate)
-        .map((i) => ({ ...i, exp: Date.parse(i.expirationDate) }))
-        .filter((i) => !isNaN(i.exp) && i.exp <= cutoff)
-        .sort((a, b) => a.exp - b.exp)
-        .map((i) => ({
-          name: i.name,
-          expirationDate: i.expirationDate,
-          daysLeft: Math.ceil((i.exp - now) / 86400000),
-        }));
-      return text(soon);
+      const items = await getItems();
+      const cs = await getContainers();
+      const nameById = new Map(cs.map((c) => [c.id, c.name]));
+      const batches = [];
+      for (const item of items) {
+        for (const lot of item.lots || []) {
+          if (!lot.expirationDate) continue;
+          const exp = Date.parse(lot.expirationDate);
+          if (isNaN(exp) || exp > cutoff) continue;
+          batches.push({
+            name: item.name,
+            container: lot.containerId
+              ? nameById.get(lot.containerId) || lot.containerId
+              : "Unassigned",
+            quantity: lot.quantity,
+            expirationDate: lot.expirationDate,
+            daysLeft: Math.ceil((exp - now) / 86400000),
+            exp,
+          });
+        }
+      }
+      batches.sort((a, b) => a.exp - b.exp);
+      return text(batches.map(({ exp, ...b }) => b));
     },
   },
   {
@@ -246,25 +266,33 @@ const TOOLS = [
   },
   {
     name: "add_item_to_container",
-    description: "Put an existing item into a container (both given by name).",
+    description:
+      "Add stock of an existing item into a container as a batch (both given " +
+      "by name). Optionally set a quantity and expiration date (YYYY-MM-DD).",
     inputSchema: {
       type: "object",
       properties: {
         item: { type: "string", description: "Item name" },
         container: { type: "string", description: "Container name" },
+        quantity: { type: "number", description: "Quantity (default 1)" },
+        expirationDate: { type: "string", description: "Optional YYYY-MM-DD" },
       },
       required: ["item", "container"],
     },
-    handler: async ({ item, container }) => {
+    handler: async ({ item, container, quantity, expirationDate }) => {
       const it = findByName(await getItems(), item);
       if (!it) return text(`No item found matching "${item}". Create it first.`);
       const c = findByName(await getContainers(), container);
       if (!c) return text(`No container found matching "${container}".`);
-      await api(`/api/containers/addItems/${c.id}`, {
-        method: "POST",
-        body: { itemId: it.id, quantity: 1 },
+      await addLot({
+        itemId: it.id,
+        containerId: c.id,
+        quantity: typeof quantity === "number" ? quantity : 1,
+        expirationDate: expirationDate
+          ? `${expirationDate}T00:00:00+00:00`
+          : null,
       });
-      return text(`Added "${it.name}" to container "${c.name}".`);
+      return text(`Added ${it.name} to container "${c.name}".`);
     },
   },
 ];

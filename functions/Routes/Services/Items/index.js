@@ -1,6 +1,7 @@
 const { db, logger } = require("../../../setup");
 const { NotFoundError } = require("../../Contracts/Errors");
 const Utilities = require("../Utilities");
+const LotService = require("../Lots");
 
 const itemsDB = "items";
 
@@ -139,6 +140,9 @@ const deleteItem = async (id) => {
     if (!(await docRef.get()).exists) {
       throw new NotFoundError("Item not found");
     }
+
+    // Remove the item's stock batches too.
+    await LotService.deleteLotsByItem(id);
 
     batch.delete(docRef);
     await batch.commit();
