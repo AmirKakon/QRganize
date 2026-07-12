@@ -3,6 +3,8 @@ import {
   Box,
   TextField,
   Typography,
+  FormControlLabel,
+  Switch,
   useMediaQuery,
   ImageList,
   ImageListItem,
@@ -17,20 +19,27 @@ const ItemList = ({ items, isSmallScreen }) => {
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
     const [searchQuery, setSearchQuery] = useState("");
+    const [inStockOnly, setInStockOnly] = useState(false);
 
-    const filteredItems = items.filter((item) =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredItems = items
+      .filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .filter((item) => !inStockOnly || (item.quantity || 0) > 0);
 
   const handleItemClick = (item) => {
     navigate(`/item?id=${item.id}`);
   };
 
+  let emptyMessage = "No items match your search.";
+  if (items.length === 0) {
+    emptyMessage = "No items yet — scan a barcode to add your first one.";
+  } else if (inStockOnly) {
+    emptyMessage = "No items in stock match your search.";
+  }
   const emptyState = (
     <Typography sx={{ mt: 4, color: "text.secondary", textAlign: "center" }}>
-      {items.length === 0
-        ? "No items yet — scan a barcode to add your first one."
-        : "No items match your search."}
+      {emptyMessage}
     </Typography>
   );
 
@@ -39,7 +48,9 @@ const ItemList = ({ items, isSmallScreen }) => {
       <Box
             sx={{
               display: "flex",
-              justifyContent: "center",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 1,
               marginBottom: 2,
             }}
           >
@@ -52,6 +63,16 @@ const ItemList = ({ items, isSmallScreen }) => {
                 width: "100%",
                 maxWidth: "400px",
               }}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={inStockOnly}
+                  onChange={(e) => setInStockOnly(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="In stock only"
             />
       </Box>
 
@@ -93,7 +114,7 @@ const ItemList = ({ items, isSmallScreen }) => {
                 />
                 <ImageListItemBar
                   title={item.name}
-                  subtitle={`Price: ${item.price}`}
+                  subtitle={`Price: ${item.price} · ${item.quantity ?? 0} in stock`}
                 />
               </ImageListItem>
             ))}
@@ -139,7 +160,7 @@ const ItemList = ({ items, isSmallScreen }) => {
                 />
                 <ImageListItemBar
                   title={item.name}
-                  subtitle={`Price: ${item.price}`}
+                  subtitle={`Price: ${item.price} · ${item.quantity ?? 0} in stock`}
                 />
               </ImageListItem>
             ))}

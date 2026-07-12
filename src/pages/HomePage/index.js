@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import HomePageTabs from "../../components/HomePageTabs";
-import AccessTokenExpiration from "../../components/AccessTokenExpiration";
 import Loading from "../../components/Loading";
 
 const HomePage = ({ isSmallScreen }) => {
@@ -17,7 +16,6 @@ const HomePage = ({ isSmallScreen }) => {
   ) : (
     <Box flex={1} spacing={1} sx={{ backgroundColor: "background.default", padding: 2 }}>
       <HomePageTabs isSmallScreen={isSmallScreen} />
-      <AccessTokenExpiration />
     </Box>
   );
 };
