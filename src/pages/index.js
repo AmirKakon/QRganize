@@ -4,6 +4,7 @@ import QrCodePage from "./QrCodePage";
 import ContainerPage from "./ContainerPage";
 import PrintLabelsPage from "./PrintLabelsPage";
 import ScanReceiptPage from "./ScanReceiptPage";
+import AreasPage from "./AreasPage";
 
 export {
   HomePage,
@@ -12,4 +13,5 @@ export {
   ContainerPage,
   PrintLabelsPage,
   ScanReceiptPage,
+  AreasPage,
 };

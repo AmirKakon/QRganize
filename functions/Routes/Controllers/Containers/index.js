@@ -15,6 +15,7 @@ app.post("/api/containers/create", authenticate, async (req, res) => {
       req.body.image,
       req.headers["uuid"],
       req.body.id ?? null,
+      req.body.areaId ?? null,
     );
 
     return res.status(200).send({
@@ -63,6 +64,7 @@ app.put("/api/containers/update/:id", authenticate, async (req, res) => {
       req.body.name,
       req.body.image,
       req.body.userId,
+      req.body.areaId ?? null,
     );
     return updated ?
       res.status(200).send({ status: "Success", msg: "Container Updated" }) :

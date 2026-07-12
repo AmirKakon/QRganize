@@ -52,6 +52,11 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
             `PUT /api/items/shoppingList/:id` (id only, accepts a boolean; no image required).
             "Remove purchased (N)" button calls it per checked item and refreshes the list.
       - [ ] auto-suggest items whose container quantity hit 0 (needs container-quantity aggregation)
+- [x] **🏠 Areas** — Containers can belong to an area (Kitchen, Pantry, Garage…). New `areas`
+      collection + CRUD (`functions/Routes/{Services,Controllers}/Areas`); containers gain an
+      optional `areaId`; deleting an area unassigns its containers (never deletes them). New
+      `/areas` page (header link) to create/rename/delete areas and see each area's containers;
+      the container page has an Area dropdown. Backend deploy only; no migration.
 
 ---
 

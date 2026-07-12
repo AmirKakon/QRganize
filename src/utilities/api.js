@@ -75,6 +75,68 @@ export const setItemShoppingList = async (id, shoppingList) => {
   return res.status === "Success";
 };
 
+// ---- Areas (groups of containers) ----
+
+export const getAllAreas = async () => {
+  const response = await fetch(`${apiBaseUrl}/api/areas/getAll`, {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+    },
+  });
+  if (!response.ok) {
+    return [];
+  }
+  const res = await response.json();
+  return res.data?.areas ?? [];
+};
+
+export const createArea = async (area) => {
+  const response = await fetch(`${apiBaseUrl}/api/areas/create`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(area),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  return (await response.json()).status === "Success";
+};
+
+export const updateArea = async (id, name) => {
+  const response = await fetch(`${apiBaseUrl}/api/areas/update/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  return (await response.json()).status === "Success";
+};
+
+export const deleteArea = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/areas/delete/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  return (await response.json()).status === "Success";
+};
+
 // ---- Lots (stock batches) ----
 
 export const getLotsByItem = async (itemId) => {

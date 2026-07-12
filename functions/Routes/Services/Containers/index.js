@@ -5,7 +5,7 @@ const containersDB = "containers";
 const containerItemsDB = "containerItems";
 
 // Create a container
-const createContainer = async (name, image, userId, id = null) => {
+const createContainer = async (name, image, userId, id = null, areaId = null) => {
   let itemRef = null;
 
   if (id) {
@@ -16,7 +16,7 @@ const createContainer = async (name, image, userId, id = null) => {
         name: name,
         image: image,
         userId: userId,
-
+        areaId: areaId ?? null,
       });
     itemRef = db.collection(containersDB).doc(String(id));
   } else {
@@ -24,6 +24,7 @@ const createContainer = async (name, image, userId, id = null) => {
       name: name,
       image: image,
       userId: userId,
+      areaId: areaId ?? null,
     });
   }
 
@@ -83,18 +84,34 @@ const getUserContainers = async (userId, asSnapshot = false) => {
 };
 
 // Update a container
-const updateContainer = async (id, name, image, userId) => {
+const updateContainer = async (id, name, image, userId, areaId = null) => {
   try {
     await db.collection(containersDB).doc(id).update({
       name: name,
       image: image,
       userId: userId,
+      areaId: areaId ?? null,
     });
     return true;
   } catch (error) {
     logger.error(`Failed to update container: ${id}`, error);
     return false;
   }
+};
+
+// Clear an area from every container in it (used when an area is deleted).
+const clearAreaFromContainers = async (areaId) => {
+  const snapshot = await db
+    .collection(containersDB)
+    .where("areaId", "==", areaId)
+    .get();
+  if (snapshot.empty) {
+    return 0;
+  }
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => batch.update(doc.ref, { areaId: null }));
+  await batch.commit();
+  return snapshot.size;
 };
 
 // Delete a container
@@ -239,6 +256,7 @@ module.exports = {
   getAllContainers,
   getUserContainers,
   updateContainer,
+  clearAreaFromContainers,
   deleteContainer,
   addItemToContainer,
   removeItemFromContainer,

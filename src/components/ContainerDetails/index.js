@@ -17,8 +17,12 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import { createContainer, deleteContainer, updateContainerItemsQuantity, getAllItems, addItemToContainer } from "../../utilities/api";
+import { createContainer, deleteContainer, updateContainerItemsQuantity, getAllItems, addItemToContainer, getAllAreas } from "../../utilities/api";
 import { getImageSrc } from "../../utilities/helpers";
 import ItemsInContainerList from "../ItemsInContainerList";
 
@@ -36,6 +40,13 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [areas, setAreas] = useState([]);
+
+  useEffect(() => {
+    getAllAreas()
+      .then((res) => setAreas(res || []))
+      .catch((error) => console.error("Error fetching areas:", error));
+  }, []);
 
   useEffect(() => {
     if (container?.id && !container.image) {
@@ -332,6 +343,26 @@ const ContainerDetails = ({ container, setContainer, items, setItems, isSmallScr
             onChange={handleInputChange}
             fullWidth
           />
+
+          <FormControl fullWidth>
+            <InputLabel>Area</InputLabel>
+            <Select
+              label="Area"
+              value={container.areaId || ""}
+              onChange={(e) =>
+                setContainer((prev) => ({ ...prev, areaId: e.target.value || null }))
+              }
+            >
+              <MenuItem value="">
+                <em>Unassigned</em>
+              </MenuItem>
+              {areas.map((area) => (
+                <MenuItem key={area.id} value={area.id}>
+                  {area.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <label htmlFor="imageUpload">
             {container.image ? (
