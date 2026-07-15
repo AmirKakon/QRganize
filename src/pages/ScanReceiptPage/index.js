@@ -58,8 +58,25 @@ const resizeImage = (file) =>
     reader.readAsDataURL(file);
   });
 
-// Find an existing item that matches an extracted name (case-insensitive).
-const matchExisting = (name, items) => {
+// Strip leading zeros so barcodes compare regardless of padding.
+const normBarcode = (value) => String(value || "").replace(/\D/g, "").replace(/^0+/, "");
+
+// A code short enough to be a store PLU (e.g. "22") is not a reliable key.
+const isRealBarcode = (value) => normBarcode(value).length >= 8;
+
+// Find an existing item that matches an extracted line. Barcode is the
+// strongest key (items are keyed by barcode), so try it first; fall back to
+// name (exact, then substring) when there is no usable barcode.
+const matchExisting = (name, barcode, items) => {
+  if (isRealBarcode(barcode)) {
+    const bc = normBarcode(barcode);
+    // Only compare against items whose id is itself numeric (a barcode),
+    // never an alphanumeric Firestore auto-id.
+    const byBarcode = items.find(
+      (i) => /^\d+$/.test(String(i.id)) && normBarcode(i.id) === bc
+    );
+    if (byBarcode) return byBarcode;
+  }
   const n = name.trim().toLowerCase();
   if (!n) return null;
   return (
@@ -104,11 +121,12 @@ const ScanReceiptPage = () => {
       }
       setRows(
         items.map((item) => {
-          const match = matchExisting(item.name, allItems);
+          const match = matchExisting(item.name, item.barcode, allItems);
           return {
             name: item.name,
             price: item.price,
             quantity: item.quantity,
+            barcode: item.barcode || "",
             include: true,
             matchedId: match ? match.id : null,
             matchedName: match ? match.name : null,
@@ -149,6 +167,11 @@ const ScanReceiptPage = () => {
             image: null,
             expirationDate: null,
             shoppingList: false,
+            // Key the item by its barcode when one is present, so future
+            // receipt scans (and the barcode scanner) match it by id.
+            ...(isRealBarcode(row.barcode)
+              ? { id: normBarcode(row.barcode) }
+              : {}),
           });
           if (typeof result === "string") {
             itemId = result;

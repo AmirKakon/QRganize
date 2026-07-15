@@ -20,6 +20,7 @@ const receiptSchema = {
           name: { type: "STRING" },
           price: { type: "NUMBER" },
           quantity: { type: "NUMBER" },
+          barcode: { type: "STRING" },
         },
         required: ["name", "price", "quantity"],
       },
@@ -85,7 +86,10 @@ const parseReceipt = async (image) => {
     "Ignore everything that is not a product you would stock: store " +
     "details, dates, cashier lines, subtotals, taxes, totals, discounts, " +
     "loyalty/points lines, shopping bags, bag fees, and bottle or " +
-    "container deposits. If a quantity cannot be determined, use 1.";
+    "container deposits. If a quantity cannot be determined, use 1.\n\n" +
+    "If a product barcode or item code is printed on the line (usually a " +
+    "long run of digits), return it as barcode using digits only. Omit " +
+    "barcode when no code is visible for that line.";
 
   const url = `${geminiBaseUrl}/${model}:generateContent?key=${apiKey}`;
   const body = {
@@ -133,6 +137,8 @@ const parseReceipt = async (image) => {
       // Inventory counts are whole numbers; round up any fractional weight
       // the model may still return, with a floor of 1.
       quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
+      // Digits only; used to match against existing items (keyed by barcode).
+      barcode: String(item.barcode || "").replace(/\D/g, ""),
     }))
     .filter((item) => item.name);
 
