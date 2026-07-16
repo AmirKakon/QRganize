@@ -5,6 +5,7 @@ import ContainerPage from "./ContainerPage";
 import PrintLabelsPage from "./PrintLabelsPage";
 import ScanReceiptPage from "./ScanReceiptPage";
 import AreasPage from "./AreasPage";
+import DuplicatesPage from "./DuplicatesPage";
 
 export {
   HomePage,
@@ -14,4 +15,5 @@ export {
   PrintLabelsPage,
   ScanReceiptPage,
   AreasPage,
+  DuplicatesPage,
 };

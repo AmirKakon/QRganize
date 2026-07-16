@@ -34,6 +34,24 @@ export const createItem = async (item) => {
   return res.status === "Success" ? (res.item?.itemId ?? true) : false;
 }
 
+// Merge the source item into the target (moves its stock, deletes the source).
+export const mergeItems = async (sourceId, targetId) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/merge`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ sourceId, targetId }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+}
+
 export const parseReceipt = async (image) => {
   const response = await fetch(`${apiBaseUrl}/api/ai/parseReceipt`, {
     method: "POST",
@@ -321,80 +339,3 @@ export const getContainer = async (id) => {
   return res.data;
 }
 
-export const addItemToContainer = async (containerId, item) => {
-  const response = await fetch(`${apiBaseUrl}/api/containers/addItems/${containerId}`, {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("accessToken"),
-      uuid: localStorage.getItem("uuid"),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(item),
-  });
-  if (!response.ok) {
-    throw new Error(`Error: ${response.status}`);
-  }
-  const res = await response.json();
-  return res.status === "Success";
-}
-
-export const getContainerItems = async (id) => {
-  const response = await fetch(`${apiBaseUrl}/api/containers/getItems/${id}`, {
-    method: "GET",
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("accessToken"),
-      uuid: localStorage.getItem("uuid"),
-    },
-  });
-  if (!response.ok) {
-    return [];
-  }
-  const res = await response.json();
-  return res.data;
-}
-
-export const deleteContainerItem = async (containerId, itemId) => {
-  const response = await fetch(`${apiBaseUrl}/api/containers/removeItems/${containerId}/${itemId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("accessToken"),
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`Error: ${response.status}`);
-  }
-  const res = await response.json();
-  return res.status === "Success"; 
-}
-
-export const updateContainerItemsQuantity = async (containerId, items) => {
-  const response = await fetch(`${apiBaseUrl}/api/containers/updateItemQuantitiesBatch/${containerId}`, {
-    method: "PUT",
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("accessToken"),
-      uuid: localStorage.getItem("uuid"),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({items: items}),
-  });
-  if (!response.ok) {
-    throw new Error(`Error: ${response.status}`);
-  }
-  const res = await response.json();
-  return res.status === "Success";
-}
-
-export const getContainersOfItem = async (id) => {
-  const response = await fetch(`${apiBaseUrl}/api/containers/getContainers/${id}`, {
-    method: "GET",
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("accessToken"),
-      uuid: localStorage.getItem("uuid"),
-    },
-  });
-  if (!response.ok) {
-    return [];
-  }
-  const res = await response.json();
-  return res.data;
-}

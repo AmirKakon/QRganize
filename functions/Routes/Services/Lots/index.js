@@ -1,8 +1,7 @@
-const { db, logger } = require("../../../setup");
+const { db } = require("../../../setup");
 const { NotFoundError } = require("../../Contracts/Errors");
 
 const lotsDB = "lots";
-const containerItemsDB = "containerItems";
 
 // A "lot" is one batch of an item: a quantity, an optional container, and an
 // optional expiration date. An item is the sum of its lots. This is the unit
@@ -144,39 +143,6 @@ const deleteLotsByContainer = async (containerId) => {
   return snapshot.size;
 };
 
-// One-time migration: seed `lots` from existing containerItems (per-container
-// amounts, no expiry). Idempotent — does nothing if lots already exist.
-const migrateFromContainerItems = async () => {
-  const existing = await db.collection(lotsDB).limit(1).get();
-  if (!existing.empty) {
-    return { migrated: 0, skipped: true, note: "lots already present" };
-  }
-
-  const snapshot = await db.collection(containerItemsDB).get();
-  const docs = snapshot.docs;
-  let migrated = 0;
-
-  // Commit in chunks to stay under Firestore's 500-write batch limit.
-  for (let i = 0; i < docs.length; i += 400) {
-    const batch = db.batch();
-    for (const doc of docs.slice(i, i + 400)) {
-      const { itemId, containerId, quantity } = doc.data();
-      const ref = db.collection(lotsDB).doc();
-      batch.set(ref, {
-        itemId,
-        containerId: normContainer(containerId),
-        quantity: Number(quantity) || 0,
-        expirationDate: null,
-      });
-      migrated += 1;
-    }
-    await batch.commit();
-  }
-
-  logger.info(`Lots migration | created ${migrated} lots`);
-  return { migrated, skipped: false };
-};
-
 module.exports = {
   addLot,
   updateLot,
@@ -187,5 +153,4 @@ module.exports = {
   getAllLots,
   deleteLotsByItem,
   deleteLotsByContainer,
-  migrateFromContainerItems,
 };

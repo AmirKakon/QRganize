@@ -22,6 +22,7 @@ import PrintIcon from '@mui/icons-material/Print';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import MergeTypeIcon from '@mui/icons-material/MergeType';
 import { generateRandomId } from "../../utilities/helpers";
 import qrganizeLogo from "../../assets/QRganize-logo.png";
 
@@ -107,6 +108,7 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
     { title: "Areas", link: "/areas", icon: <WarehouseIcon /> },
     { title: "Print Labels", link: "/labels", icon: <PrintIcon /> },
     { title: "Scan Receipt", link: "/scan-receipt", icon: <ReceiptLongIcon /> },
+    { title: "Find Duplicates", link: "/duplicates", icon: <MergeTypeIcon /> },
     { title: "About", link: "/about", icon: <InfoIcon /> },
   ];
 

@@ -27,6 +27,24 @@ app.post("/api/items/create", authenticate, async (req, res) => {
   }
 });
 
+// merge one item into another (consolidate duplicates)
+app.post("/api/items/merge", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["sourceId", "targetId"], req.body);
+
+    const result = await ItemService.mergeItems(
+      req.body.sourceId,
+      req.body.targetId,
+    );
+
+    return res
+      .status(200)
+      .send({ status: "Success", msg: "Items Merged", data: result });
+  } catch (error) {
+    handleError(res, error, `Failed to merge items: ${req.body}`);
+  }
+});
+
 // get a single item
 app.get("/api/items/get/:id", authenticate, async (req, res) => {
   try {

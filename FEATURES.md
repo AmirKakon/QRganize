@@ -113,6 +113,16 @@ Tools:
         app (JWT, apify, google_customsearch). Note: `functions.config()` is deprecated
         (retires ~March 2027); migrating the whole app to Secret Manager/params is a future task.
       - Note: `createItem` now allows a null `image` (receipt items have no photo).
+      - [x] **Weighed-item pricing** — sold-by-weight lines return the line total as price with
+        quantity 1 (not per-kg × fractional weight); bags/fees/deposits are skipped; quantities are
+        normalized to whole numbers.
+      - [x] **Barcode matching** — Gemini also extracts each line's barcode; the review screen matches
+        it to existing items (keyed by barcode) before falling back to name. New items with a real
+        barcode (≥8 digits) are created keyed by that barcode, so future scans + the barcode scanner
+        recognize them.
+      - [x] **Manual merge-to-existing** — each review row has a 🔗 picker to link a "New" line to an
+        existing item (bridges garbled OCR names / misread barcodes). Save always records the
+        purchased quantity as a lot (unassigned when no container is picked).
 - [ ] **📸 Photo → auto-fill item details** *(highest value)* — Item images are already captured as
       base64. Send to a vision model to auto-populate name / category / rough price. Removes the
       most tedious part of adding items.
@@ -130,7 +140,7 @@ Tools:
 
 ---
 
-## 6. Lot / Batch Inventory Model (in progress)
+## 6. Lot / Batch Inventory Model (shipped)
 
 Replace the single per-item quantity + single expiration date with **lots** (batches). A lot is
 `{ itemId, containerId | null, quantity, expirationDate | null }`; an item is the sum of its lots.
@@ -159,10 +169,29 @@ Phases:
       `add_item_to_container`) now derive from / write lots.
 - [x] **5. Cutover** — `getItems`/`find`/`get` derive quantity + expiries purely from lots (no more
       `userItems` fallback); `createItem` no longer writes `userItems`; deleting an item or container
-      now cascades to its lots. Removed the dead `ItemsInContainerList` component. *(Left in place,
-      harmless: the legacy `containerItems`/`userItems` documents and the now-unused
-      container-item endpoints — safe to delete later.)*
+      now cascades to its lots. Removed the dead `ItemsInContainerList` component.
+- [x] **6. Legacy retirement** — removed the now-dead `containerItems` join collection and `userItems`
+      per-user collection from the **prod** `app` (Routes) + frontend: the container-item service
+      methods & endpoints (`/api/containers/{addItems,removeItems,updateItemQuantity,`
+      `updateItemQuantitiesBatch,getItems,getContainers}`), the user-item methods & endpoints, the
+      `POST /api/lots/migrate` one-time migration, the `ContainerItem` contract, and 5 unused frontend
+      api wrappers. Kept user CRUD (`users` collection) and left the `dev` app (DevRoutes, still on the
+      old `*_dev` collections) untouched. *(Orphaned `containerItems`/`userItems` documents in
+      Firestore are harmless; delete them as a one-time housekeeping step if desired.)*
 
 ---
 
-_Last updated: 2026-07-09_
+## 7. Maintenance & Data Hygiene
+
+- [x] **🧬 Find duplicate items** — New `/duplicates` page (header link). Client-side fuzzy detection
+      (normalized names + Levenshtein similarity + containment) clusters likely-duplicate items; pick
+      the keeper and merge the rest with a confirm step. Backend `POST /api/items/merge` moves the
+      source's lots onto the target (coalescing by container + date), carries the shopping-list flag,
+      then deletes the source. Bridges cross-language / misspelled dupes the barcode matcher can't
+      (e.g. `Chery tomatoes` / `Chery tomatos`). Files: `Routes/{Services,Controllers}/Items`
+      (`mergeItems`), `pages/DuplicatesPage`.
+- [ ] Delete orphaned `containerItems` / `userItems` Firestore documents (one-time housekeeping).
+
+---
+
+_Last updated: 2026-07-16_

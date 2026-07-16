@@ -3,7 +3,6 @@ const { NotFoundError } = require("../../Contracts/Errors");
 const LotService = require("../Lots");
 
 const containersDB = "containers";
-const containerItemsDB = "containerItems";
 
 // Create a container
 const createContainer = async (name, image, userId, id = null, areaId = null) => {
@@ -138,116 +137,6 @@ const deleteContainer = async (id) => {
   }
 };
 
-// add item to container
-const addItemToContainer = async (containerId, itemId, quantity) => {
-  const itemRef = db
-    .collection(containerItemsDB)
-    .doc(`${containerId}_${itemId}`);
-  await itemRef.set({
-    containerId,
-    itemId,
-    quantity,
-  });
-
-  return {
-    id: itemRef.id,
-  };
-};
-
-// remove item from container
-const removeItemFromContainer = async (containerId, itemId) => {
-  await db
-    .collection(containerItemsDB)
-    .doc(`${containerId}_${itemId}`)
-    .delete();
-  return true;
-};
-
-// update quantity of item in container
-const updateItemQuantity = async ( containerId, itemId, quantity ) => {
-  const itemRef = db
-    .collection(containerItemsDB)
-    .doc(`${containerId}_${itemId}`);
-
-  const itemDoc = await itemRef.get();
-  if (!itemDoc.exists) {
-    throw new NotFoundError(
-      `Item ${itemId} not found in container ${containerId}`,
-    );
-  }
-
-  await itemRef.update({ quantity });
-
-  return true;
-};
-
-const updateItemQuantitiesBatch = async (containerId, items) => {
-  const batch = db.batch();
-
-  for (const { itemId, quantity } of items) {
-    const itemRef = db
-      .collection(containerItemsDB)
-      .doc(`${containerId}_${itemId}`);
-
-    const itemDoc = await itemRef.get();
-
-    if (!itemDoc.exists) {
-      throw new Error(`Item ${itemId} not found in container ${containerId}`);
-    }
-
-    batch.update(itemRef, { quantity });
-  }
-
-  await batch.commit();
-  return true;
-};
-
-// get all items in a container
-const getItemsByContainerId = async (containerId, asSnapshot = false) => {
-  const snapshot = await db
-    .collection(containerItemsDB)
-    .where("containerId", "==", containerId)
-    .get();
-
-  if (snapshot.empty) {
-    logger.info(
-      `Get container items | No items found for container ${containerId}`,
-    );
-    return asSnapshot ? [] : { containerId, items: [] };
-  }
-
-  if (asSnapshot) {
-    return snapshot;
-  }
-
-  const items = snapshot.docs.map((doc) => ({ ...doc.data() }));
-
-  return { containerId, items };
-};
-
-// get all containers that an item is in
-const getContainersByItemId = async (itemId, asSnapshot = false) => {
-  const snapshot = await db
-    .collection(containerItemsDB)
-    .where("itemId", "==", itemId)
-    .get();
-
-  if (snapshot.empty) {
-    logger.info(
-      `Get container items | No containers found for item ${itemId}`,
-    );
-    return asSnapshot ? [] : { itemId, containers: [] };
-  }
-
-  if (asSnapshot) {
-    return snapshot;
-  }
-
-  const containers = snapshot.docs.map((doc) => ({ ...doc.data() }));
-
-  return { itemId, containers };
-};
-
 module.exports = {
   createContainer,
   getContainer,
@@ -256,10 +145,4 @@ module.exports = {
   updateContainer,
   clearAreaFromContainers,
   deleteContainer,
-  addItemToContainer,
-  removeItemFromContainer,
-  updateItemQuantity,
-  updateItemQuantitiesBatch,
-  getItemsByContainerId,
-  getContainersByItemId,
 };

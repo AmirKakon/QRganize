@@ -83,14 +83,4 @@ app.get("/api/lots/byContainer/:containerId", authenticate, async (req, res) => 
   }
 });
 
-// One-time migration from containerItems → lots (idempotent).
-app.post("/api/lots/migrate", authenticate, async (req, res) => {
-  try {
-    const result = await LotService.migrateFromContainerItems();
-    return res.status(200).send({ status: "Success", data: result });
-  } catch (error) {
-    return handleError(res, error, "Failed to migrate lots");
-  }
-});
-
 module.exports = { app };

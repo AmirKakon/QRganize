@@ -1,5 +1,5 @@
 const { db, logger } = require("../../../setup");
-const { NotFoundError } = require("../../Contracts/Errors");
+const { NotFoundError, MissingArgumentError } = require("../../Contracts/Errors");
 const Utilities = require("../Utilities");
 const LotService = require("../Lots");
 
@@ -154,6 +154,46 @@ const deleteItem = async (id) => {
   }
 };
 
+// Merge the source item into the target: move every stock batch (lot) onto the
+// target (coalescing by container + date), carry over the shopping-list flag,
+// then delete the source item. Used to consolidate duplicate items.
+const mergeItems = async (sourceId, targetId) => {
+  if (!sourceId || !targetId) {
+    throw new MissingArgumentError("Both sourceId and targetId are required");
+  }
+  if (String(sourceId) === String(targetId)) {
+    throw new MissingArgumentError("Cannot merge an item into itself");
+  }
+
+  // getItem throws NotFoundError if either id is missing.
+  const source = await getItem(String(sourceId));
+  const target = await getItem(String(targetId));
+
+  const lots = await LotService.getLotsByItem(String(sourceId));
+  for (const lot of lots) {
+    await LotService.addLot(
+      String(targetId),
+      lot.containerId ?? null,
+      lot.quantity || 0,
+      lot.expirationDate ?? null,
+    );
+  }
+  await LotService.deleteLotsByItem(String(sourceId));
+
+  // Keep the target on the shopping list if either item was on it.
+  if (source.shoppingList && !target.shoppingList) {
+    await db
+      .collection(itemsDB)
+      .doc(String(targetId))
+      .update({ shoppingList: true });
+  }
+
+  await db.collection(itemsDB).doc(String(sourceId)).delete();
+
+  logger.info(`Merged item ${sourceId} into ${targetId} (${lots.length} lots)`);
+  return { targetId: String(targetId), movedLots: lots.length };
+};
+
 const searchBarcode = async (barcode) => {
   const results = await Utilities.searchBarcode(barcode);
 
@@ -181,5 +221,6 @@ module.exports = {
   updateItem,
   setShoppingList,
   deleteItem,
+  mergeItems,
   searchBarcode,
 };
