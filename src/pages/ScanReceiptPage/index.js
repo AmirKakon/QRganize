@@ -17,8 +17,16 @@ import {
   List,
   ListItem,
   Divider,
+  IconButton,
+  Tooltip,
+  Autocomplete,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import LinkIcon from "@mui/icons-material/Link";
 import {
   parseReceipt,
   getAllItems,
@@ -98,6 +106,8 @@ const ScanReceiptPage = () => {
   const [containers, setContainers] = useState([]);
   const [containerId, setContainerId] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  // Index of the row whose "match to existing item" dialog is open (null = closed).
+  const [matchRowIndex, setMatchRowIndex] = useState(null);
 
   useEffect(() => {
     getAllItems().then((res) => setAllItems(res || [])).catch(() => {});
@@ -146,6 +156,21 @@ const ScanReceiptPage = () => {
       prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
     );
 
+  // Link (or unlink) a review row to an existing inventory item. Passing null
+  // resets it to a brand-new item.
+  const setRowMatch = (index, item) =>
+    setRows((prev) =>
+      prev.map((row, i) =>
+        i === index
+          ? {
+              ...row,
+              matchedId: item ? item.id : null,
+              matchedName: item ? item.name : null,
+            }
+          : row
+      )
+    );
+
   const includedRows = rows.filter((row) => row.include);
   const total = includedRows.reduce(
     (sum, row) => sum + (Number(row.price) || 0) * (Number(row.quantity) || 1),
@@ -155,11 +180,13 @@ const ScanReceiptPage = () => {
   const handleSave = async () => {
     setSaving(true);
     let created = 0;
-    let added = 0;
+    let merged = 0;
     try {
       for (const row of includedRows) {
         let itemId = row.matchedId;
-        if (!itemId) {
+        if (itemId) {
+          merged += 1;
+        } else {
           const result = await createItem({
             name: row.name,
             price: String(row.price),
@@ -178,18 +205,23 @@ const ScanReceiptPage = () => {
             created += 1;
           }
         }
-        if (containerId && typeof itemId === "string") {
+        // Always record the purchased quantity as stock. A lot with no
+        // container is "unassigned" stock; picking a container files it there.
+        if (typeof itemId === "string") {
           await addLot({
             itemId,
-            containerId,
+            containerId: containerId || null,
             quantity: Number(row.quantity) || 1,
             expirationDate: null,
           });
-          added += 1;
         }
       }
-      const containerNote = containerId ? ` · ${added} added to container` : "";
-      notify(`Saved: ${created} new item${created === 1 ? "" : "s"}${containerNote}.`);
+      const mergedNote = merged ? ` · ${merged} merged into existing` : "";
+      const containerNote = containerId ? " · filed to container" : "";
+      notify(
+        `Saved: ${created} new item${created === 1 ? "" : "s"}` +
+          `${mergedNote}${containerNote}.`
+      );
       setRows([]);
       setImage(null);
       getAllItems().then((res) => setAllItems(res || [])).catch(() => {});
@@ -282,6 +314,14 @@ const ScanReceiptPage = () => {
                     color={row.matchedId ? "success" : "secondary"}
                     variant={row.matchedId ? "filled" : "outlined"}
                   />
+                  <Tooltip title="Match to an existing item">
+                    <IconButton
+                      size="small"
+                      onClick={() => setMatchRowIndex(index)}
+                    >
+                      <LinkIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </ListItem>
               ))}
             </List>
@@ -338,6 +378,61 @@ const ScanReceiptPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={matchRowIndex !== null}
+        onClose={() => setMatchRowIndex(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Match to an existing item</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
+            {matchRowIndex !== null && rows[matchRowIndex]
+              ? `Receipt line: "${rows[matchRowIndex].name}"`
+              : ""}
+          </Typography>
+          <Autocomplete
+            options={allItems}
+            getOptionLabel={(option) => option.name || ""}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            value={
+              matchRowIndex !== null && rows[matchRowIndex]?.matchedId
+                ? allItems.find(
+                    (i) => i.id === rows[matchRowIndex].matchedId
+                  ) || null
+                : null
+            }
+            onChange={(event, item) => setRowMatch(matchRowIndex, item)}
+            renderOption={(props, option) => (
+              <li {...props} key={option.id}>
+                <Box>
+                  <Typography variant="body2">{option.name}</Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {option.quantity ?? 0} in stock · id {option.id}
+                  </Typography>
+                </Box>
+              </li>
+            )}
+            renderInput={(params) => (
+              <TextField {...params} label="Search items" autoFocus />
+            )}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setRowMatch(matchRowIndex, null);
+              setMatchRowIndex(null);
+            }}
+          >
+            Keep as new item
+          </Button>
+          <Button variant="contained" onClick={() => setMatchRowIndex(null)}>
+            Done
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
