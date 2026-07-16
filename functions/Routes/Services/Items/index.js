@@ -1,9 +1,53 @@
+const { FieldValue } = require("firebase-admin/firestore");
 const { db, logger } = require("../../../setup");
 const { NotFoundError, MissingArgumentError } = require("../../Contracts/Errors");
 const Utilities = require("../Utilities");
 const LotService = require("../Lots");
 
 const itemsDB = "items";
+
+// Digits only, no leading zeros — the canonical form we store/compare barcodes
+// in. A code shorter than 8 digits (e.g. a store PLU) is not a reliable key.
+const normBarcode = (value) => String(value || "").replace(/\D/g, "").replace(/^0+/, "");
+const isRealBarcode = (value) => normBarcode(value).length >= 8;
+
+// Resolve a barcode to an item: first by document id (items are keyed by their
+// primary barcode), then by the `barcodes` alias array (extra barcodes picked
+// up when duplicates were merged). Returns null if nothing matches.
+const getItemByBarcode = async (code) => {
+  const doc = await db.collection(itemsDB).doc(String(code)).get();
+  if (doc.exists) {
+    return { id: doc.id, ...doc.data() };
+  }
+  const norm = normBarcode(code);
+  if (norm) {
+    const snapshot = await db
+      .collection(itemsDB)
+      .where("barcodes", "array-contains", norm)
+      .limit(1)
+      .get();
+    if (!snapshot.empty) {
+      const match = snapshot.docs[0];
+      return { id: match.id, ...match.data() };
+    }
+  }
+  return null;
+};
+
+// Add a barcode alias to an item so a different package's barcode still
+// resolves to it. Idempotent (array union). Ignores non-barcode codes.
+const addBarcodeToItem = async (id, barcode) => {
+  const norm = normBarcode(barcode);
+  if (!isRealBarcode(barcode) || normBarcode(id) === norm) {
+    return false; // nothing useful to add (its own id or a short PLU)
+  }
+  const ref = db.collection(itemsDB).doc(String(id));
+  if (!(await ref.get()).exists) {
+    throw new NotFoundError(`No item found with id: ${id}`);
+  }
+  await ref.update({ barcodes: FieldValue.arrayUnion(norm) });
+  return true;
+};
 
 // Create an item
 const createItem = async (name, price, image, shoppingList, id = null) => {
@@ -46,23 +90,19 @@ const getItem = async (id) => {
   return { id: doc.id, ...doc.data() };
 };
 
-// find an item in db or online
+// find an item in db (by id or barcode alias) or online
 const findItem = async (id) => {
-  let item = null;
-  try {
-    item = await getItem(id);
-  } catch (error) {
-    if (!item) {
-      const barcodeResponse = await searchBarcode(id);
-
-      if (barcodeResponse.data.length > 0) {
-        return barcodeResponse.data[0];
-      }
-
-      throw new NotFoundError(`No item found with id: ${id}`);
-    }
+  const item = await getItemByBarcode(id);
+  if (item) {
+    return item;
   }
-  return item;
+
+  const barcodeResponse = await searchBarcode(id);
+  if (barcodeResponse.data.length > 0) {
+    return barcodeResponse.data[0];
+  }
+
+  throw new NotFoundError(`No item found with id: ${id}`);
 };
 
 // Get all items
@@ -180,18 +220,32 @@ const mergeItems = async (sourceId, targetId) => {
   }
   await LotService.deleteLotsByItem(String(sourceId));
 
+  // Collect every barcode both items answer to (their own ids + existing
+  // aliases) so scanning any merged package still resolves to the survivor.
+  const barcodes = new Set([...(target.barcodes || []), ...(source.barcodes || [])]);
+  [source.id, target.id].forEach((docId) => {
+    if (isRealBarcode(docId) && /^\d+$/.test(String(docId))) {
+      barcodes.add(normBarcode(docId));
+    }
+  });
+  // Drop the target's own id — it already resolves by document id.
+  barcodes.delete(normBarcode(target.id));
+
+  const update = { barcodes: [...barcodes] };
   // Keep the target on the shopping list if either item was on it.
   if (source.shoppingList && !target.shoppingList) {
-    await db
-      .collection(itemsDB)
-      .doc(String(targetId))
-      .update({ shoppingList: true });
+    update.shoppingList = true;
   }
+  await db.collection(itemsDB).doc(String(targetId)).update(update);
 
   await db.collection(itemsDB).doc(String(sourceId)).delete();
 
   logger.info(`Merged item ${sourceId} into ${targetId} (${lots.length} lots)`);
-  return { targetId: String(targetId), movedLots: lots.length };
+  return {
+    targetId: String(targetId),
+    movedLots: lots.length,
+    barcodes: update.barcodes,
+  };
 };
 
 const searchBarcode = async (barcode) => {
@@ -222,5 +276,6 @@ module.exports = {
   setShoppingList,
   deleteItem,
   mergeItems,
+  addBarcodeToItem,
   searchBarcode,
 };

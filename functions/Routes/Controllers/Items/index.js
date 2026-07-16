@@ -45,6 +45,25 @@ app.post("/api/items/merge", authenticate, async (req, res) => {
   }
 });
 
+// attach a barcode alias to an item (so another package's barcode resolves too)
+app.put("/api/items/addBarcode/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    checkRequiredParams(["barcode"], req.body);
+
+    const added = await ItemService.addBarcodeToItem(
+      req.params.id,
+      req.body.barcode,
+    );
+
+    return res
+      .status(200)
+      .send({ status: "Success", msg: added ? "Barcode added" : "No change" });
+  } catch (error) {
+    handleError(res, error, `Failed to add barcode to item: ${req.params.id}`);
+  }
+});
+
 // get a single item
 app.get("/api/items/get/:id", authenticate, async (req, res) => {
   try {

@@ -33,6 +33,7 @@ import {
   getAllContainers,
   createItem,
   addLot,
+  addItemBarcode,
 } from "../../utilities/api";
 
 const money = (n) => `$${(Number(n) || 0).toFixed(2)}`;
@@ -78,10 +79,12 @@ const isRealBarcode = (value) => normBarcode(value).length >= 8;
 const matchExisting = (name, barcode, items) => {
   if (isRealBarcode(barcode)) {
     const bc = normBarcode(barcode);
-    // Only compare against items whose id is itself numeric (a barcode),
-    // never an alphanumeric Firestore auto-id.
+    // Match a numeric (barcode) document id, or any barcode alias the item
+    // picked up from a merge / a previously-linked package.
     const byBarcode = items.find(
-      (i) => /^\d+$/.test(String(i.id)) && normBarcode(i.id) === bc
+      (i) =>
+        (/^\d+$/.test(String(i.id)) && normBarcode(i.id) === bc) ||
+        (Array.isArray(i.barcodes) && i.barcodes.includes(bc))
     );
     if (byBarcode) return byBarcode;
   }
@@ -214,6 +217,20 @@ const ScanReceiptPage = () => {
             quantity: Number(row.quantity) || 1,
             expirationDate: null,
           });
+        }
+        // If this line was linked to an existing item but carries a different
+        // barcode (a new package of the same product), remember that barcode so
+        // scanning it later still resolves to this item.
+        if (
+          row.matchedId &&
+          isRealBarcode(row.barcode) &&
+          normBarcode(row.matchedId) !== normBarcode(row.barcode)
+        ) {
+          try {
+            await addItemBarcode(row.matchedId, row.barcode);
+          } catch (barcodeError) {
+            console.error("Failed to attach barcode alias:", barcodeError);
+          }
         }
       }
       const mergedNote = merged ? ` · ${merged} merged into existing` : "";

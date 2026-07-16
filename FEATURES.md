@@ -190,6 +190,13 @@ Phases:
       then deletes the source. Bridges cross-language / misspelled dupes the barcode matcher can't
       (e.g. `Chery tomatoes` / `Chery tomatos`). Files: `Routes/{Services,Controllers}/Items`
       (`mergeItems`), `pages/DuplicatesPage`.
+- [x] **🏷️ Multiple barcodes per item (aliases)** — an item can answer to several barcodes (e.g. the
+      same product from different packages/brands). Items store a `barcodes` alias array; `findItem`
+      resolves a scanned code by document id **then** by `barcodes` (`array-contains`). Merging
+      duplicates unions every merged item's barcode onto the survivor, and linking a receipt line to
+      an existing item records that line's barcode on it (`PUT /api/items/addBarcode/:id`,
+      `FieldValue.arrayUnion`). Without this, merging was lossy — a merged-away barcode would rescan as
+      a brand-new item. The receipt matcher also checks the alias array.
 - [ ] Delete orphaned `containerItems` / `userItems` Firestore documents (one-time housekeeping).
 
 ---

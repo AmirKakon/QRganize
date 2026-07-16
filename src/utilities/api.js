@@ -34,6 +34,24 @@ export const createItem = async (item) => {
   return res.status === "Success" ? (res.item?.itemId ?? true) : false;
 }
 
+// Attach a barcode alias to an item so another package's barcode resolves to it.
+export const addItemBarcode = async (itemId, barcode) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/addBarcode/${itemId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ barcode }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+}
+
 // Merge the source item into the target (moves its stock, deletes the source).
 export const mergeItems = async (sourceId, targetId) => {
   const response = await fetch(`${apiBaseUrl}/api/items/merge`, {
