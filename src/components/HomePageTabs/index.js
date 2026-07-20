@@ -26,15 +26,16 @@ const HomePageTabs = ({ isSmallScreen }) => {
       .catch((error) => console.error("Error fetching containers:", error));
   }, [loadItems]);
 
-  // Define tab configurations
+  // Define tab configurations. "View Items" leads so the app opens on the
+  // user's inventory rather than a live camera; scanning is a deliberate tab.
   const tabs = [
-    {
-      label: "Barcode Scanner",
-      component: <BarcodeTab isSmallScreen={isSmallScreen} />,
-    },
     {
       label: "View Items",
       component: <ItemsTab isSmallScreen={isSmallScreen} items={items} />,
+    },
+    {
+      label: "Barcode Scanner",
+      component: <BarcodeTab isSmallScreen={isSmallScreen} />,
     },
     {
       label: "Shopping List",

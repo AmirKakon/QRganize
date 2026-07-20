@@ -85,6 +85,15 @@ const StockList = ({ itemId, lots, containers, onChanged }) => {
   const sorted = sortByExpiry(lots);
   const total = lots.reduce((sum, l) => sum + (l.quantity || 0), 0);
 
+  // Pre-select the container the item already lives in, so adding more stock
+  // doesn't silently default to Unassigned.
+  const defaultContainer = lots.find((l) => l.containerId)?.containerId ?? UNASSIGNED;
+
+  const openAddForm = () => {
+    if (!adding) setAddContainer(defaultContainer);
+    setAdding((v) => !v);
+  };
+
   const handleAdd = () =>
     run(async () => {
       await addLot({
@@ -130,7 +139,7 @@ const StockList = ({ itemId, lots, containers, onChanged }) => {
           size="small"
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setAdding((v) => !v)}
+          onClick={openAddForm}
           disabled={!itemId}
         >
           Add stock

@@ -61,13 +61,15 @@ const similarity = (a, b) => {
 };
 
 // Two names are candidate duplicates if they normalize equal, are very close
-// by edit distance, or one wholly contains the other.
+// by edit distance, or one name is *most of* the other. The containment ratio
+// guard stops loose matches like "onion" ⊂ "sour cream and onion chips" and
+// distinct variants ("...barista coffee" vs "...original coffee") from grouping.
 const looksLikeDuplicate = (a, b) => {
   if (!a || !b) return false;
   if (a === b) return true;
-  if (similarity(a, b) >= 0.72) return true;
+  if (similarity(a, b) >= 0.82) return true;
   const [short, long] = a.length <= b.length ? [a, b] : [b, a];
-  return short.length >= 4 && long.includes(short);
+  return long.includes(short) && short.length / long.length >= 0.7;
 };
 
 // Union-find grouping of items whose names look like duplicates.

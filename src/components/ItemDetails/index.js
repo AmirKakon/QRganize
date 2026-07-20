@@ -13,8 +13,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Chip,
+  Typography,
 } from "@mui/material";
-import { createItem, deleteItem } from "../../utilities/api";
+import { createItem, deleteItem, addItemBarcode } from "../../utilities/api";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
@@ -25,6 +27,8 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [newBarcode, setNewBarcode] = useState("");
+  const [addingBarcode, setAddingBarcode] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -116,6 +120,30 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     }
   };
 
+  const handleAddBarcode = async () => {
+    const code = newBarcode.trim();
+    if (!code) return;
+    setAddingBarcode(true);
+    try {
+      await addItemBarcode(item.id, code);
+      setItem((prev) => ({
+        ...prev,
+        barcodes: Array.from(new Set([...(prev.barcodes || []), code])),
+      }));
+      setNewBarcode("");
+      setSnackbar({ open: true, message: "Barcode added.", severity: "success" });
+    } catch (error) {
+      console.error("Error adding barcode:", error);
+      setSnackbar({
+        open: true,
+        message: "Couldn't add barcode. Save the item first, then try again.",
+        severity: "error",
+      });
+    } finally {
+      setAddingBarcode(false);
+    }
+  };
+
   const handleSearchForBarcode = () => {
     setBarcode(item.id);
     setSnackbar({ open: true, message: "searching for barcode...", severity: "info" });
@@ -144,7 +172,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
 
   return (
     <>
-      <Paper elevation={2} sx={{ padding: 2, marginBottom: 2 }}>
+      <Paper elevation={2} sx={{ padding: 2, marginBottom: 2, maxWidth: 700, mx: "auto" }}>
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 2, gap: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
             <TextField label="Item ID" name="id" value={item.id || ""} onChange={handleInputChange} fullWidth />
@@ -190,6 +218,45 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
             containers={containers}
             onChanged={onLotsChanged}
           />
+
+          <Paper variant="outlined" sx={{ p: 2, width: "100%" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Barcodes
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
+              Extra barcodes let the same item be found from different packages
+              or brands.
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1 }}>
+              {Array.from(new Set([item.id, ...(item.barcodes || [])]))
+                .filter(Boolean)
+                .map((code, i) => (
+                  <Chip
+                    key={code}
+                    label={code}
+                    size="small"
+                    color={i === 0 ? "primary" : "default"}
+                    variant={i === 0 ? "filled" : "outlined"}
+                  />
+                ))}
+            </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <TextField
+                size="small"
+                label="Add a barcode"
+                value={newBarcode}
+                onChange={(e) => setNewBarcode(e.target.value)}
+                sx={{ flex: 1 }}
+              />
+              <Button
+                variant="outlined"
+                onClick={handleAddBarcode}
+                disabled={addingBarcode || !newBarcode.trim()}
+              >
+                {addingBarcode ? <CircularProgress size={20} /> : "Add"}
+              </Button>
+            </Box>
+          </Paper>
 
           <Button variant="contained" color="primary" onClick={handleDownloadBarcode} sx={{ width: "100%" }}>
             Download Barcode

@@ -88,7 +88,8 @@ const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
     <Paper variant="outlined" sx={{ p: 2, width: "100%" }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-          Contents: {total}
+          Contents: {Number.isInteger(total) ? total : Math.round(total * 100) / 100}{" "}
+          {total === 1 ? "item" : "items"}
         </Typography>
         <Button
           size="small"

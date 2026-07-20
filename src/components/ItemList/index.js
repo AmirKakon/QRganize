@@ -11,7 +11,7 @@ import {
   ImageListItemBar,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { getImageSrc } from "../../utilities/helpers";
+import { getImageSrc, PLACEHOLDER_IMAGE } from "../../utilities/helpers";
 
 const ItemList = ({ items, isSmallScreen }) => {
   const navigate = useNavigate();
@@ -110,6 +110,10 @@ const ItemList = ({ items, isSmallScreen }) => {
                   src={getImageSrc(item.image)}
                   alt={item.name}
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = PLACEHOLDER_IMAGE;
+                  }}
                   style={{ objectFit: "cover" }}
                 />
                 <ImageListItemBar
@@ -156,6 +160,10 @@ const ItemList = ({ items, isSmallScreen }) => {
                   src={getImageSrc(item.image)}
                   alt={item.name}
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = PLACEHOLDER_IMAGE;
+                  }}
                   style={{ objectFit: "cover" }}
                 />
                 <ImageListItemBar

@@ -19,16 +19,17 @@ const QrCodeTabs = ({ isSmallScreen }) => {
       .catch((error) => console.error("Error fetching data:", error));
   }, []);
 
-  // Define tab configurations
+  // Define tab configurations. "View Containers" leads so the page opens on the
+  // container list rather than a live camera; scanning is a deliberate tab.
   const tabs = [
+    {
+      label: "View Containers",
+      component: <ContainersTab isSmallScreen={isSmallScreen} containers={containers} />,
+    },
     {
       label: "QrCode Scanner",
       component: <QrCodeTab isSmallScreen={isSmallScreen} />,
     },
-    {
-      label: "View Containers",
-      component: <ContainersTab isSmallScreen={isSmallScreen} containers={containers} />,
-    }
   ];
 
   return (

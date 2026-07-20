@@ -26,7 +26,6 @@ const App = () => {
   const [mode, setMode] = useState(
     () => localStorage.getItem("themeMode") || (prefersDarkMode ? "dark" : "light")
   );
-  const [accessToken, setAccessToken] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -59,37 +58,23 @@ const App = () => {
       username: process.env.REACT_APP_DEFAULT_USERNAME,
       id: id,
     };
-    tryGetTokenOrLogin(defaultUser)
-      .then((res) => {
-        setAccessToken(localStorage.getItem("accessToken"));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    tryGetTokenOrLogin(defaultUser).finally(() => {
+      setLoading(false);
+    });
 
     const intervalId = setInterval(() => {
       const defaultUser = {
         username: process.env.REACT_APP_DEFAULT_USERNAME,
         id: id,
       };
-      tryGetTokenOrLogin(defaultUser)
-        .then((res) => {
-          setAccessToken(localStorage.getItem("accessToken"));
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+      tryGetTokenOrLogin(defaultUser).finally(() => {
+        setLoading(false);
+      });
     }, 60 * 1000); // Update every minute
 
     // Clear interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
-
-  useEffect(() => {
-    if (accessToken) {
-      setMessage("Access token updated");
-    }
-  }, [accessToken]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
