@@ -80,7 +80,9 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
 - [ ] Container nesting (a container inside a container)
 - [ ] Recently scanned / item history
 - [ ] Offline support — manifest exists; add a service worker for PWA caching
-- [ ] Home dashboard with stats (total items, containers, expiring soon)
+- [x] Home dashboard with stats (total items, containers, expiring soon) — "Overview"
+      is now the default Home tab (`components/HomeDashboard`): clickable count tiles + a
+      "next to expire" peek.
 - [ ] Manual barcode entry fallback when the camera fails
 
 ---

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
 import { BarcodeTab, ItemsTab, ExpiringTab, ShoppingListTab } from "./Tabs";
+import HomeDashboard from "../HomeDashboard";
 import { getAllItems, getAllContainers } from "../../utilities/api";
 
 const HomePageTabs = ({ isSmallScreen }) => {
@@ -11,6 +12,10 @@ const HomePageTabs = ({ isSmallScreen }) => {
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
   };
+
+  // Let the dashboard jump to a sibling tab by name.
+  const tabIndexByKey = { items: 1, scanner: 2, shopping: 3, expiring: 4 };
+  const goToTab = (key) => setTabIndex(tabIndexByKey[key] ?? 0);
 
   const loadItems = useCallback(() => {
     return getAllItems()
@@ -26,9 +31,16 @@ const HomePageTabs = ({ isSmallScreen }) => {
       .catch((error) => console.error("Error fetching containers:", error));
   }, [loadItems]);
 
-  // Define tab configurations. "View Items" leads so the app opens on the
-  // user's inventory rather than a live camera; scanning is a deliberate tab.
+  // Define tab configurations. "Overview" leads so the app opens on an
+  // at-a-glance dashboard rather than a live camera; scanning is a deliberate
+  // tab. (Keys in tabIndexByKey above must match this order.)
   const tabs = [
+    {
+      label: "Overview",
+      component: (
+        <HomeDashboard items={items} containers={containers} onGoTo={goToTab} />
+      ),
+    },
     {
       label: "View Items",
       component: <ItemsTab isSmallScreen={isSmallScreen} items={items} />,

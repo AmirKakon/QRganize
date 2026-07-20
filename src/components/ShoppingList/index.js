@@ -12,9 +12,11 @@ import {
   Snackbar,
   Alert,
   Typography,
+  TextField,
 } from "@mui/material";
 import RemoveShoppingCartIcon from "@mui/icons-material/RemoveShoppingCart";
-import { setItemShoppingList } from "../../utilities/api";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import { setItemShoppingList, createItem } from "../../utilities/api";
 
 const money = (n) => `$${n.toFixed(2)}`;
 
@@ -35,7 +37,28 @@ const ShoppingList = ({ items, onListChanged }) => {
   // Items removed locally but not yet gone from the (slow) refetch — hide them
   // immediately so there's no window where a purchased item lingers un-crossed.
   const [hiddenIds, setHiddenIds] = useState([]);
+  const [newItem, setNewItem] = useState("");
+  const [adding, setAdding] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+  // Add an arbitrary "to buy" item that isn't in the inventory yet. It's created
+  // as a normal item (price 0, no photo) flagged onto the shopping list.
+  const handleAddFreeText = async () => {
+    const name = newItem.trim();
+    if (!name) return;
+    setAdding(true);
+    try {
+      await createItem({ name, price: "0", image: null, shoppingList: true, expirationDate: null });
+      setNewItem("");
+      setSnackbar({ open: true, message: `Added "${name}" to the list.`, severity: "success" });
+      await onListChanged?.();
+    } catch (error) {
+      console.error("Error adding shopping-list item:", error);
+      setSnackbar({ open: true, message: "Failed to add item. Please try again.", severity: "error" });
+    } finally {
+      setAdding(false);
+    }
+  };
 
   const toggle = (id) =>
     setCheckedIds((prev) =>
@@ -74,15 +97,7 @@ const ShoppingList = ({ items, onListChanged }) => {
   };
 
   const visibleItems = items.filter((item) => !hiddenIds.includes(item.id));
-
-  if (visibleItems.length === 0) {
-    return (
-      <Typography sx={{ mt: 4, color: "text.secondary", textAlign: "center" }}>
-        Your shopping list is empty. Turn on &ldquo;Add to Shopping List&rdquo;
-        on an item to add it here.
-      </Typography>
-    );
-  }
+  const isEmpty = visibleItems.length === 0;
 
   const total = visibleItems.reduce((sum, item) => sum + lineTotalOf(item), 0);
   const remaining = visibleItems
@@ -91,6 +106,36 @@ const ShoppingList = ({ items, onListChanged }) => {
 
   return (
     <Box sx={{ maxWidth: 600, mx: "auto" }}>
+      <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+        <TextField
+          size="small"
+          fullWidth
+          label="Add something to buy"
+          value={newItem}
+          onChange={(e) => setNewItem(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleAddFreeText();
+          }}
+        />
+        <Button
+          variant="contained"
+          onClick={handleAddFreeText}
+          disabled={adding || !newItem.trim()}
+          startIcon={adding ? <CircularProgress size={18} color="inherit" /> : <AddShoppingCartIcon />}
+        >
+          Add
+        </Button>
+      </Box>
+
+      {isEmpty && (
+        <Typography sx={{ mt: 2, color: "text.secondary", textAlign: "center" }}>
+          Your shopping list is empty. Add something above, or turn on
+          &ldquo;Add to Shopping List&rdquo; on any item.
+        </Typography>
+      )}
+
+      {!isEmpty && (
+      <>
       <Paper
         variant="outlined"
         sx={{ p: 2, mb: 2, display: "flex", justifyContent: "space-between" }}
@@ -155,6 +200,8 @@ const ShoppingList = ({ items, onListChanged }) => {
           );
         })}
       </List>
+      </>
+      )}
 
       <Snackbar
         open={snackbar.open}
