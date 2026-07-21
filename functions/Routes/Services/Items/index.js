@@ -248,22 +248,32 @@ const mergeItems = async (sourceId, targetId) => {
   };
 };
 
-// Consume one unit of an item, FEFO (soonest-to-expire batch first, undated
-// last). Item-level so callers (UI quick-use, MCP/LLM) don't need to pick a lot.
-const consumeOne = async (id) => {
+// Consume `amount` whole units of an item, FEFO (soonest-to-expire batch first,
+// undated last), spilling across batches as needed. Item-level so callers (UI
+// quick-use, MCP/LLM, recipe deduction) don't need to pick a lot.
+const consume = async (id, amount = 1) => {
+  let toUse = Math.max(1, Math.floor(Number(amount) || 1));
   const lots = await LotService.getLotsByItem(String(id));
   if (lots.length === 0) {
-    return { quantity: 0, used: false };
+    return { quantity: 0, used: 0 };
   }
   const sorted = [...lots].sort((a, b) => {
     if (!a.expirationDate) return 1;
     if (!b.expirationDate) return -1;
     return new Date(a.expirationDate) - new Date(b.expirationDate);
   });
-  // updateLot removes the lot when quantity hits zero.
-  await LotService.updateLot(sorted[0].id, {
-    quantity: (sorted[0].quantity || 0) - 1,
-  });
+
+  let used = 0;
+  for (const lot of sorted) {
+    if (toUse <= 0) break;
+    const have = lot.quantity || 0;
+    const take = Math.min(have, toUse);
+    // updateLot removes the lot when quantity hits zero.
+    await LotService.updateLot(lot.id, { quantity: have - take });
+    toUse -= take;
+    used += take;
+  }
+
   await db
     .collection(itemsDB)
     .doc(String(id))
@@ -271,7 +281,7 @@ const consumeOne = async (id) => {
 
   const remaining = await LotService.getLotsByItem(String(id));
   const quantity = remaining.reduce((sum, l) => sum + (l.quantity || 0), 0);
-  return { quantity, used: true };
+  return { quantity, used };
 };
 
 // Finish an item: drop all its stock (every lot) but keep the item record so it
@@ -314,7 +324,7 @@ module.exports = {
   deleteItem,
   mergeItems,
   addBarcodeToItem,
-  consumeOne,
+  consume,
   finish,
   searchBarcode,
 };

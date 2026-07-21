@@ -64,11 +64,12 @@ app.put("/api/items/addBarcode/:id", authenticate, async (req, res) => {
   }
 });
 
-// use one unit of an item (FEFO); item-level so callers needn't pick a lot
+// use N whole units of an item (FEFO, default 1); item-level so callers
+// needn't pick a lot
 app.post("/api/items/use/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
-    const result = await ItemService.consumeOne(req.params.id);
+    const result = await ItemService.consume(req.params.id, req.body?.amount);
     return res.status(200).send({ status: "Success", data: result });
   } catch (error) {
     handleError(res, error, `Failed to use item: ${req.params.id}`);

@@ -41,6 +41,12 @@ const getContainers = async () =>
   ((await api("/api/containers/getAll")).data || {}).containers || [];
 const addLot = async (lot) =>
   (await api("/api/lots/add", { method: "POST", body: lot })).data;
+const consumeItem = async (id, amount) =>
+  (await api(`/api/items/use/${id}`, { method: "POST", body: { amount } })).data;
+const finishItemApi = async (id) =>
+  (await api(`/api/items/finish/${id}`, { method: "POST" })).data;
+const createItemApi = async (body) =>
+  (await api("/api/items/create", { method: "POST", body })).item;
 
 // ---- Matching ---------------------------------------------------------------
 const norm = (s) => (s || "").trim().toLowerCase();
@@ -53,6 +59,23 @@ const findByName = (list, name) => {
     list.find((x) => x.id === name) ||
     null
   );
+};
+
+// Ranked matches for a name/barcode, best first — for LLM disambiguation.
+const candidates = (list, name) => {
+  const n = norm(name);
+  if (!n) return [];
+  const scored = [];
+  for (const x of list) {
+    const xn = norm(x.name);
+    let score = 0;
+    if (xn === n || x.id === name || (x.barcodes || []).includes(name)) score = 100;
+    else if (xn.startsWith(n)) score = 80;
+    else if (xn.includes(n)) score = 60;
+    else if (n.includes(xn)) score = 40;
+    if (score > 0) scored.push({ score, item: x });
+  }
+  return scored.sort((a, b) => b.score - a.score).map((s) => s.item);
 };
 
 const text = (data) => ({
@@ -293,6 +316,148 @@ const TOOLS = [
           : null,
       });
       return text(`Added ${it.name} to container "${c.name}".`);
+    },
+  },
+  {
+    name: "resolve_item",
+    description:
+      "Resolve a spoken/typed item name to concrete inventory items, best match " +
+      "first. Use this to DISAMBIGUATE before consuming/finishing when a name is " +
+      "vague (e.g. 'milk' → several items). Returns id, name, quantity for each " +
+      "candidate so you can ask the user which one they mean.",
+    inputSchema: {
+      type: "object",
+      properties: { name: { type: "string", description: "Item name or barcode" } },
+      required: ["name"],
+    },
+    handler: async ({ name }) => {
+      const matches = candidates(await getItems(), name);
+      if (matches.length === 0) return text(`No item matches "${name}".`);
+      return text(
+        matches.slice(0, 10).map((i) => ({
+          id: i.id,
+          name: i.name,
+          quantity: i.quantity,
+          onShoppingList: !!i.shoppingList,
+        }))
+      );
+    },
+  },
+  {
+    name: "get_item_stock",
+    description:
+      "Get how much of an item is in stock and where: total quantity plus each " +
+      "batch's container and expiration date. Matches by name or id.",
+    inputSchema: {
+      type: "object",
+      properties: { item: { type: "string", description: "Item name or id" } },
+      required: ["item"],
+    },
+    handler: async ({ item }) => {
+      const it = findByName(await getItems(), item);
+      if (!it) return text(`No item found matching "${item}".`);
+      const cs = await getContainers();
+      const nameById = new Map(cs.map((c) => [c.id, c.name]));
+      return text({
+        id: it.id,
+        name: it.name,
+        quantity: it.quantity || 0,
+        batches: (it.lots || []).map((l) => ({
+          container: l.containerId
+            ? nameById.get(l.containerId) || l.containerId
+            : "Unassigned",
+          quantity: l.quantity,
+          expirationDate: l.expirationDate,
+        })),
+      });
+    },
+  },
+  {
+    name: "consume_item",
+    description:
+      "Record that the user USED some of an item — decrements stock by whole " +
+      "units, oldest/soonest-to-expire batch first (FEFO). Default amount is 1. " +
+      "Use for 'I used/finished the pasta', recipe deduction, etc. If the name is " +
+      "ambiguous, call resolve_item first. Returns the remaining quantity.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        item: { type: "string", description: "Item name or id" },
+        amount: { type: "number", description: "Whole units to use (default 1)" },
+      },
+      required: ["item"],
+    },
+    handler: async ({ item, amount }) => {
+      const it = findByName(await getItems(), item);
+      if (!it) return text(`No item found matching "${item}".`);
+      const n = typeof amount === "number" && amount > 0 ? Math.floor(amount) : 1;
+      const res = await consumeItem(it.id, n);
+      return text(
+        `Used ${res.used} ${it.name}. ${res.quantity} left in stock.`
+      );
+    },
+  },
+  {
+    name: "finish_item",
+    description:
+      "Mark an item as fully used up — clears ALL its stock (every batch) but " +
+      "keeps the item so it can be re-added or put on the shopping list. Use for " +
+      "'I finished the X'. Matches by name or id; disambiguate with resolve_item.",
+    inputSchema: {
+      type: "object",
+      properties: { item: { type: "string", description: "Item name or id" } },
+      required: ["item"],
+    },
+    handler: async ({ item }) => {
+      const it = findByName(await getItems(), item);
+      if (!it) return text(`No item found matching "${item}".`);
+      await finishItemApi(it.id);
+      return text(`Finished "${it.name}" — stock cleared to 0.`);
+    },
+  },
+  {
+    name: "create_item",
+    description:
+      "Create a new inventory item by name (for one-off items not scanned from a " +
+      "receipt). Optionally give it an initial quantity in a container and an " +
+      "expiration date (YYYY-MM-DD). If the item already exists, prefer " +
+      "add_item_to_container instead.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Item name" },
+        price: { type: "string", description: "Optional price" },
+        container: { type: "string", description: "Optional container to stock it in" },
+        quantity: { type: "number", description: "Optional quantity if a container is given (default 1)" },
+        expirationDate: { type: "string", description: "Optional YYYY-MM-DD" },
+      },
+      required: ["name"],
+    },
+    handler: async ({ name, price, container, quantity, expirationDate }) => {
+      const created = await createItemApi({
+        name,
+        price: String(price ?? "0"),
+        image: null,
+        shoppingList: false,
+        expirationDate: null,
+      });
+      const itemId = created?.itemId;
+      let note = `Created item "${name}".`;
+      if (container && itemId) {
+        const c = findByName(await getContainers(), container);
+        if (!c) {
+          note += ` (No container "${container}" found — left unstocked.)`;
+        } else {
+          await addLot({
+            itemId,
+            containerId: c.id,
+            quantity: typeof quantity === "number" ? quantity : 1,
+            expirationDate: expirationDate ? `${expirationDate}T00:00:00+00:00` : null,
+          });
+          note += ` Stocked ${typeof quantity === "number" ? quantity : 1} in "${c.name}".`;
+        }
+      }
+      return text(note);
     },
   },
 ];

@@ -62,6 +62,11 @@ server sees the same quantities and expiration dates as the app.
 | `get_shopping_list` | Current shopping list + estimated total |
 | `add_to_shopping_list` | Flag/create an item on the shopping list |
 | `add_item_to_container` | Put an item into a container |
+| `resolve_item` | Rank name matches for disambiguation ("which milk?") |
+| `get_item_stock` | How much of an item is in stock and where |
+| `consume_item` | Record using N whole units (FEFO) |
+| `finish_item` | Clear all of an item's stock (keeps the item) |
+| `create_item` | Create a one-off item (optionally stocked in a container) |
 
 ## Example prompts
 
