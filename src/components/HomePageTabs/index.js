@@ -53,6 +53,7 @@ const HomePageTabs = ({ isSmallScreen }) => {
           items={items}
           containers={containers}
           areas={areas}
+          onItemsChanged={loadItems}
         />
       ),
     },

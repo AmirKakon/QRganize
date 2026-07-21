@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import ItemList from "../../ItemList";
 
-const ItemsTab = ({ isSmallScreen, items, containers = [], areas = [] }) => {
+const ItemsTab = ({ isSmallScreen, items, containers = [], areas = [], onItemsChanged }) => {
   return (
     <Box
       sx={{
@@ -21,6 +21,7 @@ const ItemsTab = ({ isSmallScreen, items, containers = [], areas = [] }) => {
         isSmallScreen={isSmallScreen}
         containers={containers}
         areas={areas}
+        onItemsChanged={onItemsChanged}
       />
     </Box>
   );

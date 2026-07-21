@@ -12,17 +12,24 @@ import {
   Select,
   MenuItem,
   Button,
+  IconButton,
+  Tooltip,
+  Snackbar,
+  Alert,
 } from "@mui/material";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { getImageSrc, PLACEHOLDER_IMAGE } from "../../utilities/helpers";
+import { setItemShoppingList } from "../../utilities/api";
 
 const NO_CONTAINER = "__no_container__";
 const UNASSIGNED_AREA = "__unassigned_area__";
 
 const daysTo = (d) => dayjs(d).startOf("day").diff(dayjs().startOf("day"), "day");
 
-const ItemList = ({ items, isSmallScreen, containers = [], areas = [] }) => {
+const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsChanged }) => {
   const navigate = useNavigate();
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
@@ -32,6 +39,30 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [] }) => {
   const [areaId, setAreaId] = useState("");
   const [containerId, setContainerId] = useState("");
   const [sortBy, setSortBy] = useState("name"); // name | price | qty | expiry
+  // Optimistic shopping-list state for instant cart feedback on the grid.
+  const [cartOverrides, setCartOverrides] = useState({});
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+  const isInCart = (item) => cartOverrides[item.id] ?? item.shoppingList ?? false;
+
+  const toggleCart = async (e, item) => {
+    e.stopPropagation();
+    const next = !isInCart(item);
+    setCartOverrides((prev) => ({ ...prev, [item.id]: next }));
+    try {
+      await setItemShoppingList(item.id, next);
+      setSnackbar({
+        open: true,
+        message: next ? `Added "${item.name}" to shopping list.` : `Removed "${item.name}" from shopping list.`,
+        severity: "success",
+      });
+      onItemsChanged?.();
+    } catch (error) {
+      console.error("Error toggling shopping list:", error);
+      setCartOverrides((prev) => ({ ...prev, [item.id]: !next })); // revert
+      setSnackbar({ open: true, message: "Couldn't update the shopping list.", severity: "error" });
+    }
+  };
 
   const areaOfContainer = (cid) =>
     containers.find((c) => c.id === cid)?.areaId ?? null;
@@ -114,28 +145,47 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [] }) => {
     </Typography>
   );
 
-  const cardOf = (item) => (
-    <ImageListItem
-      key={item.id}
-      onClick={() => handleItemClick(item)}
-      sx={{ cursor: "pointer" }}
-    >
-      <img
-        src={getImageSrc(item.image)}
-        alt={item.name}
-        loading="lazy"
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = PLACEHOLDER_IMAGE;
-        }}
-        style={{ objectFit: "cover" }}
-      />
-      <ImageListItemBar
-        title={item.name}
-        subtitle={`Price: ${item.price} · ${item.quantity ?? 0} in stock`}
-      />
-    </ImageListItem>
-  );
+  const cardOf = (item) => {
+    const inCart = isInCart(item);
+    return (
+      <ImageListItem
+        key={item.id}
+        onClick={() => handleItemClick(item)}
+        sx={{ cursor: "pointer", position: "relative" }}
+      >
+        <img
+          src={getImageSrc(item.image)}
+          alt={item.name}
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = PLACEHOLDER_IMAGE;
+          }}
+          style={{ objectFit: "cover" }}
+        />
+        <Tooltip title={inCart ? "On shopping list — tap to remove" : "Add to shopping list"}>
+          <IconButton
+            size="small"
+            onClick={(e) => toggleCart(e, item)}
+            sx={{
+              position: "absolute",
+              top: 6,
+              right: 6,
+              bgcolor: "rgba(0,0,0,0.55)",
+              color: inCart ? "primary.light" : "common.white",
+              "&:hover": { bgcolor: "rgba(0,0,0,0.75)" },
+            }}
+          >
+            {inCart ? <ShoppingCartIcon fontSize="small" /> : <AddShoppingCartIcon fontSize="small" />}
+          </IconButton>
+        </Tooltip>
+        <ImageListItemBar
+          title={item.name}
+          subtitle={`Price: ${item.price} · ${item.quantity ?? 0} in stock`}
+        />
+      </ImageListItem>
+    );
+  };
 
   return (
     <>
@@ -286,6 +336,21 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [] }) => {
           )}
         </Box>
       )}
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((p) => ({ ...p, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar((p) => ({ ...p, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

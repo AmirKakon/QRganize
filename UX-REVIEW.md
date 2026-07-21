@@ -10,7 +10,7 @@ _Reviewed against the live app (`2.17.0`) on 2026-07-19, walking the real user f
 >
 > **Update 2026-07-19 — deferred batch (v2.19.0):** 🔵 **Home dashboard** shipped — Home now opens on an "Overview" tab with headline counts (items / in-stock / expiring / expired / shopping-list / containers, each a shortcut) and a "next to expire" peek. **#11 (partial):** shopping list now has a **free-text add** ("Add something to buy") for items not yet in inventory.
 >
-> **Update 2026-07-19 — more (v2.20.0–v2.22.0):** View Items **filtering** (status / area / container / sort) shipped. **#13 container cards** done — the container list now shows a photo-or-placeholder plus **area · N items** (no more QR wall). 🔵 **Global search** shipped (`/search`). **#9 header** done — everyday actions stay as icons; the rest (Add Container, Areas, Print Labels, Find Duplicates, About) fold into a labeled overflow "⋮" menu on desktop; mobile keeps the full labeled drawer. **Still deferred:** #11's per-card quick-add from the grid, categories/tags.
+> **Update 2026-07-19 — more (v2.20.0–v2.22.0):** View Items **filtering** (status / area / container / sort) shipped. **#13 container cards** done — the container list now shows a photo-or-placeholder plus **area · N items** (no more QR wall). 🔵 **Global search** shipped (`/search`). **#9 header** done — everyday actions stay as icons; the rest (Add Container, Areas, Print Labels, Find Duplicates, About) fold into a labeled overflow "⋮" menu on desktop; mobile keeps the full labeled drawer. **#11 fully done** — items grid now has a per-card cart toggle to add/remove from the shopping list without leaving the page (optimistic, with a refresh). **Still open:** categories/tags (a larger feature — needs scope sign-off).
 
 ---
 
