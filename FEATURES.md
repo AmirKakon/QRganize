@@ -73,7 +73,9 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
 
 ## 4. Ideas Parking Lot (unprioritized — capture now, triage later)
 
-- [ ] Global search across both items and containers
+- [x] Global search across both items and containers — new `/search` page (header link):
+      one box searches items (by name or barcode) and containers (by name); results are
+      grouped and clickable. (`pages/SearchPage`)
 - [x] Sorting/filtering options — View Items now has a filter bar: search + Status
       (all / in stock / out of stock / expiring ≤30d) + **Area** + **Container** (scoped
       to the chosen area) + Sort (name / price / quantity / expiry), with a result count

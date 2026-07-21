@@ -13,7 +13,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Box, Snackbar } from "@mui/material";
 import {
-  HomePage, ItemPage, QrCodePage, ContainerPage, PrintLabelsPage, ScanReceiptPage, AreasPage, DuplicatesPage
+  HomePage, ItemPage, QrCodePage, ContainerPage, PrintLabelsPage, ScanReceiptPage, AreasPage, DuplicatesPage, SearchPage
 } from "./pages";
 import { Header, Footer } from "./layout";
 import { tryGetTokenOrLogin, getUuid } from "./utilities/auth";
@@ -114,6 +114,10 @@ const App = () => {
               <Route
                 path="/duplicates"
                 element={<DuplicatesPage isSmallScreen={isSmallScreen} />}
+              />
+              <Route
+                path="/search"
+                element={<SearchPage isSmallScreen={isSmallScreen} />}
               />
               <Route
                 path="/"

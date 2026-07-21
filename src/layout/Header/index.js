@@ -23,6 +23,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import MergeTypeIcon from '@mui/icons-material/MergeType';
+import SearchIcon from '@mui/icons-material/Search';
 import { generateRandomId } from "../../utilities/helpers";
 import qrganizeLogo from "../../assets/QRganize-logo.png";
 
@@ -102,6 +103,7 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
 
   const headerIcons = [
     { title: "Home", link: "/", icon: <HomeIcon /> },
+    { title: "Search", link: "/search", icon: <SearchIcon /> },
     { title: "QrCode", link: "/qrcode", icon: <QrCodeIcon /> },
     { title: "Add Item", link: `/item`, icon: <PostAddIcon /> },
     { title: "Add Container", link: `/container/${generateRandomId()}`, icon: <WidgetsIcon /> },

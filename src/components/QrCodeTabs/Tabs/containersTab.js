@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import ContainerList from "../../ContainerList";
 
-const ContainersTab = ({ isSmallScreen, containers }) => {
+const ContainersTab = ({ isSmallScreen, containers, items = [], areas = [] }) => {
   return (
     <Box
       sx={{
@@ -16,7 +16,12 @@ const ContainersTab = ({ isSmallScreen, containers }) => {
       >
         Containers List
       </Typography>
-      <ContainerList containers={containers} isSmallScreen={isSmallScreen} />
+      <ContainerList
+        containers={containers}
+        items={items}
+        areas={areas}
+        isSmallScreen={isSmallScreen}
+      />
     </Box>
   );
 };

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
 import { QrCodeTab, ContainersTab } from "./Tabs";
-import { getAllContainers } from "../../utilities/api";
+import { getAllContainers, getAllItems, getAllAreas } from "../../utilities/api";
 
 const QrCodeTabs = ({ isSmallScreen }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [containers, setContainers] = useState([]);
+  const [items, setItems] = useState([]);
+  const [areas, setAreas] = useState([]);
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
@@ -15,8 +17,14 @@ const QrCodeTabs = ({ isSmallScreen }) => {
     window.scrollTo({ top: 0, behavior: "auto" });
 
     getAllContainers()
-      .then((res) => setContainers(res))
+      .then((res) => setContainers(res || []))
       .catch((error) => console.error("Error fetching data:", error));
+    getAllItems()
+      .then((res) => setItems(res || []))
+      .catch((error) => console.error("Error fetching items:", error));
+    getAllAreas()
+      .then((res) => setAreas(res || []))
+      .catch((error) => console.error("Error fetching areas:", error));
   }, []);
 
   // Define tab configurations. "View Containers" leads so the page opens on the
@@ -24,7 +32,14 @@ const QrCodeTabs = ({ isSmallScreen }) => {
   const tabs = [
     {
       label: "View Containers",
-      component: <ContainersTab isSmallScreen={isSmallScreen} containers={containers} />,
+      component: (
+        <ContainersTab
+          isSmallScreen={isSmallScreen}
+          containers={containers}
+          items={items}
+          areas={areas}
+        />
+      ),
     },
     {
       label: "QrCode Scanner",
