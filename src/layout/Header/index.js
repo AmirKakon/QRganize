@@ -10,7 +10,11 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
+  Menu,
+  MenuItem,
 } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Link } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
 import PostAddIcon from '@mui/icons-material/PostAdd';
@@ -92,6 +96,7 @@ const SmallScreenIcon = ({ title, link, icon, handleDrawerClose }) => {
 
 const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
   const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const [moreAnchor, setMoreAnchor] = useState(null);
 
   const handleDrawerOpen = () => {
     setDrawerOpen(true);
@@ -101,18 +106,23 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
     setDrawerOpen(false);
   };
 
-  const headerIcons = [
+  // Everyday actions stay as icons; the rest fold into an overflow menu so the
+  // desktop bar doesn't overflow. (Mobile shows the full labeled drawer.)
+  const primaryIcons = [
     { title: "Home", link: "/", icon: <HomeIcon /> },
     { title: "Search", link: "/search", icon: <SearchIcon /> },
-    { title: "QrCode", link: "/qrcode", icon: <QrCodeIcon /> },
+    { title: "Containers", link: "/qrcode", icon: <QrCodeIcon /> },
     { title: "Add Item", link: `/item`, icon: <PostAddIcon /> },
+    { title: "Scan Receipt", link: "/scan-receipt", icon: <ReceiptLongIcon /> },
+  ];
+  const moreIcons = [
     { title: "Add Container", link: `/container/${generateRandomId()}`, icon: <WidgetsIcon /> },
     { title: "Areas", link: "/areas", icon: <WarehouseIcon /> },
     { title: "Print Labels", link: "/labels", icon: <PrintIcon /> },
-    { title: "Scan Receipt", link: "/scan-receipt", icon: <ReceiptLongIcon /> },
     { title: "Find Duplicates", link: "/duplicates", icon: <MergeTypeIcon /> },
     { title: "About", link: "/about", icon: <InfoIcon /> },
   ];
+  const headerIcons = [...primaryIcons, ...moreIcons];
 
   return (
     <Box sx={{ flexGrow: 1, marginBottom: 7 }}>
@@ -138,7 +148,7 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
 
           {!isSmallScreen && (
             <>
-              {headerIcons.map((item, index) => (
+              {primaryIcons.map((item, index) => (
                 <LargeScreenIcon
                   key={index}
                   title={item.title}
@@ -146,6 +156,33 @@ const Header = ({ isSmallScreen, mode, onToggleTheme }) => {
                   icon={item.icon}
                 />
               ))}
+
+              <Tooltip title="More">
+                <IconButton
+                  color="inherit"
+                  onClick={(e) => setMoreAnchor(e.currentTarget)}
+                  aria-label="more actions"
+                >
+                  <MoreVertIcon />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={moreAnchor}
+                open={Boolean(moreAnchor)}
+                onClose={() => setMoreAnchor(null)}
+              >
+                {moreIcons.map((item, index) => (
+                  <MenuItem
+                    key={index}
+                    component={Link}
+                    to={item.link}
+                    onClick={() => setMoreAnchor(null)}
+                  >
+                    <ListItemIcon>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.title} />
+                  </MenuItem>
+                ))}
+              </Menu>
 
               <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
                 <IconButton
