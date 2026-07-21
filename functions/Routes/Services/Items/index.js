@@ -248,6 +248,43 @@ const mergeItems = async (sourceId, targetId) => {
   };
 };
 
+// Consume one unit of an item, FEFO (soonest-to-expire batch first, undated
+// last). Item-level so callers (UI quick-use, MCP/LLM) don't need to pick a lot.
+const consumeOne = async (id) => {
+  const lots = await LotService.getLotsByItem(String(id));
+  if (lots.length === 0) {
+    return { quantity: 0, used: false };
+  }
+  const sorted = [...lots].sort((a, b) => {
+    if (!a.expirationDate) return 1;
+    if (!b.expirationDate) return -1;
+    return new Date(a.expirationDate) - new Date(b.expirationDate);
+  });
+  // updateLot removes the lot when quantity hits zero.
+  await LotService.updateLot(sorted[0].id, {
+    quantity: (sorted[0].quantity || 0) - 1,
+  });
+  await db
+    .collection(itemsDB)
+    .doc(String(id))
+    .update({ lastUsedAt: new Date().toISOString() });
+
+  const remaining = await LotService.getLotsByItem(String(id));
+  const quantity = remaining.reduce((sum, l) => sum + (l.quantity || 0), 0);
+  return { quantity, used: true };
+};
+
+// Finish an item: drop all its stock (every lot) but keep the item record so it
+// can be re-added or put on the shopping list.
+const finish = async (id) => {
+  await LotService.deleteLotsByItem(String(id));
+  await db
+    .collection(itemsDB)
+    .doc(String(id))
+    .update({ lastUsedAt: new Date().toISOString() });
+  return { quantity: 0, finished: true };
+};
+
 const searchBarcode = async (barcode) => {
   const results = await Utilities.searchBarcode(barcode);
 
@@ -277,5 +314,7 @@ module.exports = {
   deleteItem,
   mergeItems,
   addBarcodeToItem,
+  consumeOne,
+  finish,
   searchBarcode,
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
 import { BarcodeTab, ItemsTab, ExpiringTab, ShoppingListTab } from "./Tabs";
 import HomeDashboard from "../HomeDashboard";
+import QuickUse from "../QuickUse";
 import { getAllItems, getAllContainers, getAllAreas } from "../../utilities/api";
 
 const HomePageTabs = ({ isSmallScreen }) => {
@@ -15,7 +16,8 @@ const HomePageTabs = ({ isSmallScreen }) => {
   };
 
   // Let the dashboard jump to a sibling tab by name.
-  const tabIndexByKey = { items: 1, scanner: 2, shopping: 3, expiring: 4 };
+  // (Keep in sync with the tabs order below.)
+  const tabIndexByKey = { items: 1, use: 2, scanner: 3, shopping: 4, expiring: 5 };
   const goToTab = (key) => setTabIndex(tabIndexByKey[key] ?? 0);
 
   const loadItems = useCallback(() => {
@@ -56,6 +58,10 @@ const HomePageTabs = ({ isSmallScreen }) => {
           onItemsChanged={loadItems}
         />
       ),
+    },
+    {
+      label: "Quick Use",
+      component: <QuickUse items={items} onChanged={loadItems} />,
     },
     {
       label: "Barcode Scanner",

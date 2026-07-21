@@ -64,6 +64,28 @@ app.put("/api/items/addBarcode/:id", authenticate, async (req, res) => {
   }
 });
 
+// use one unit of an item (FEFO); item-level so callers needn't pick a lot
+app.post("/api/items/use/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    const result = await ItemService.consumeOne(req.params.id);
+    return res.status(200).send({ status: "Success", data: result });
+  } catch (error) {
+    handleError(res, error, `Failed to use item: ${req.params.id}`);
+  }
+});
+
+// finish an item: clear all its stock but keep the item record
+app.post("/api/items/finish/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    const result = await ItemService.finish(req.params.id);
+    return res.status(200).send({ status: "Success", data: result });
+  } catch (error) {
+    handleError(res, error, `Failed to finish item: ${req.params.id}`);
+  }
+});
+
 // get a single item
 app.get("/api/items/get/:id", authenticate, async (req, res) => {
   try {

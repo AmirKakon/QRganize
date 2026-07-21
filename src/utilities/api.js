@@ -52,6 +52,38 @@ export const addItemBarcode = async (itemId, barcode) => {
   return res.status === "Success";
 }
 
+// Use one unit of an item (FEFO); returns the new quantity.
+export const consumeItemOne = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/use/${id}`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.data;
+}
+
+// Finish an item: clear all its stock (keeps the item record).
+export const finishItem = async (id) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/finish/${id}`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.data;
+}
+
 // Merge the source item into the target (moves its stock, deletes the source).
 export const mergeItems = async (sourceId, targetId) => {
   const response = await fetch(`${apiBaseUrl}/api/items/merge`, {
