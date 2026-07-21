@@ -74,7 +74,10 @@ Check items off as they ship. Add new ideas at the bottom of the relevant sectio
 ## 4. Ideas Parking Lot (unprioritized — capture now, triage later)
 
 - [ ] Global search across both items and containers
-- [ ] Sorting/filtering options (by expiration, price, name, quantity)
+- [x] Sorting/filtering options — View Items now has a filter bar: search + Status
+      (all / in stock / out of stock / expiring ≤30d) + **Area** + **Container** (scoped
+      to the chosen area) + Sort (name / price / quantity / expiry), with a result count
+      and Clear. (`components/ItemList`)
 - [ ] Categories / tags for items
 - [ ] Multiple photos per item
 - [ ] Container nesting (a container inside a container)

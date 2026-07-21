@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
 import { BarcodeTab, ItemsTab, ExpiringTab, ShoppingListTab } from "./Tabs";
 import HomeDashboard from "../HomeDashboard";
-import { getAllItems, getAllContainers } from "../../utilities/api";
+import { getAllItems, getAllContainers, getAllAreas } from "../../utilities/api";
 
 const HomePageTabs = ({ isSmallScreen }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [items, setItems] = useState([]);
   const [containers, setContainers] = useState([]);
+  const [areas, setAreas] = useState([]);
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
@@ -29,6 +30,9 @@ const HomePageTabs = ({ isSmallScreen }) => {
     getAllContainers()
       .then((res) => setContainers(res || []))
       .catch((error) => console.error("Error fetching containers:", error));
+    getAllAreas()
+      .then((res) => setAreas(res || []))
+      .catch((error) => console.error("Error fetching areas:", error));
   }, [loadItems]);
 
   // Define tab configurations. "Overview" leads so the app opens on an
@@ -43,7 +47,14 @@ const HomePageTabs = ({ isSmallScreen }) => {
     },
     {
       label: "View Items",
-      component: <ItemsTab isSmallScreen={isSmallScreen} items={items} />,
+      component: (
+        <ItemsTab
+          isSmallScreen={isSmallScreen}
+          items={items}
+          containers={containers}
+          areas={areas}
+        />
+      ),
     },
     {
       label: "Barcode Scanner",
