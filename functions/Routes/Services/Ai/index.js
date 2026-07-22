@@ -1,6 +1,6 @@
-const axios = require("axios");
 const { db, functions, logger } = require("../../../setup");
 const { MissingArgumentError } = require("../../Contracts/Errors");
+// axios is required lazily inside parseReceipt (see Utilities for why).
 
 const usageDB = "aiUsage";
 const geminiBaseUrl =
@@ -107,6 +107,7 @@ const parseReceipt = async (image) => {
     },
   };
 
+  const axios = require("axios");
   const response = await axios.post(url, body, {
     headers: { "Content-Type": "application/json" },
   });

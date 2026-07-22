@@ -1,9 +1,8 @@
 const { logger } = require("firebase-functions");
 const { functions } = require("../../../setup");
 const { NotFoundError } = require("./error-handler");
-const axios = require("axios");
-const cheerio = require("cheerio");
-const ApifyClient = require("apify-client").ApifyClient;
+// axios / cheerio / apify-client are required lazily inside the functions that
+// use them (keeps deploy source-analysis under its 10s budget).
 
 // Read config defensively so this module loads even when the runtime config is
 // absent (e.g. CI deploy source-analysis). Values are populated at runtime.
@@ -19,6 +18,7 @@ const googleCustomSearchId = googleCustomSearch.id;
 const googleCustomSearchKey = googleCustomSearch.key;
 
 const searchBarcodeApify = async (barcode) => {
+  const { ApifyClient } = require("apify-client");
   // Initialize the ApifyClient with API token
   const client = new ApifyClient({
     token: apifyToken,
@@ -64,6 +64,8 @@ const searchBarcodeChp = async (barcode) => {
     },
   };
 
+  const axios = require("axios");
+  const cheerio = require("cheerio");
   let src = null;
   let title = null;
   const response = await axios.get(url, config);
@@ -90,6 +92,7 @@ const searchBarcodeChp = async (barcode) => {
 
 const searchGoogleCustomSearch = async (barcode) => {
   try {
+    const axios = require("axios");
     const url = `https://www.googleapis.com/customsearch/v1?q=${barcode}&searchType=image&key=${googleCustomSearchKey}&cx=${googleCustomSearchId}`;
 
     const response = await axios.get(url);
