@@ -87,7 +87,8 @@ See `README.md` for client registration details.
 |---|---|---|
 | `consume_item` | `item` (req), `amount?` (int, default 1) | **Use N whole units**, FEFO across batches. For "I used/ate X", recipe deduction. Returns remaining quantity. |
 | `finish_item` | `item` (req) | **Clear all stock** for the item (every batch); keeps the item. For "I finished / used up / threw out X". |
-| `create_item` | `name` (req), `price?`, `container?`, `quantity?`, `expirationDate?` (YYYY-MM-DD) | Create a new one-off item; optionally stock it in a container. Use when the item doesn't exist yet. If it exists, use `add_item_to_container` instead. |
+| `create_item` | `name` (req), `price?`, `image?`, `container?`, `quantity?`, `expirationDate?` (YYYY-MM-DD) | Create a new one-off item; optionally attach an image and stock it in a container. Use when the item doesn't exist yet. If it exists, use `add_item_to_container` / `set_item_image`. |
+| `set_item_image` | `item` (req), `image` (req) | Set/replace an existing item's photo. |
 | `add_item_to_container` | `item` (req), `container` (req), `quantity?` (default 1), `expirationDate?` | Add stock of an **existing** item into a container as a batch. |
 | `add_to_shopping_list` | `item` (req), `price?` | Flag an existing item to buy, or create+flag a new one. |
 
@@ -144,4 +145,7 @@ Deduction is in **whole units** — if a recipe needs "200g pasta", consume 1 un
 - **`finish_item` keeps the item** at quantity 0 (so it stays searchable and can
   be re-added). It does not delete the item.
 - **No partial/weight quantities** — whole units only.
+- **Images** (`create_item` / `set_item_image`) accept an http(s) URL or a base64
+  data-URL. **Prefer a URL** — base64 blobs are very large in a tool call. You
+  can't emit raw bytes of an image you were shown; pass a link to it.
 - Consuming below zero is safe — stock floors at 0 and empty batches are removed.

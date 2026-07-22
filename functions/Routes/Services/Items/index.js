@@ -171,6 +171,17 @@ const setShoppingList = async (id, shoppingList) => {
   }
 };
 
+// Set only an item's image (a URL, data-URL, or raw base64 string).
+const setImage = async (id, image) => {
+  try {
+    await db.collection(itemsDB).doc(String(id)).update({ image });
+    return true;
+  } catch (error) {
+    logger.error(`Failed to update image for item: ${id}`, error);
+    return false;
+  }
+};
+
 // Delete an item
 const deleteItem = async (id) => {
   try {
@@ -321,6 +332,7 @@ module.exports = {
   getBatchOfItems,
   updateItem,
   setShoppingList,
+  setImage,
   deleteItem,
   mergeItems,
   addBarcodeToItem,

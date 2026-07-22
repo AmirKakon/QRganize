@@ -307,25 +307,32 @@ const TOOLS = [
     name: "create_item",
     description:
       "Create a new inventory item by name (for one-off items not scanned from " +
-      "a receipt). Optionally stock it in a container with a quantity and expiry " +
-      "(YYYY-MM-DD). If it already exists, use add_item_to_container instead.",
+      "a receipt). Optionally attach an image and stock it in a container with a " +
+      "quantity and expiry (YYYY-MM-DD). If it already exists, use " +
+      "add_item_to_container (and set_item_image) instead.",
     inputSchema: {
       type: "object",
       properties: {
         name: { type: "string", description: "Item name" },
         price: { type: "string", description: "Optional price" },
+        image: {
+          type: "string",
+          description:
+            "Optional image: an http(s) URL or a base64 data-URL " +
+            "(data:image/...;base64,...). A URL is strongly preferred.",
+        },
         container: { type: "string", description: "Optional container to stock it in" },
         quantity: { type: "number", description: "Optional quantity (default 1)" },
         expirationDate: { type: "string", description: "Optional YYYY-MM-DD" },
       },
       required: ["name"],
     },
-    handler: async ({ name, price, container, quantity, expirationDate }) => {
+    handler: async ({ name, price, image, container, quantity, expirationDate }) => {
       const created = await ItemService.createItem(
-        name, String(price ?? "0"), null, false, null,
+        name, String(price ?? "0"), image ?? null, false, null,
       );
       const itemId = created && created.itemId;
-      let note = `Created item "${name}".`;
+      let note = `Created item "${name}"${image ? " with image" : ""}.`;
       if (container && itemId) {
         const c = findByName(await containersList(), container);
         if (!c) {
@@ -337,6 +344,34 @@ const TOOLS = [
         }
       }
       return note;
+    },
+  },
+  {
+    name: "set_item_image",
+    description:
+      "Set (or replace) the photo on an existing item. Provide the item by name " +
+      "or id and an image as an http(s) URL or a base64 data-URL " +
+      "(data:image/...;base64,...). A URL is strongly preferred — base64 is " +
+      "large. Use with create_item's image arg to add photos to one-off items.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        item: { type: "string", description: "Item name or id" },
+        image: {
+          type: "string",
+          description: "http(s) URL or base64 data-URL of the image",
+        },
+      },
+      required: ["item", "image"],
+    },
+    handler: async ({ item, image }) => {
+      const it = findByName(await enrichedItems(), item);
+      if (!it) return `No item found matching "${item}".`;
+      if (typeof image !== "string" || !image.trim()) {
+        return "Please provide an image URL or base64 data-URL.";
+      }
+      await ItemService.setImage(it.id, image);
+      return `Set the image on "${it.name}".`;
     },
   },
   {

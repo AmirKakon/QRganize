@@ -87,6 +87,22 @@ app.post("/api/items/finish/:id", authenticate, async (req, res) => {
   }
 });
 
+// set only an item's image (URL, data-URL, or raw base64)
+app.put("/api/items/image/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    if (typeof req.body.image !== "string") {
+      throw new MissingArgumentError("Missing string parameter: image");
+    }
+    const updated = await ItemService.setImage(req.params.id, req.body.image);
+    return updated ?
+      res.status(200).send({ status: "Success", msg: "Image updated" }) :
+      res.status(400).send({ status: "Failed", msg: "Image failed to update" });
+  } catch (error) {
+    handleError(res, error, `Failed to update image for item: ${req.params.id}`);
+  }
+});
+
 // get a single item
 app.get("/api/items/get/:id", authenticate, async (req, res) => {
   try {

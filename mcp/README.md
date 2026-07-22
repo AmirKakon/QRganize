@@ -82,7 +82,8 @@ server sees the same quantities and expiration dates as the app.
 | `get_item_stock` | How much of an item is in stock and where |
 | `consume_item` | Record using N whole units (FEFO) |
 | `finish_item` | Clear all of an item's stock (keeps the item) |
-| `create_item` | Create a one-off item (optionally stocked in a container) |
+| `create_item` | Create a one-off item (optional image + stocked in a container) |
+| `set_item_image` | Set/replace an existing item's photo (URL or base64) |
 
 ## Hosted endpoint
 
