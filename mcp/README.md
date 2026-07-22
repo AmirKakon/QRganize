@@ -6,6 +6,10 @@ etc.). It runs locally and calls the deployed QRganize REST API — so you can a
 things like *"where are the spare HDMI cables?"* or *"add AA batteries to my
 shopping list"* in natural language.
 
+> **Driving this from an LLM?** See [`LLM_GUIDE.md`](LLM_GUIDE.md) — a
+> self-contained reference (inventory model, tool catalog, behavior rules,
+> workflows) you can hand to any assistant so it knows how to use these tools.
+
 ## Setup
 
 Requires Node 18+.
