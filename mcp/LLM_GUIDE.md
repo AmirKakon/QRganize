@@ -35,9 +35,16 @@ There is one user — do not ask "whose inventory?"; there's only one.
 
 ## Setup (for the human, not you)
 
-Runs locally over stdio: `node mcp/index.js`. Env: `QRGANIZE_API_URL`
-(defaults to the deployed API) and `QRGANIZE_UUID` (the user's device id — needed
-for correct quantities/expiries). See `README.md` for client registration.
+There are two ways to connect — both expose the same tools below:
+
+- **Hosted (HTTP)** — a network-reachable MCP endpoint on the backend:
+  `POST https://us-central1-qrganize-f651b.cloudfunctions.net/app/api/mcp`
+  (MCP Streamable HTTP, stateless JSON-RPC). If a shared secret is set
+  (`mcp.key` in the functions config), send `Authorization: Bearer <key>`.
+- **Local (stdio)** — `node mcp/index.js`, a thin wrapper forwarding to the same
+  REST API. Env: `QRGANIZE_API_URL`, `QRGANIZE_UUID`.
+
+See `README.md` for client registration details.
 
 ---
 

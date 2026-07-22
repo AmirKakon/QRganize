@@ -10,7 +10,19 @@ shopping list"* in natural language.
 > self-contained reference (inventory model, tool catalog, behavior rules,
 > workflows) you can hand to any assistant so it knows how to use these tools.
 
-## Setup
+## Two ways to connect
+
+- **Hosted (HTTP)** — a network-reachable MCP endpoint lives on the backend at
+  `POST https://us-central1-qrganize-f651b.cloudfunctions.net/app/api/mcp`
+  (MCP Streamable HTTP, stateless JSON-RPC — one self-contained POST per call,
+  no local process). Use this for remote/hosted assistants. See
+  [Hosted endpoint](#hosted-endpoint) below.
+- **Local (stdio)** — the `node mcp/index.js` wrapper described here, for local
+  clients (Claude Desktop/Code) that spawn a child process.
+
+Both speak the same tool set.
+
+## Setup (local stdio)
 
 Requires Node 18+.
 
@@ -71,6 +83,36 @@ server sees the same quantities and expiration dates as the app.
 | `consume_item` | Record using N whole units (FEFO) |
 | `finish_item` | Clear all of an item's stock (keeps the item) |
 | `create_item` | Create a one-off item (optionally stocked in a container) |
+
+## Hosted endpoint
+
+A network-reachable MCP server runs on the backend (no local process needed):
+
+```
+POST https://us-central1-qrganize-f651b.cloudfunctions.net/app/api/mcp
+```
+
+It speaks **MCP Streamable HTTP** in stateless JSON-response mode — each call is
+a self-contained JSON-RPC 2.0 POST returning a single JSON body (no SSE stream),
+which suits the Cloud Functions gen1 runtime. `GET` returns 405.
+
+**Auth (recommended before remote use):** the endpoint is open unless a shared
+secret is set. Configure one, then send it as a bearer token:
+
+```bash
+firebase functions:config:set mcp.key="<long-random-secret>"
+firebase deploy --only functions
+# then clients send:  Authorization: Bearer <long-random-secret>
+```
+
+Quick smoke test (`initialize` handshake):
+
+```bash
+curl -s https://us-central1-qrganize-f651b.cloudfunctions.net/app/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-key>" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
+```
 
 ## Example prompts
 
