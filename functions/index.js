@@ -8,6 +8,7 @@ require("./Routes/Controllers/Users");
 require("./Routes/Controllers/Ai");
 require("./Routes/Controllers/Lots");
 require("./Routes/Controllers/Areas");
+require("./Routes/Controllers/Mcp");
 
 // require("./Routes/CopyFromDev");
 
