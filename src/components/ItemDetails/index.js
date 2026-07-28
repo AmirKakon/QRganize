@@ -15,13 +15,17 @@ import {
   DialogActions,
   Chip,
   Typography,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { createItem, deleteItem, addItemBarcode } from "../../utilities/api";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
+import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 import JsBarcode from "jsbarcode";
 import StockList from "../StockList";
+import BarcodeScanner from "../BarcodeScanner";
 
 const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], onLotsChanged }) => {
   const [saving, setSaving] = useState(false);
@@ -29,6 +33,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [newBarcode, setNewBarcode] = useState("");
   const [addingBarcode, setAddingBarcode] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -240,7 +245,12 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
                   />
                 ))}
             </Box>
-            <Box sx={{ display: "flex", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Tooltip title="Scan a barcode">
+                <IconButton color="primary" onClick={() => setScanOpen(true)}>
+                  <QrCodeScannerIcon />
+                </IconButton>
+              </Tooltip>
               <TextField
                 size="small"
                 label="Add a barcode"
@@ -299,6 +309,24 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
           <Button onClick={handleDelete} color="error" variant="contained">
             Delete
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={scanOpen} onClose={() => setScanOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Scan a barcode</DialogTitle>
+        <DialogContent>
+          {scanOpen && (
+            <BarcodeScanner
+              compact
+              onDetected={(code) => {
+                setNewBarcode(code);
+                setScanOpen(false);
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setScanOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
 

@@ -12,12 +12,22 @@ import {
 import { useNavigate } from "react-router-dom";
 import { BrowserMultiFormatReader } from "@zxing/library";
 
-const BarcodeScanner = ({ isSmallScreen, itemType }) => {
+// When `onDetected` is given, a scanned code is passed to it (instead of
+// navigating) — used to fill a field, e.g. adding a barcode to an item.
+// `compact` renders a small inline scanner (for dialogs).
+const BarcodeScanner = ({ isSmallScreen, itemType, onDetected, compact }) => {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const [message, setMessage] = useState("");
   const [selectedCamera, setSelectedCamera] = useState("");
   const [cameras, setCameras] = useState([]);
+
+  // Keep the latest callback in a ref so the scanner effect doesn't restart
+  // every render when a fresh function identity is passed.
+  const onDetectedRef = useRef(onDetected);
+  useEffect(() => {
+    onDetectedRef.current = onDetected;
+  }, [onDetected]);
 
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
@@ -99,9 +109,14 @@ const BarcodeScanner = ({ isSmallScreen, itemType }) => {
             videoElement,
             (result, error) => {
               if (result) {
-                navigate(`/${itemType}?id=${result.getText()}`);
+                const code = result.getText();
                 stopScanning = true;
                 codeReader.reset();
+                if (onDetectedRef.current) {
+                  onDetectedRef.current(code);
+                } else {
+                  navigate(`/${itemType}?id=${code}`);
+                }
               } else if (error) {
                 console.error("Decoding error:", error.message); // Log decoding errors
               }
@@ -119,6 +134,49 @@ const BarcodeScanner = ({ isSmallScreen, itemType }) => {
       codeReader.reset();
     };
   }, [navigate, selectedCamera, itemType]);
+
+  if (compact) {
+    return (
+      <>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+            <InputLabel>Camera</InputLabel>
+            <Select
+              value={selectedCamera}
+              onChange={(e) => setSelectedCamera(e.target.value)}
+              label="Camera"
+            >
+              {cameras.map((camera, index) => (
+                <MenuItem key={camera.deviceId} value={camera.deviceId}>
+                  {camera.label || `Camera ${index + 1}`}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <video
+            ref={videoRef}
+            style={{ width: "100%", maxHeight: 320, borderRadius: 8, background: "#000" }}
+          />
+        </Box>
+
+        <Snackbar
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          open={Boolean(message)}
+          onClose={() => setMessage("")}
+          autoHideDuration={6000}
+        >
+          <Alert
+            onClose={() => setMessage("")}
+            severity="error"
+            variant="filled"
+            sx={{ width: "100%" }}
+          >
+            {message}
+          </Alert>
+        </Snackbar>
+      </>
+    );
+  }
 
   return (
     <>
