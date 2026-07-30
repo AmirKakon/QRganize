@@ -8,6 +8,9 @@ const geminiBaseUrl =
 // Default to Pro for better OCR on tough/garbled receipts. Override without a
 // deploy via functions config: `firebase functions:config:set gemini.model=...`
 const defaultModel = "gemini-2.5-pro";
+// Retried once if the primary model errors (e.g. Pro rate-limit) so a scan
+// never hard-fails. Skipped when the primary already is this model.
+const fallbackModel = "gemini-2.5-flash";
 const dailyLimit = 25;
 
 // Gemini structured-output schema (OpenAPI subset — types are uppercase enums).
@@ -93,7 +96,6 @@ const parseReceipt = async (image) => {
     "long run of digits), return it as barcode using digits only. Omit " +
     "barcode when no code is visible for that line.";
 
-  const url = `${geminiBaseUrl}/${model}:generateContent?key=${apiKey}`;
   const body = {
     contents: [
       {
@@ -110,15 +112,33 @@ const parseReceipt = async (image) => {
   };
 
   const axios = require("axios");
-  const response = await axios.post(url, body, {
-    headers: { "Content-Type": "application/json" },
-  });
+  const runModel = async (m) => {
+    const url = `${geminiBaseUrl}/${m}:generateContent?key=${apiKey}`;
+    const response = await axios.post(url, body, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return (
+      response.data &&
+      response.data.candidates &&
+      response.data.candidates[0] &&
+      response.data.candidates[0].content.parts[0].text
+    );
+  };
 
-  const text =
-    response.data &&
-    response.data.candidates &&
-    response.data.candidates[0] &&
-    response.data.candidates[0].content.parts[0].text;
+  let text;
+  try {
+    text = await runModel(model);
+  } catch (error) {
+    const status = error.response && error.response.status;
+    logger.warn(`Gemini model ${model} failed (${status || error.message}).`);
+    // Don't hard-fail a scan on a Pro rate-limit/error — retry once on flash.
+    if (model !== fallbackModel) {
+      logger.info(`Retrying receipt parse on ${fallbackModel}.`);
+      text = await runModel(fallbackModel);
+    } else {
+      throw error;
+    }
+  }
 
   if (!text) {
     logger.error("Gemini returned no content");
