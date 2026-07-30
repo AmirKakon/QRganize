@@ -17,8 +17,16 @@ import {
   Typography,
   IconButton,
   Tooltip,
+  Autocomplete,
 } from "@mui/material";
-import { createItem, deleteItem, addItemBarcode, removeItemBarcode } from "../../utilities/api";
+import {
+  createItem,
+  deleteItem,
+  addItemBarcode,
+  removeItemBarcode,
+  getAllItems,
+  mergeItems,
+} from "../../utilities/api";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
@@ -34,6 +42,10 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
   const [newBarcode, setNewBarcode] = useState("");
   const [addingBarcode, setAddingBarcode] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeCandidates, setMergeCandidates] = useState([]);
+  const [mergeTarget, setMergeTarget] = useState(null);
+  const [merging, setMerging] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -163,6 +175,41 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     }
   };
 
+  const openMerge = async () => {
+    setMergeTarget(null);
+    setMergeOpen(true);
+    try {
+      const all = await getAllItems();
+      setMergeCandidates((all || []).filter((i) => i.id !== item.id));
+    } catch (error) {
+      console.error("Error loading items for merge:", error);
+    }
+  };
+
+  // Merge THIS item into the chosen target: the target keeps everything
+  // (stock, barcodes, shopping-list flag), this item is deleted. Then switch
+  // the page to the surviving target item.
+  const handleMerge = async () => {
+    if (!mergeTarget) return;
+    setMerging(true);
+    try {
+      const ok = await mergeItems(item.id, mergeTarget.id);
+      if (ok) {
+        const targetId = mergeTarget.id;
+        setMergeOpen(false);
+        setSnackbar({ open: true, message: `Merged into "${mergeTarget.name}".`, severity: "success" });
+        setBarcode(targetId); // load the surviving item
+      } else {
+        setSnackbar({ open: true, message: "Merge failed.", severity: "error" });
+      }
+    } catch (error) {
+      console.error("Error merging items:", error);
+      setSnackbar({ open: true, message: "Merge failed. Please try again.", severity: "error" });
+    } finally {
+      setMerging(false);
+    }
+  };
+
   const handleSearchForBarcode = () => {
     setBarcode(item.id);
     setSnackbar({ open: true, message: "searching for barcode...", severity: "info" });
@@ -287,6 +334,16 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
             Download Barcode
           </Button>
 
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={openMerge}
+            disabled={!item.id || !item.name}
+            sx={{ width: "100%" }}
+          >
+            Merge into another item
+          </Button>
+
           <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 2 }}>
             <Button
               variant="contained"
@@ -323,6 +380,52 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
           </Button>
           <Button onClick={handleDelete} color="error" variant="contained">
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={mergeOpen} onClose={() => !merging && setMergeOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Merge into another item</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
+            Everything from <strong>{item.name || "this item"}</strong> — its
+            stock, barcodes, and shopping-list flag — moves into the item you
+            pick, and <strong>this item is deleted</strong>. Use it to fold a
+            duplicate the finder missed. This can&apos;t be undone.
+          </Typography>
+          <Autocomplete
+            options={mergeCandidates}
+            getOptionLabel={(o) => o.name || ""}
+            isOptionEqualToValue={(o, v) => o.id === v.id}
+            value={mergeTarget}
+            onChange={(e, v) => setMergeTarget(v)}
+            renderOption={(props, option) => (
+              <li {...props} key={option.id}>
+                <Box>
+                  <Typography variant="body2">{option.name}</Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {option.quantity ?? 0} in stock · id {option.id}
+                  </Typography>
+                </Box>
+              </li>
+            )}
+            renderInput={(params) => (
+              <TextField {...params} label="Keep this item (merge into)" autoFocus />
+            )}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMergeOpen(false)} disabled={merging}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleMerge}
+            disabled={merging || !mergeTarget}
+            startIcon={merging ? <CircularProgress size={18} color="inherit" /> : null}
+          >
+            Merge
           </Button>
         </DialogActions>
       </Dialog>
