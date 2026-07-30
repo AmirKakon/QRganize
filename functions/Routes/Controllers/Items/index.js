@@ -64,6 +64,22 @@ app.put("/api/items/addBarcode/:id", authenticate, async (req, res) => {
   }
 });
 
+// remove an extra barcode (alias) from an item
+app.put("/api/items/removeBarcode/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    checkRequiredParams(["barcode"], req.body);
+
+    await ItemService.removeBarcodeFromItem(req.params.id, req.body.barcode);
+
+    return res
+      .status(200)
+      .send({ status: "Success", msg: "Barcode removed" });
+  } catch (error) {
+    handleError(res, error, `Failed to remove barcode from item: ${req.params.id}`);
+  }
+});
+
 // use N whole units of an item (FEFO, default 1); item-level so callers
 // needn't pick a lot
 app.post("/api/items/use/:id", authenticate, async (req, res) => {

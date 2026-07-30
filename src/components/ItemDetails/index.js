@@ -18,7 +18,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { createItem, deleteItem, addItemBarcode } from "../../utilities/api";
+import { createItem, deleteItem, addItemBarcode, removeItemBarcode } from "../../utilities/api";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
@@ -149,6 +149,20 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     }
   };
 
+  const handleRemoveBarcode = async (code) => {
+    try {
+      await removeItemBarcode(item.id, code);
+      setItem((prev) => ({
+        ...prev,
+        barcodes: (prev.barcodes || []).filter((b) => b !== code),
+      }));
+      setSnackbar({ open: true, message: "Barcode removed.", severity: "success" });
+    } catch (error) {
+      console.error("Error removing barcode:", error);
+      setSnackbar({ open: true, message: "Couldn't remove barcode.", severity: "error" });
+    }
+  };
+
   const handleSearchForBarcode = () => {
     setBarcode(item.id);
     setSnackbar({ open: true, message: "searching for barcode...", severity: "info" });
@@ -242,6 +256,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
                     size="small"
                     color={i === 0 ? "primary" : "default"}
                     variant={i === 0 ? "filled" : "outlined"}
+                    onDelete={i === 0 ? undefined : () => handleRemoveBarcode(code)}
                   />
                 ))}
             </Box>

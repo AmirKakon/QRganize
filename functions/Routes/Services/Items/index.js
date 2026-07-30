@@ -49,6 +49,19 @@ const addBarcodeToItem = async (id, barcode) => {
   return true;
 };
 
+// Remove an extra barcode (alias) from an item. Removes both the normalized
+// and raw forms in case an older value was stored un-normalized.
+const removeBarcodeFromItem = async (id, barcode) => {
+  const ref = db.collection(itemsDB).doc(String(id));
+  if (!(await ref.get()).exists) {
+    throw new NotFoundError(`No item found with id: ${id}`);
+  }
+  await ref.update({
+    barcodes: FieldValue.arrayRemove(normBarcode(barcode), String(barcode)),
+  });
+  return true;
+};
+
 // Create an item
 const createItem = async (name, price, image, shoppingList, id = null) => {
   let itemRef = null;
@@ -336,6 +349,7 @@ module.exports = {
   deleteItem,
   mergeItems,
   addBarcodeToItem,
+  removeBarcodeFromItem,
   consume,
   finish,
   searchBarcode,

@@ -52,6 +52,24 @@ export const addItemBarcode = async (itemId, barcode) => {
   return res.status === "Success";
 }
 
+// Remove a barcode alias from an item (undo a wrongly-added extra barcode).
+export const removeItemBarcode = async (itemId, barcode) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/removeBarcode/${itemId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ barcode }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+}
+
 // Use one unit of an item (FEFO); returns the new quantity.
 export const consumeItemOne = async (id) => {
   const response = await fetch(`${apiBaseUrl}/api/items/use/${id}`, {
