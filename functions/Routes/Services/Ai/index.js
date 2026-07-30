@@ -5,7 +5,9 @@ const { MissingArgumentError } = require("../../Contracts/Errors");
 const usageDB = "aiUsage";
 const geminiBaseUrl =
   "https://generativelanguage.googleapis.com/v1beta/models";
-const defaultModel = "gemini-2.5-flash";
+// Default to Pro for better OCR on tough/garbled receipts. Override without a
+// deploy via functions config: `firebase functions:config:set gemini.model=...`
+const defaultModel = "gemini-2.5-pro";
 const dailyLimit = 25;
 
 // Gemini structured-output schema (OpenAPI subset — types are uppercase enums).
