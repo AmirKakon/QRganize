@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -6,6 +6,7 @@ import {
   Button,
   Chip,
   IconButton,
+  Tooltip,
   TextField,
   Dialog,
   DialogTitle,
@@ -15,13 +16,16 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
-import { addLot, consumeLot, deleteLot } from "../../utilities/api";
+import { addLot, consumeLot, deleteLot, updateLot, getAllContainers } from "../../utilities/api";
 
 const toDateString = (date) =>
   date ? dayjs(date).format("YYYY-MM-DD").concat("T00:00:00+00:00") : null;
@@ -47,6 +51,14 @@ const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
   const [picked, setPicked] = useState(null);
   const [qty, setQty] = useState(1);
   const [date, setDate] = useState(null);
+  const [containers, setContainers] = useState([]);
+  const [moveMenu, setMoveMenu] = useState(null); // { anchorEl, lot }
+
+  useEffect(() => {
+    getAllContainers()
+      .then((res) => setContainers(res || []))
+      .catch((error) => console.error("Error fetching containers:", error));
+  }, []);
 
   const nameOf = (itemId) =>
     allItems.find((i) => i.id === itemId)?.name || "(unknown item)";
@@ -85,6 +97,15 @@ const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
       setQty(1);
       setDate(null);
     });
+
+  const handleMove = (targetContainerId) => {
+    const lot = moveMenu?.lot;
+    setMoveMenu(null);
+    if (!lot) return;
+    run(() => updateLot(lot.id, { containerId: targetContainerId }));
+  };
+
+  const otherContainers = containers.filter((c) => c.id !== containerId);
 
   return (
     <Paper variant="outlined" sx={{ p: 2, width: "100%" }}>
@@ -142,6 +163,15 @@ const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
             <Button size="small" onClick={() => run(() => consumeLot(lot.id, 1))} disabled={busy}>
               Use
             </Button>
+            <Tooltip title="Move to another container">
+              <IconButton
+                size="small"
+                onClick={(e) => setMoveMenu({ anchorEl: e.currentTarget, lot })}
+                disabled={busy}
+              >
+                <DriveFileMoveOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <IconButton size="small" color="error" onClick={() => run(() => deleteLot(lot.id))} disabled={busy}>
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
@@ -154,6 +184,22 @@ const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
           Nothing stored here yet — use "Add item".
         </Typography>
       )}
+
+      <Menu
+        anchorEl={moveMenu?.anchorEl}
+        open={Boolean(moveMenu)}
+        onClose={() => setMoveMenu(null)}
+      >
+        {otherContainers.length === 0 ? (
+          <MenuItem disabled>No other containers</MenuItem>
+        ) : (
+          otherContainers.map((c) => (
+            <MenuItem key={c.id} onClick={() => handleMove(c.id)}>
+              {c.name}
+            </MenuItem>
+          ))
+        )}
+      </Menu>
 
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>Add an item to this container</DialogTitle>
