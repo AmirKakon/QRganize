@@ -104,6 +104,11 @@ const ShoppingList = ({ items, onListChanged }) => {
     .filter((item) => !checkedIds.includes(item.id))
     .reduce((sum, item) => sum + lineTotalOf(item), 0);
 
+  const allChecked =
+    visibleItems.length > 0 &&
+    visibleItems.every((item) => checkedIds.includes(item.id));
+  const someChecked = checkedIds.length > 0 && !allChecked;
+
   return (
     <Box sx={{ maxWidth: 600, mx: "auto" }}>
       <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
@@ -167,6 +172,19 @@ const ShoppingList = ({ items, onListChanged }) => {
           Remove purchased ({checkedIds.length})
         </Button>
       )}
+
+      <Box sx={{ display: "flex", alignItems: "center", pl: 1 }}>
+        <Checkbox
+          edge="start"
+          checked={allChecked}
+          indeterminate={someChecked}
+          onChange={() => setCheckedIds(allChecked ? [] : visibleItems.map((i) => i.id))}
+          disableRipple
+        />
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+          Select all ({visibleItems.length})
+        </Typography>
+      </Box>
 
       <List>
         {visibleItems.map((item) => {
