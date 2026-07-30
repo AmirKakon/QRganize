@@ -19,6 +19,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { addLot, consumeLot, deleteLot } from "../../utilities/api";
 
@@ -39,6 +40,7 @@ const expiryChip = (expirationDate) => {
 
 // The batches (lots) stored in one container, with add / use / toss.
 const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -118,14 +120,24 @@ const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
           >
             <Chip size="small" label={chip.label} color={chip.color} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" noWrap>
-                {nameOf(lot.itemId)} · ×{lot.quantity}
+              <Typography
+                variant="body2"
+                onClick={() => navigate(`/item?id=${lot.itemId}`)}
+                sx={{
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  wordBreak: "break-word",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                {nameOf(lot.itemId)}
               </Typography>
-              {lot.expirationDate && (
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  Exp {dayjs(lot.expirationDate).format("MMM D, YYYY")}
-                </Typography>
-              )}
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                ×{lot.quantity}
+                {lot.expirationDate
+                  ? ` · Exp ${dayjs(lot.expirationDate).format("MMM D, YYYY")}`
+                  : ""}
+              </Typography>
             </Box>
             <Button size="small" onClick={() => run(() => consumeLot(lot.id, 1))} disabled={busy}>
               Use
