@@ -27,6 +27,8 @@ import {
 } from "@mui/material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import LinkIcon from "@mui/icons-material/Link";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 import {
   parseReceipt,
   getAllItems,
@@ -37,6 +39,47 @@ import {
 } from "../../utilities/api";
 
 const money = (n) => `$${(Number(n) || 0).toFixed(2)}`;
+
+const toDateString = (d) =>
+  d ? dayjs(d).format("YYYY-MM-DD").concat("T00:00:00+00:00") : null;
+
+// Rough household shelf life (days) for perishables, keyed by name substrings
+// (English + Hebrew). First matching entry wins, so list more-specific first.
+// Non-perishables (pasta, rice, cans, cleaning, snacks…) match nothing → no
+// suggested date. These are just editable defaults, not guarantees.
+const SHELF_LIFE = [
+  { days: 30, keys: ["תפוח אדמה", "תפוד", "potato", "בצל", "onion", "שום", "garlic"] },
+  { days: 2, keys: ["salmon", "סלמון", "fresh fish", "דג טרי", "טונה טרי"] },
+  { days: 4, keys: ["strawberr", "raspberr", "blueberr", "berry", "berries", "תות", "פטל"] },
+  {
+    days: 5,
+    keys: [
+      "lettuce", "spinach", "salad", "greens", "arugula", "herb", "basil",
+      "cilantro", "parsley", "mushroom", "banana", "avocado", "asparagus",
+      "bread", "pita", "חסה", "תרד", "פטרוזיליה", "כוסברה", "בזיליקום",
+      "פטריות", "בננה", "אבוקדו", "לחם", "פיתה",
+    ],
+  },
+  {
+    days: 7,
+    keys: [
+      "cucumber", "tomato", "pepper", "zucchini", "broccoli", "cauliflower",
+      "grape", "milk", "cream", "מלפפון", "עגבני", "פלפל", "קישוא", "ברוקולי",
+      "כרובית", "ענב", "חלב", "שמנת",
+    ],
+  },
+  { days: 10, keys: ["yogurt", "יוגורט", "יורט"] },
+  { days: 14, keys: ["cheese", "feta", "celery", "cabbage", "tofu", "גבינ", "סלרי", "כרוב", "טופו"] },
+  { days: 21, keys: ["apple", "orange", "citrus", "lemon", "carrot", "egg", "תפוח", "תפוז", "לימון", "גזר", "ביצ"] },
+];
+
+// Suggest an expiry (dayjs) from an item name, or null if not a known perishable.
+const suggestExpiry = (name) => {
+  const n = (name || "").toLowerCase();
+  if (!n) return null;
+  const hit = SHELF_LIFE.find((e) => e.keys.some((k) => n.includes(k)));
+  return hit ? dayjs().add(hit.days, "day") : null;
+};
 
 // Resize an uploaded image to a max dimension and return a base64 data URL.
 const resizeImage = (file) =>
@@ -143,6 +186,8 @@ const ScanReceiptPage = () => {
             include: true,
             matchedId: match ? match.id : null,
             matchedName: match ? match.name : null,
+            // Pre-fill a suggested expiry for known perishables (editable).
+            expirationDate: suggestExpiry(item.name),
           };
         })
       );
@@ -215,7 +260,7 @@ const ScanReceiptPage = () => {
             itemId,
             containerId: containerId || null,
             quantity: Number(row.quantity) || 1,
-            expirationDate: null,
+            expirationDate: toDateString(row.expirationDate),
           });
         }
         // If this line was linked to an existing item but carries a different
@@ -324,6 +369,15 @@ const ScanReceiptPage = () => {
                     value={row.quantity}
                     onChange={(e) => updateRow(index, "quantity", Number(e.target.value))}
                     sx={{ width: 70 }}
+                  />
+                  <DatePicker
+                    label="Expires"
+                    value={row.expirationDate || null}
+                    onChange={(d) => updateRow(index, "expirationDate", d)}
+                    slotProps={{
+                      field: { clearable: true },
+                      textField: { size: "small", sx: { width: 155 } },
+                    }}
                   />
                   <Chip
                     size="small"
