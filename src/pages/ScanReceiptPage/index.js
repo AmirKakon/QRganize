@@ -336,63 +336,71 @@ const ScanReceiptPage = () => {
               Review {rows.length} item{rows.length === 1 ? "" : "s"}
             </Typography>
 
-            <List>
+            <List disablePadding>
               {rows.map((row, index) => (
-                <ListItem
-                  key={index}
-                  disableGutters
-                  sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}
-                >
-                  <Checkbox
-                    checked={row.include}
-                    onChange={(e) => updateRow(index, "include", e.target.checked)}
-                  />
-                  <TextField
-                    label="Name"
-                    size="small"
-                    value={row.name}
-                    onChange={(e) => updateRow(index, "name", e.target.value)}
-                    sx={{ flex: 1, minWidth: 140 }}
-                  />
-                  <TextField
-                    label="Price"
-                    size="small"
-                    type="number"
-                    value={row.price}
-                    onChange={(e) => updateRow(index, "price", e.target.value)}
-                    sx={{ width: 90 }}
-                  />
-                  <TextField
-                    label="Qty"
-                    size="small"
-                    type="number"
-                    value={row.quantity}
-                    onChange={(e) => updateRow(index, "quantity", Number(e.target.value))}
-                    sx={{ width: 70 }}
-                  />
-                  <DatePicker
-                    label="Expires"
-                    value={row.expirationDate || null}
-                    onChange={(d) => updateRow(index, "expirationDate", d)}
-                    slotProps={{
-                      field: { clearable: true },
-                      textField: { size: "small", sx: { width: 155 } },
-                    }}
-                  />
-                  <Chip
-                    size="small"
-                    label={row.matchedId ? `Matches: ${row.matchedName}` : "New item"}
-                    color={row.matchedId ? "success" : "secondary"}
-                    variant={row.matchedId ? "filled" : "outlined"}
-                  />
-                  <Tooltip title="Match to an existing item">
-                    <IconButton
-                      size="small"
-                      onClick={() => setMatchRowIndex(index)}
-                    >
-                      <LinkIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                <ListItem key={index} disableGutters sx={{ display: "block", px: 0, py: 0.75 }}>
+                  <Paper variant="outlined" sx={{ p: 1, opacity: row.include ? 1 : 0.55 }}>
+                    {/* Row 1: include + name */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                      <Checkbox
+                        checked={row.include}
+                        onChange={(e) => updateRow(index, "include", e.target.checked)}
+                        sx={{ p: 0.5 }}
+                      />
+                      <TextField
+                        label="Name"
+                        size="small"
+                        value={row.name}
+                        onChange={(e) => updateRow(index, "name", e.target.value)}
+                        sx={{ flex: 1, minWidth: 0 }}
+                      />
+                    </Box>
+
+                    {/* Row 2: price, qty, expiry */}
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
+                      <TextField
+                        label="Price"
+                        size="small"
+                        type="number"
+                        value={row.price}
+                        onChange={(e) => updateRow(index, "price", e.target.value)}
+                        sx={{ width: 90 }}
+                      />
+                      <TextField
+                        label="Qty"
+                        size="small"
+                        type="number"
+                        value={row.quantity}
+                        onChange={(e) => updateRow(index, "quantity", Number(e.target.value))}
+                        sx={{ width: 70 }}
+                      />
+                      <DatePicker
+                        label="Expires"
+                        value={row.expirationDate || null}
+                        onChange={(d) => updateRow(index, "expirationDate", d)}
+                        slotProps={{
+                          field: { clearable: true },
+                          textField: { size: "small", sx: { width: 160 } },
+                        }}
+                      />
+                    </Box>
+
+                    {/* Row 3: match status + relink */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+                      <Chip
+                        size="small"
+                        label={row.matchedId ? `Matches: ${row.matchedName}` : "New item"}
+                        color={row.matchedId ? "success" : "secondary"}
+                        variant={row.matchedId ? "filled" : "outlined"}
+                        sx={{ maxWidth: "70%" }}
+                      />
+                      <Tooltip title="Match to an existing item">
+                        <IconButton size="small" onClick={() => setMatchRowIndex(index)}>
+                          <LinkIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Paper>
                 </ListItem>
               ))}
             </List>
