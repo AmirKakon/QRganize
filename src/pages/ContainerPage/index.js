@@ -1,43 +1,54 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { getContainer, getLotsByContainer, getAllItems } from "../../utilities/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { getContainer } from "../../utilities/api";
+import {
+  queryKeys,
+  useItems,
+  useLotsByContainer,
+  useRefreshInventory,
+} from "../../utilities/queries";
 import Loading from "../../components/Loading";
 import ContainerDetails from "../../components/ContainerDetails";
 
 const ContainerPage = ({ isSmallScreen }) => {
   const { id } = useParams();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [container, setContainer] = useState({});
-  const [lots, setLots] = useState([]);
-  const [allItems, setAllItems] = useState([]);
-
-  useEffect(() => {
-    getAllItems()
-      .then((res) => setAllItems(res || []))
-      .catch((error) => console.error("Error fetching items:", error));
-  }, []);
+  const { data: lots } = useLotsByContainer(id);
+  const { data: allItems } = useItems();
+  const refreshInventory = useRefreshInventory();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
+
+    // Show the cached copy right away; the fetch below only replaces it if
+    // the form hasn't been touched in the meantime.
+    const cached = queryClient
+      .getQueryData(queryKeys.containers)
+      ?.find((c) => String(c.id) === String(id));
+    if (cached) {
+      setContainer(cached);
+      setLoading(false);
+    }
+
     getContainer(id)
-      .then((res) => setContainer(res))
+      // getContainer resolves with a blank container on failure, so only
+      // let a real (named) result replace the cached copy.
+      .then((res) =>
+        setContainer((prev) => {
+          if (!cached) return res;
+          return prev === cached && res?.name ? res : prev;
+        })
+      )
       .catch((error) => {
         console.error("Error fetching data:", error);
-        setContainer({ id: id });
+        if (!cached) setContainer({ id: id });
       })
       .finally(() => setLoading(false));
-  }, [id]);
-
-  const loadLots = useCallback(() => {
-    return getLotsByContainer(id)
-      .then((res) => setLots(res || []))
-      .catch((error) => console.error("Error fetching lots:", error));
-  }, [id]);
-
-  useEffect(() => {
-    loadLots();
-  }, [loadLots]);
+  }, [id, queryClient]);
 
   return loading ? (
     <Loading />
@@ -57,7 +68,7 @@ const ContainerPage = ({ isSmallScreen }) => {
         setContainer={setContainer}
         lots={lots}
         allItems={allItems}
-        onLotsChanged={loadLots}
+        onLotsChanged={refreshInventory}
         isSmallScreen={isSmallScreen}
       />
     </Box>

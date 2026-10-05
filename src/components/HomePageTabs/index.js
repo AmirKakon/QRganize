@@ -1,45 +1,38 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
+import { useSearchParams } from "react-router-dom";
 import { BarcodeTab, ItemsTab, ExpiringTab, ShoppingListTab } from "./Tabs";
 import HomeDashboard from "../HomeDashboard";
 import QuickUse from "../QuickUse";
-import { getAllItems, getAllContainers, getAllAreas } from "../../utilities/api";
+import { useItems, useContainers, useAreas, useRefreshInventory } from "../../utilities/queries";
+
+// The open tab lives in the URL (?tab=items) so Back from an item returns to
+// the same tab instead of resetting to Overview.
+const TAB_KEYS = ["overview", "items", "use", "scanner", "shopping", "expiring"];
 
 const HomePageTabs = ({ isSmallScreen }) => {
-  const [tabIndex, setTabIndex] = useState(0);
-  const [items, setItems] = useState([]);
-  const [containers, setContainers] = useState([]);
-  const [areas, setAreas] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: items } = useItems();
+  const { data: containers } = useContainers();
+  const { data: areas } = useAreas();
+  const refreshInventory = useRefreshInventory();
 
-  const handleTabChange = (event, newValue) => {
-    setTabIndex(newValue);
-  };
+  const tabIndex = Math.max(0, TAB_KEYS.indexOf(searchParams.get("tab")));
 
-  // Let the dashboard jump to a sibling tab by name.
-  // (Keep in sync with the tabs order below.)
-  const tabIndexByKey = { items: 1, use: 2, scanner: 3, shopping: 4, expiring: 5 };
-  const goToTab = (key) => setTabIndex(tabIndexByKey[key] ?? 0);
+  const goToTab = (key) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", key);
+        return next;
+      },
+      { replace: true }
+    );
 
-  const loadItems = useCallback(() => {
-    return getAllItems()
-      .then((res) => setItems(res || []))
-      .catch((error) => console.error("Error fetching data:", error));
-  }, []);
+  const handleTabChange = (event, newValue) => goToTab(TAB_KEYS[newValue]);
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
-    loadItems();
-    getAllContainers()
-      .then((res) => setContainers(res || []))
-      .catch((error) => console.error("Error fetching containers:", error));
-    getAllAreas()
-      .then((res) => setAreas(res || []))
-      .catch((error) => console.error("Error fetching areas:", error));
-  }, [loadItems]);
-
-  // Define tab configurations. "Overview" leads so the app opens on an
-  // at-a-glance dashboard rather than a live camera; scanning is a deliberate
-  // tab. (Keys in tabIndexByKey above must match this order.)
+  // "Overview" leads so the app opens on an at-a-glance dashboard rather than
+  // a live camera; scanning is a deliberate tab. (Order must match TAB_KEYS.)
   const tabs = [
     {
       label: "Overview",
@@ -55,13 +48,13 @@ const HomePageTabs = ({ isSmallScreen }) => {
           items={items}
           containers={containers}
           areas={areas}
-          onItemsChanged={loadItems}
+          onItemsChanged={refreshInventory}
         />
       ),
     },
     {
       label: "Quick Use",
-      component: <QuickUse items={items} onChanged={loadItems} />,
+      component: <QuickUse items={items} onChanged={refreshInventory} />,
     },
     {
       label: "Barcode Scanner",
@@ -69,11 +62,11 @@ const HomePageTabs = ({ isSmallScreen }) => {
     },
     {
       label: "Shopping List",
-      component: <ShoppingListTab items={items.filter((a) => a.shoppingList ?? false)} onListChanged={loadItems} />,
+      component: <ShoppingListTab items={items.filter((a) => a.shoppingList ?? false)} onListChanged={refreshInventory} />,
     },
     {
       label: "Expiring Soon",
-      component: <ExpiringTab items={items} containers={containers} onChanged={loadItems} />,
+      component: <ExpiringTab items={items} containers={containers} onChanged={refreshInventory} />,
     },
   ];
 

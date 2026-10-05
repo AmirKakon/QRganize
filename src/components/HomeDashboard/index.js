@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Paper, Typography, Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import useOpenItem from "../../utilities/useOpenItem";
 import dayjs from "dayjs";
 
 const daysTo = (d) => dayjs(d).startOf("day").diff(dayjs().startOf("day"), "day");
@@ -36,6 +37,7 @@ const StatTile = ({ label, value, hint, color, onClick }) => (
 // a peek at what's expiring next.
 const HomeDashboard = ({ items = [], containers = [], onGoTo }) => {
   const navigate = useNavigate();
+  const openItem = useOpenItem();
 
   const total = items.length;
   const inStock = items.filter((i) => (i.quantity || 0) > 0).length;
@@ -93,7 +95,7 @@ const HomeDashboard = ({ items = [], containers = [], onGoTo }) => {
             return (
               <Box
                 key={it.id}
-                onClick={() => navigate(`/item?id=${it.id}`)}
+                onClick={() => openItem(it.id)}
                 sx={{
                   display: "flex",
                   alignItems: "center",

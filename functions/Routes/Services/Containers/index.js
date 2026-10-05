@@ -1,32 +1,22 @@
 const { db, logger } = require("../../../setup");
 const { NotFoundError } = require("../../Contracts/Errors");
 const LotService = require("../Lots");
+const ImageService = require("../Images");
 
 const containersDB = "containers";
 
 // Create a container
 const createContainer = async (name, image, userId, id = null, areaId = null) => {
-  let itemRef = null;
+  const itemRef = id ?
+    db.collection(containersDB).doc(String(id)) :
+    db.collection(containersDB).doc();
 
-  if (id) {
-    await db
-      .collection(containersDB)
-      .doc(String(id))
-      .set({
-        name: name,
-        image: image,
-        userId: userId,
-        areaId: areaId ?? null,
-      });
-    itemRef = db.collection(containersDB).doc(String(id));
-  } else {
-    itemRef = await db.collection(containersDB).add({
-      name: name,
-      image: image,
-      userId: userId,
-      areaId: areaId ?? null,
-    });
-  }
+  await itemRef.set({
+    name: name,
+    image: await ImageService.storeImage("containers", itemRef.id, image),
+    userId: userId,
+    areaId: areaId ?? null,
+  });
 
   return {
     containerId: itemRef.id,
@@ -88,7 +78,7 @@ const updateContainer = async (id, name, image, userId, areaId = null) => {
   try {
     await db.collection(containersDB).doc(id).update({
       name: name,
-      image: image,
+      image: await ImageService.storeImage("containers", id, image),
       userId: userId,
       areaId: areaId ?? null,
     });

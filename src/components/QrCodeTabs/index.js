@@ -1,31 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Tabs, Tab, Paper } from "@mui/material";
+import { useSearchParams } from "react-router-dom";
 import { QrCodeTab, ContainersTab } from "./Tabs";
-import { getAllContainers, getAllItems, getAllAreas } from "../../utilities/api";
+import { useItems, useContainers, useAreas } from "../../utilities/queries";
+
+// Open tab kept in the URL so Back from a container returns to it.
+const TAB_KEYS = ["containers", "scanner"];
 
 const QrCodeTabs = ({ isSmallScreen }) => {
-  const [tabIndex, setTabIndex] = useState(0);
-  const [containers, setContainers] = useState([]);
-  const [items, setItems] = useState([]);
-  const [areas, setAreas] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: containers } = useContainers();
+  const { data: items } = useItems();
+  const { data: areas } = useAreas();
 
-  const handleTabChange = (event, newValue) => {
-    setTabIndex(newValue);
-  };
+  const tabIndex = Math.max(0, TAB_KEYS.indexOf(searchParams.get("tab")));
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
-
-    getAllContainers()
-      .then((res) => setContainers(res || []))
-      .catch((error) => console.error("Error fetching data:", error));
-    getAllItems()
-      .then((res) => setItems(res || []))
-      .catch((error) => console.error("Error fetching items:", error));
-    getAllAreas()
-      .then((res) => setAreas(res || []))
-      .catch((error) => console.error("Error fetching areas:", error));
-  }, []);
+  const handleTabChange = (event, newValue) =>
+    setSearchParams({ tab: TAB_KEYS[newValue] }, { replace: true });
 
   // Define tab configurations. "View Containers" leads so the page opens on the
   // container list rather than a live camera; scanning is a deliberate tab.

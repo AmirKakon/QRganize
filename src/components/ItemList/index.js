@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import {
   Box,
   TextField,
@@ -13,41 +13,110 @@ import {
   MenuItem,
   Button,
   IconButton,
-  Tooltip,
   Snackbar,
   Alert,
 } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { getImageSrc, PLACEHOLDER_IMAGE } from "../../utilities/helpers";
 import { setItemShoppingList } from "../../utilities/api";
+import useScrollMemory from "../../utilities/useScrollMemory";
+import useOpenItem from "../../utilities/useOpenItem";
 
 const NO_CONTAINER = "__no_container__";
 const UNASSIGNED_AREA = "__unassigned_area__";
 
 const daysTo = (d) => dayjs(d).startOf("day").diff(dayjs().startOf("day"), "day");
 
+const tileSx = { cursor: "pointer", position: "relative" };
+// Square tiles keep the grid's height fixed while lazy photos load, so a
+// restored scroll position stays put.
+const imageStyle = { objectFit: "cover", aspectRatio: "1 / 1" };
+const cartButtonSx = (inCart) => ({
+  position: "absolute",
+  top: 6,
+  right: 6,
+  bgcolor: "rgba(0,0,0,0.55)",
+  color: inCart ? "primary.light" : "common.white",
+  "&:hover": { bgcolor: "rgba(0,0,0,0.75)" },
+});
+
+const showPlaceholder = (e) => {
+  e.currentTarget.onerror = null;
+  e.currentTarget.src = PLACEHOLDER_IMAGE;
+};
+
+// Memoized: the grid can hold hundreds of tiles, and typing in the search box
+// or toggling one cart shouldn't re-render all of them. A native title stands
+// in for MUI's Tooltip, which is costly to mount per tile.
+const ItemTile = memo(({ item, inCart, onOpen, onToggleCart }) => {
+  const cartLabel = inCart ? "On shopping list — tap to remove" : "Add to shopping list";
+  return (
+    <ImageListItem onClick={() => onOpen(item.id)} sx={tileSx}>
+      <img
+        src={getImageSrc(item.image)}
+        alt={item.name}
+        loading="lazy"
+        onError={showPlaceholder}
+        style={imageStyle}
+      />
+      <IconButton
+        size="small"
+        title={cartLabel}
+        aria-label={cartLabel}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleCart(item, !inCart);
+        }}
+        sx={cartButtonSx(inCart)}
+      >
+        {inCart ? <ShoppingCartIcon fontSize="small" /> : <AddShoppingCartIcon fontSize="small" />}
+      </IconButton>
+      <ImageListItemBar
+        title={item.name}
+        subtitle={`Price: ${item.price} · ${item.quantity ?? 0} in stock`}
+      />
+    </ImageListItem>
+  );
+});
+
 const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsChanged }) => {
-  const navigate = useNavigate();
   const isMediumScreen = useMediaQuery("(max-width: 950px)");
   const isLargeScreen = useMediaQuery("(max-width: 1300px)");
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [status, setStatus] = useState("all"); // all | instock | outofstock | expiring
-  const [areaId, setAreaId] = useState("");
-  const [containerId, setContainerId] = useState("");
-  const [sortBy, setSortBy] = useState("name"); // name | price | qty | expiry
+  // Filters live in the URL so Back from an item restores them. Defaults are
+  // left out of the URL to keep it short.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get("q") ?? "";
+  const status = searchParams.get("status") ?? "all"; // all | instock | outofstock | expiring
+  const areaId = searchParams.get("area") ?? "";
+  const containerId = searchParams.get("container") ?? "";
+  const sortBy = searchParams.get("sort") ?? "name"; // name | price | qty | expiry
+
+  const setFilters = (changes) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        Object.entries(changes).forEach(([key, value]) =>
+          value ? next.set(key, value) : next.delete(key)
+        );
+        return next;
+      },
+      { replace: true }
+    );
+  const setSearchQuery = (value) => setFilters({ q: value });
+  const setStatus = (value) => setFilters({ status: value === "all" ? "" : value });
+  const setContainerId = (value) => setFilters({ container: value });
+  const setSortBy = (value) => setFilters({ sort: value === "name" ? "" : value });
   // Optimistic shopping-list state for instant cart feedback on the grid.
   const [cartOverrides, setCartOverrides] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const isInCart = (item) => cartOverrides[item.id] ?? item.shoppingList ?? false;
 
-  const toggleCart = async (e, item) => {
-    e.stopPropagation();
-    const next = !isInCart(item);
+  const toggleCart = useCallback(async (item, next) => {
     setCartOverrides((prev) => ({ ...prev, [item.id]: next }));
     try {
       await setItemShoppingList(item.id, next);
@@ -62,7 +131,7 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
       setCartOverrides((prev) => ({ ...prev, [item.id]: !next })); // revert
       setSnackbar({ open: true, message: "Couldn't update the shopping list.", severity: "error" });
     }
-  };
+  }, [onItemsChanged]);
 
   const areaOfContainer = (cid) =>
     containers.find((c) => c.id === cid)?.areaId ?? null;
@@ -122,18 +191,15 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, containers, searchQuery, status, areaId, containerId, sortBy]);
 
-  const handleItemClick = (item) => navigate(`/item?id=${item.id}`);
+  const openItem = useOpenItem();
 
   const filtersActive =
     searchQuery || status !== "all" || areaId || containerId || sortBy !== "name";
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setStatus("all");
-    setAreaId("");
-    setContainerId("");
-    setSortBy("name");
-  };
+  const clearFilters = () =>
+    setFilters({ q: "", status: "", area: "", container: "", sort: "" });
+
+  const scrollRef = useScrollMemory("items-list", filteredItems.length > 0, isSmallScreen);
 
   let emptyMessage = "No items match your filters.";
   if (items.length === 0) {
@@ -144,48 +210,6 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
       {emptyMessage}
     </Typography>
   );
-
-  const cardOf = (item) => {
-    const inCart = isInCart(item);
-    return (
-      <ImageListItem
-        key={item.id}
-        onClick={() => handleItemClick(item)}
-        sx={{ cursor: "pointer", position: "relative" }}
-      >
-        <img
-          src={getImageSrc(item.image)}
-          alt={item.name}
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = PLACEHOLDER_IMAGE;
-          }}
-          style={{ objectFit: "cover" }}
-        />
-        <Tooltip title={inCart ? "On shopping list — tap to remove" : "Add to shopping list"}>
-          <IconButton
-            size="small"
-            onClick={(e) => toggleCart(e, item)}
-            sx={{
-              position: "absolute",
-              top: 6,
-              right: 6,
-              bgcolor: "rgba(0,0,0,0.55)",
-              color: inCart ? "primary.light" : "common.white",
-              "&:hover": { bgcolor: "rgba(0,0,0,0.75)" },
-            }}
-          >
-            {inCart ? <ShoppingCartIcon fontSize="small" /> : <AddShoppingCartIcon fontSize="small" />}
-          </IconButton>
-        </Tooltip>
-        <ImageListItemBar
-          title={item.name}
-          subtitle={`Price: ${item.price} · ${item.quantity ?? 0} in stock`}
-        />
-      </ImageListItem>
-    );
-  };
 
   return (
     <>
@@ -232,10 +256,10 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
             <Select
               value={areaId}
               label="Area"
-              onChange={(e) => {
-                setAreaId(e.target.value);
-                setContainerId(""); // reset container when area changes
-              }}
+              onChange={(e) =>
+                // reset container when area changes
+                setFilters({ area: e.target.value, container: "" })
+              }
             >
               <MenuItem value="">All areas</MenuItem>
               {areas.map((a) => (
@@ -305,12 +329,22 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
           }}
         >
           {filteredItems.length === 0 ? emptyState : (
+            // ImageList (not the outer box) is the element that scrolls.
             <ImageList
+              ref={scrollRef}
               cols={isMediumScreen ? 2 : isLargeScreen ? 3 : 4}
               gap={16}
               sx={{ width: "100%", maxWidth: "1200px", margin: "0 auto" }}
             >
-              {filteredItems.map(cardOf)}
+              {filteredItems.map((item) => (
+                <ItemTile
+                  key={item.id}
+                  item={item}
+                  inCart={isInCart(item)}
+                  onOpen={openItem}
+                  onToggleCart={toggleCart}
+                />
+              ))}
             </ImageList>
           )}
         </Box>
@@ -330,8 +364,16 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
           }}
         >
           {filteredItems.length === 0 ? emptyState : (
-            <ImageList cols={2} gap={5} sx={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}>
-              {filteredItems.map(cardOf)}
+            <ImageList ref={scrollRef} cols={2} gap={5} sx={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}>
+              {filteredItems.map((item) => (
+                <ItemTile
+                  key={item.id}
+                  item={item}
+                  inCart={isInCart(item)}
+                  onOpen={openItem}
+                  onToggleCart={toggleCart}
+                />
+              ))}
             </ImageList>
           )}
         </Box>

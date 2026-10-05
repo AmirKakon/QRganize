@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Paper,
@@ -31,12 +31,11 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import {
   parseReceipt,
-  getAllItems,
-  getAllContainers,
   createItem,
   addLot,
   addItemBarcode,
 } from "../../utilities/api";
+import { useItems, useContainers, useRefreshInventory } from "../../utilities/queries";
 
 const money = (n) => `$${(Number(n) || 0).toFixed(2)}`;
 
@@ -148,17 +147,13 @@ const ScanReceiptPage = () => {
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [rows, setRows] = useState([]);
-  const [allItems, setAllItems] = useState([]);
-  const [containers, setContainers] = useState([]);
+  const { data: allItems } = useItems();
+  const { data: containers } = useContainers();
+  const refreshInventory = useRefreshInventory();
   const [containerId, setContainerId] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   // Index of the row whose "match to existing item" dialog is open (null = closed).
   const [matchRowIndex, setMatchRowIndex] = useState(null);
-
-  useEffect(() => {
-    getAllItems().then((res) => setAllItems(res || [])).catch(() => {});
-    getAllContainers().then((res) => setContainers(res || [])).catch(() => {});
-  }, []);
 
   const notify = (message, severity = "success") =>
     setSnackbar({ open: true, message, severity });
@@ -286,11 +281,12 @@ const ScanReceiptPage = () => {
       );
       setRows([]);
       setImage(null);
-      getAllItems().then((res) => setAllItems(res || [])).catch(() => {});
     } catch (error) {
       console.error("Error saving receipt items:", error);
       notify("Failed to save some items. Please try again.", "error");
     } finally {
+      // Even a partial failure may have created items/stock.
+      refreshInventory();
       setSaving(false);
     }
   };

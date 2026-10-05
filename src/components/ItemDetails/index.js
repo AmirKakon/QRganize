@@ -24,9 +24,10 @@ import {
   deleteItem,
   addItemBarcode,
   removeItemBarcode,
-  getAllItems,
   mergeItems,
 } from "../../utilities/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { itemsQuery, useRefreshInventory } from "../../utilities/queries";
 import { getImageSrc, generateRandomId } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
@@ -51,6 +52,8 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     message: "",
     severity: "success",
   });
+  const queryClient = useQueryClient();
+  const refreshInventory = useRefreshInventory();
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
 
@@ -104,6 +107,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
         expirationDate: null,
       });
       if (savedId) {
+        refreshInventory();
         if (typeof savedId === "string" && savedId !== item.id) {
           setItem((prev) => ({ ...prev, id: savedId }));
         }
@@ -124,6 +128,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     setDeleting(true);
     try {
       const response = await deleteItem(item.id);
+      if (response) refreshInventory();
       setSnackbar({
         open: true,
         message: response ? "Item deleted." : "Failed to delete item.",
@@ -143,6 +148,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     setAddingBarcode(true);
     try {
       await addItemBarcode(item.id, code);
+      refreshInventory();
       setItem((prev) => ({
         ...prev,
         barcodes: Array.from(new Set([...(prev.barcodes || []), code])),
@@ -164,6 +170,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
   const handleRemoveBarcode = async (code) => {
     try {
       await removeItemBarcode(item.id, code);
+      refreshInventory();
       setItem((prev) => ({
         ...prev,
         barcodes: (prev.barcodes || []).filter((b) => b !== code),
@@ -179,7 +186,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     setMergeTarget(null);
     setMergeOpen(true);
     try {
-      const all = await getAllItems();
+      const all = await queryClient.ensureQueryData(itemsQuery);
       setMergeCandidates((all || []).filter((i) => i.id !== item.id));
     } catch (error) {
       console.error("Error loading items for merge:", error);
@@ -195,6 +202,7 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     try {
       const ok = await mergeItems(item.id, mergeTarget.id);
       if (ok) {
+        refreshInventory();
         const targetId = mergeTarget.id;
         setMergeOpen(false);
         setSnackbar({ open: true, message: `Merged into "${mergeTarget.name}".`, severity: "success" });

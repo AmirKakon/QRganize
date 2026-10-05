@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -20,7 +20,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 import MergeTypeIcon from "@mui/icons-material/MergeType";
-import { getAllItems, mergeItems } from "../../utilities/api";
+import { mergeItems } from "../../utilities/api";
+import { useItems, useRefreshInventory } from "../../utilities/queries";
 import Loading from "../../components/Loading";
 
 // --- fuzzy-duplicate detection (client-side) ---
@@ -115,8 +116,8 @@ const groupKey = (group) =>
     .join("|");
 
 const DuplicatesPage = () => {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState([]);
+  const { data: items, isLoading: loading, isError } = useItems();
+  const refreshInventory = useRefreshInventory();
   const [keepers, setKeepers] = useState({}); // groupKey -> itemId
   const [dismissed, setDismissed] = useState(() => new Set());
   const [confirm, setConfirm] = useState(null); // { group, keeper, others }
@@ -126,21 +127,10 @@ const DuplicatesPage = () => {
   const notify = (message, severity = "success") =>
     setSnackbar({ open: true, message, severity });
 
-  const load = useCallback(async () => {
-    try {
-      const list = await getAllItems();
-      setItems(list || []);
-    } catch (error) {
-      console.error("Error loading items:", error);
-      notify("Failed to load items.", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    if (isError) notify("Failed to load items.", "error");
+  }, [isError]);
+
 
   const groups = useMemo(
     () => findDuplicateGroups(items).filter((g) => !dismissed.has(groupKey(g))),
@@ -168,8 +158,7 @@ const DuplicatesPage = () => {
         `Merged ${moved} item${moved === 1 ? "" : "s"} into "${confirm.keeper.name}".`
       );
       setConfirm(null);
-      setLoading(true);
-      await load();
+      await refreshInventory();
     } catch (error) {
       console.error("Error merging items:", error);
       notify("Failed to merge. Some items may not have been merged.", "error");

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Paper,
@@ -23,9 +23,10 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { useNavigate } from "react-router-dom";
+import useOpenItem from "../../utilities/useOpenItem";
 import dayjs from "dayjs";
-import { addLot, consumeLot, deleteLot, updateLot, getAllContainers } from "../../utilities/api";
+import { addLot, consumeLot, deleteLot, updateLot } from "../../utilities/api";
+import { useContainers } from "../../utilities/queries";
 
 const toDateString = (date) =>
   date ? dayjs(date).format("YYYY-MM-DD").concat("T00:00:00+00:00") : null;
@@ -44,21 +45,15 @@ const expiryChip = (expirationDate) => {
 
 // The batches (lots) stored in one container, with add / use / toss.
 const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
-  const navigate = useNavigate();
+  const openItem = useOpenItem();
   const [busy, setBusy] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState(null);
   const [qty, setQty] = useState(1);
   const [date, setDate] = useState(null);
-  const [containers, setContainers] = useState([]);
+  const { data: containers } = useContainers();
   const [moveMenu, setMoveMenu] = useState(null); // { anchorEl, lot }
-
-  useEffect(() => {
-    getAllContainers()
-      .then((res) => setContainers(res || []))
-      .catch((error) => console.error("Error fetching containers:", error));
-  }, []);
 
   const nameOf = (itemId) =>
     allItems.find((i) => i.id === itemId)?.name || "(unknown item)";
@@ -143,7 +138,7 @@ const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
                 variant="body2"
-                onClick={() => navigate(`/item?id=${lot.itemId}`)}
+                onClick={() => openItem(lot.itemId)}
                 sx={{
                   fontWeight: 500,
                   cursor: "pointer",

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -21,20 +21,16 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useNavigate } from "react-router-dom";
-import {
-  getAllAreas,
-  getAllContainers,
-  createArea,
-  updateArea,
-  deleteArea,
-} from "../../utilities/api";
+import { createArea, updateArea, deleteArea } from "../../utilities/api";
+import { useAreas, useContainers, useRefreshInventory } from "../../utilities/queries";
 import Loading from "../../components/Loading";
 
 const AreasPage = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [areas, setAreas] = useState([]);
-  const [containers, setContainers] = useState([]);
+  const { data: areas, isLoading: areasLoading } = useAreas();
+  const { data: containers, isLoading: containersLoading } = useContainers();
+  const loading = areasLoading || containersLoading;
+  const refreshInventory = useRefreshInventory();
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
   const [renaming, setRenaming] = useState(null); // { id, name }
@@ -44,25 +40,9 @@ const AreasPage = () => {
   const notify = (message, severity = "success") =>
     setSnackbar({ open: true, message, severity });
 
-  const load = useCallback(async () => {
-    try {
-      const [areaList, containerList] = await Promise.all([
-        getAllAreas(),
-        getAllContainers(),
-      ]);
-      setAreas(areaList || []);
-      setContainers(containerList || []);
-    } catch (error) {
-      console.error("Error loading areas:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
-    load();
-  }, [load]);
+  }, []);
 
   const containersFor = (areaId) =>
     containers.filter((c) => (c.areaId || null) === areaId);
@@ -75,7 +55,7 @@ const AreasPage = () => {
     try {
       await fn();
       if (message) notify(message);
-      await load();
+      await refreshInventory();
     } catch (error) {
       console.error(error);
       notify("Something went wrong. Please try again.", "error");

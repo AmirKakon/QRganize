@@ -15,26 +15,19 @@ import {
   Divider,
 } from "@mui/material";
 import PrintIcon from "@mui/icons-material/Print";
-import { getAllContainers, getAllItems } from "../../utilities/api";
+import { useItems, useContainers } from "../../utilities/queries";
 import Label from "../../components/Label";
 
 // Batch label printing: pick containers (QR) or items (barcode), then print a sheet.
 const PrintLabelsPage = () => {
   const [mode, setMode] = useState("containers"); // "containers" | "items"
-  const [containers, setContainers] = useState([]);
-  const [items, setItems] = useState([]);
+  const { data: containers } = useContainers();
+  const { data: items } = useItems();
   const [selectedIds, setSelectedIds] = useState([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
-
-    getAllContainers()
-      .then((res) => setContainers(res || []))
-      .catch((error) => console.error("Error fetching containers:", error));
-    getAllItems()
-      .then((res) => setItems(res || []))
-      .catch((error) => console.error("Error fetching items:", error));
   }, []);
 
   // Reset selection + search when switching between containers and items

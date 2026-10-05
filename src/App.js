@@ -8,6 +8,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -16,8 +17,68 @@ import {
   HomePage, ItemPage, QrCodePage, ContainerPage, PrintLabelsPage, ScanReceiptPage, AreasPage, DuplicatesPage, SearchPage
 } from "./pages";
 import { Header, Footer } from "./layout";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { tryGetTokenOrLogin, getUuid } from "./utilities/auth";
+import { queryClient, persistOptions } from "./utilities/queries";
 import Loading from "./components/Loading";
+import ItemOverlay from "./components/ItemOverlay";
+
+// When an item is opened via useOpenItem, keep rendering the page it was
+// opened from (the "background") and layer the item over it, so Back returns
+// instantly with that page untouched. Direct /item links render normally.
+const AppRoutes = ({ isSmallScreen }) => {
+  const location = useLocation();
+  const background = location.state?.background;
+
+  return (
+    <>
+      <Routes location={background || location}>
+        <Route
+          path="/item"
+          element={<ItemPage isSmallScreen={isSmallScreen} />}
+        />
+        <Route
+          path="/container/:id"
+          element={<ContainerPage isSmallScreen={isSmallScreen} />}
+        />
+        <Route
+          path="/qrcode"
+          element={<QrCodePage isSmallScreen={isSmallScreen} />}
+        />
+        <Route
+          path="/labels"
+          element={<PrintLabelsPage isSmallScreen={isSmallScreen} />}
+        />
+        <Route
+          path="/scan-receipt"
+          element={<ScanReceiptPage isSmallScreen={isSmallScreen} />}
+        />
+        <Route
+          path="/areas"
+          element={<AreasPage isSmallScreen={isSmallScreen} />}
+        />
+        <Route
+          path="/duplicates"
+          element={<DuplicatesPage isSmallScreen={isSmallScreen} />}
+        />
+        <Route
+          path="/search"
+          element={<SearchPage isSmallScreen={isSmallScreen} />}
+        />
+        <Route
+          path="/"
+          element={<HomePage isSmallScreen={isSmallScreen} />}
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      {background && (
+        <Routes>
+          <Route path="/item" element={<ItemOverlay isSmallScreen={isSmallScreen} />} />
+        </Routes>
+      )}
+    </>
+  );
+};
 
 const App = () => {
   const isSmallScreen = useMediaQuery("(max-width: 600px)");
@@ -77,6 +138,7 @@ const App = () => {
   }, []);
 
   return (
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -86,45 +148,7 @@ const App = () => {
           {loading ? (
             <Loading />
           ) : (
-            <Routes>
-              <Route
-                path="/item"
-                element={<ItemPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/container/:id"
-                element={<ContainerPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/qrcode"
-                element={<QrCodePage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/labels"
-                element={<PrintLabelsPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/scan-receipt"
-                element={<ScanReceiptPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/areas"
-                element={<AreasPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/duplicates"
-                element={<DuplicatesPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/search"
-                element={<SearchPage isSmallScreen={isSmallScreen} />}
-              />
-              <Route
-                path="/"
-                element={<HomePage isSmallScreen={isSmallScreen} />}
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <AppRoutes isSmallScreen={isSmallScreen} />
           )}
           <Footer isSmallScreen={isSmallScreen} />
           <Snackbar
@@ -141,6 +165,7 @@ const App = () => {
       </Router>
     </ThemeProvider>
     </LocalizationProvider>
+    </PersistQueryClientProvider>
   );
 };
 

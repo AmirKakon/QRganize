@@ -1,23 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Box } from "@mui/material";
 import HomePageTabs from "../../components/HomePageTabs";
-import Loading from "../../components/Loading";
 
-const HomePage = ({ isSmallScreen }) => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
-    setLoading(false);
-  }, []);
-
-  return loading ? (
-    <Loading />
-  ) : (
-    <Box flex={1} spacing={1} sx={{ backgroundColor: "background.default", padding: 2 }}>
-      <HomePageTabs isSmallScreen={isSmallScreen} />
-    </Box>
-  );
-};
+const HomePage = ({ isSmallScreen }) => (
+  <Box flex={1} spacing={1} sx={{ backgroundColor: "background.default", padding: 2 }}>
+    <HomePageTabs isSmallScreen={isSmallScreen} />
+  </Box>
+);
 
 export default HomePage;

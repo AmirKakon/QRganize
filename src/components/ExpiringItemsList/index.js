@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Avatar, Chip, Button, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import useOpenItem from "../../utilities/useOpenItem";
 import dayjs from "dayjs";
 import { getImageSrc } from "../../utilities/helpers";
 import { consumeLot, deleteLot } from "../../utilities/api";
@@ -19,7 +19,7 @@ const getStatus = (expirationDate) => {
 // Lists every expiring *batch* (lot with a date), soonest first — an item with
 // two differently-dated batches appears twice. Inline Used / Toss act on the lot.
 const ExpiringItemsList = ({ items, containers = [], onChanged }) => {
-  const navigate = useNavigate();
+  const openItem = useOpenItem();
 
   const containerName = (id) =>
     containers.find((c) => c.id === id)?.name || "Unassigned";
@@ -81,12 +81,12 @@ const ExpiringItemsList = ({ items, containers = [], onChanged }) => {
               variant="rounded"
               src={getImageSrc(b.image)}
               alt={b.name}
-              onClick={() => navigate(`/item?id=${b.itemId}`)}
+              onClick={() => openItem(b.itemId)}
               sx={{ cursor: "pointer" }}
             />
             <Box
               sx={{ flex: 1, minWidth: 0, cursor: "pointer" }}
-              onClick={() => navigate(`/item?id=${b.itemId}`)}
+              onClick={() => openItem(b.itemId)}
             >
               <Typography variant="body2" noWrap>
                 {b.name}

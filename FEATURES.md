@@ -208,4 +208,37 @@ Phases:
 
 ---
 
-_Last updated: 2026-07-16_
+## 8. Speed & Navigation
+
+Measured on the live app (2026-10-05): `GET /api/items/getAll` was **4.1 MB**, 98.5% of it base64
+photos stored inline on 83 item docs; ~2.5–3.3 s warm, ~6 s cold — and every Back refetched it,
+reset Home to the Overview tab, cleared filters and scrolled to the top.
+
+- [~] **Photos → Cloud Storage** — new `Services/Images` (`storeImage`) uploads any inline image
+      (data-URL / raw base64) to the default bucket (`qrganize-f651b.firebasestorage.app`) with a
+      Firebase download token and a 1-year immutable cache header, and stores the URL instead.
+      Item create/update/setImage (incl. MCP `create_item` / `set_item_image`) and container
+      create/update all go through it; links pass through untouched. One-time
+      `POST /api/images/migrate` moves existing inline images (items + containers), copying each
+      original to `imageBackups` first; idempotent. **Todo:** run it after deploy, verify, then
+      remove the route and the `imageBackups` collection.
+- [x] **Shared data cache (TanStack Query)** — `src/utilities/queries.js`: one cache for items,
+      containers, areas and lots, persisted to `localStorage` (24 h, `CACHE_BUSTER` to reset).
+      Pages show cached data instantly and refresh in the background (stale after 30 s); every
+      mutation calls `useRefreshInventory()` (invalidates everything — the data set is small).
+      Item and container pages open from the cached copy, then refresh it unless already edited.
+- [x] **Back never re-renders the list** — items open as a full-screen overlay on top of the page
+      they came from (`useOpenItem` + `components/ItemOverlay`, React Router "background
+      location"). Back just closes it; the page underneath was never unmounted. Direct `/item` links
+      and the header's Add Item still render the normal page.
+- [x] **Place kept in the URL** — Home tab (`?tab=items`), View Items filters (`q`, `status`,
+      `area`, `container`, `sort`), Search query and the Containers tab; list scroll position is
+      remembered per session (`useScrollMemory`).
+- [x] **Cheaper grid** — memoized `ItemTile`, native `title` instead of a MUI Tooltip per tile,
+      square tiles (fixed layout while lazy photos load). 240 tiles: ~720 ms → ~230 ms to render.
+- [x] **Fix: saving an item wiped its extra barcodes** — `createItem` with an id did a full `set()`,
+      dropping `barcodes` and `lastUsedAt`; it now merges.
+
+---
+
+_Last updated: 2026-10-05_

@@ -17,7 +17,8 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { createContainer, deleteContainer, getAllAreas } from "../../utilities/api";
+import { createContainer, deleteContainer } from "../../utilities/api";
+import { useAreas, useRefreshInventory } from "../../utilities/queries";
 import { getImageSrc } from "../../utilities/helpers";
 import ContainerContents from "../ContainerContents";
 
@@ -25,14 +26,9 @@ const ContainerDetails = ({ container, setContainer, lots = [], allItems = [], o
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [areas, setAreas] = useState([]);
+  const { data: areas } = useAreas();
+  const refreshInventory = useRefreshInventory();
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
-
-  useEffect(() => {
-    getAllAreas()
-      .then((res) => setAreas(res || []))
-      .catch((error) => console.error("Error fetching areas:", error));
-  }, []);
 
   useEffect(() => {
     if (container?.id && !container.image) {
@@ -85,6 +81,7 @@ const ContainerDetails = ({ container, setContainer, lots = [], allItems = [], o
     setSaving(true);
     try {
       const response = await createContainer({ ...container });
+      if (response) refreshInventory();
       setSnackbar({
         open: true,
         message: response ? "Container saved." : "Failed to save container.",
@@ -103,6 +100,7 @@ const ContainerDetails = ({ container, setContainer, lots = [], allItems = [], o
     setDeleting(true);
     try {
       const response = await deleteContainer(container.id);
+      if (response) refreshInventory();
       setSnackbar({
         open: true,
         message: response ? "Container deleted." : "Failed to delete container.",

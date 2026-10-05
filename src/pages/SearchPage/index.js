@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   TextField,
@@ -10,28 +10,22 @@ import {
   Chip,
   Divider,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { getAllItems, getAllContainers } from "../../utilities/api";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useItems, useContainers } from "../../utilities/queries";
 import Loading from "../../components/Loading";
+import useOpenItem from "../../utilities/useOpenItem";
 
 // One search box across items (name / barcode) and containers (name).
 const SearchPage = () => {
   const navigate = useNavigate();
-  const [q, setQ] = useState("");
-  const [items, setItems] = useState([]);
-  const [containers, setContainers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
-    Promise.all([getAllItems(), getAllContainers()])
-      .then(([it, cn]) => {
-        setItems(it || []);
-        setContainers(cn || []);
-      })
-      .catch((error) => console.error("Error loading search data:", error))
-      .finally(() => setLoading(false));
-  }, []);
+  const openItem = useOpenItem();
+  // The query lives in the URL so Back from a result keeps the search.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
+  const setQ = (value) => setSearchParams(value ? { q: value } : {}, { replace: true });
+  const { data: items, isLoading: itemsLoading } = useItems();
+  const { data: containers, isLoading: containersLoading } = useContainers();
+  const loading = itemsLoading || containersLoading;
 
   const term = q.trim().toLowerCase();
 
@@ -92,7 +86,7 @@ const SearchPage = () => {
                       <Chip size="small" variant="outlined" label={`${i.quantity ?? 0} in stock`} />
                     }
                   >
-                    <ListItemButton onClick={() => navigate(`/item?id=${i.id}`)}>
+                    <ListItemButton onClick={() => openItem(i.id)}>
                       <ListItemText primary={i.name} secondary={`Price: ${i.price}`} />
                     </ListItemButton>
                   </ListItem>

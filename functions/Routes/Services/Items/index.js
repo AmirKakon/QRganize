@@ -3,6 +3,7 @@ const { db, logger } = require("../../../setup");
 const { NotFoundError, MissingArgumentError } = require("../../Contracts/Errors");
 const Utilities = require("../Utilities");
 const LotService = require("../Lots");
+const ImageService = require("../Images");
 
 const itemsDB = "items";
 
@@ -62,30 +63,22 @@ const removeBarcodeFromItem = async (id, barcode) => {
   return true;
 };
 
-// Create an item
+// Create an item. With an id this upserts: fields the form doesn't send
+// (barcode aliases, lastUsedAt, …) are kept rather than wiped.
 const createItem = async (name, price, image, shoppingList, id = null) => {
-  let itemRef = null;
+  const itemRef = id ?
+    db.collection(itemsDB).doc(String(id)) :
+    db.collection(itemsDB).doc();
 
-  if (id) {
-    await db
-      .collection(itemsDB)
-      .doc(String(id))
-      .set({
-        name: name,
-        price: price,
-        image: image,
-        shoppingList: shoppingList,
-
-      });
-    itemRef = db.collection(itemsDB).doc(String(id));
-  } else {
-    itemRef = await db.collection(itemsDB).add({
+  await itemRef.set(
+    {
       name: name,
       price: price,
-      image: image,
+      image: await ImageService.storeImage("items", itemRef.id, image),
       shoppingList: shoppingList,
-    });
-  }
+    },
+    { merge: true },
+  );
 
   return {
     itemId: itemRef.id,
@@ -162,9 +155,8 @@ const updateItem = async (id, name, price, image, shoppingList) => {
     await db.collection(itemsDB).doc(id).update({
       name: name,
       price: price,
-      image: image,
+      image: await ImageService.storeImage("items", id, image),
       shoppingList: shoppingList,
-
     });
     return true;
   } catch (error) {
@@ -187,7 +179,10 @@ const setShoppingList = async (id, shoppingList) => {
 // Set only an item's image (a URL, data-URL, or raw base64 string).
 const setImage = async (id, image) => {
   try {
-    await db.collection(itemsDB).doc(String(id)).update({ image });
+    await db
+      .collection(itemsDB)
+      .doc(String(id))
+      .update({ image: await ImageService.storeImage("items", id, image) });
     return true;
   } catch (error) {
     logger.error(`Failed to update image for item: ${id}`, error);
