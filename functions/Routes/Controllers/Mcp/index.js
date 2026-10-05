@@ -16,13 +16,17 @@ const SERVER_INFO = { name: "qrganize", version: "1.0.0" };
 
 // ---- helpers ----------------------------------------------------------------
 const norm = (s) => (s || "").trim().toLowerCase();
+// An item answers to its name and its alternate names (e.g. the Hebrew text
+// receipts print); containers just have a name.
+const namesOf = (x) => [x.name, ...(x.aliases || [])].map(norm).filter(Boolean);
+const matchesName = (x, query) => namesOf(x).some((n) => n.includes(norm(query)));
 
 const findByName = (list, name) => {
   const n = norm(name);
   if (!n) return null;
   return (
-    list.find((x) => norm(x.name) === n) ||
-    list.find((x) => norm(x.name).includes(n) || n.includes(norm(x.name))) ||
+    list.find((x) => namesOf(x).includes(n)) ||
+    list.find((x) => namesOf(x).some((xn) => xn.includes(n) || n.includes(xn))) ||
     list.find((x) => String(x.id) === String(name)) ||
     null
   );
@@ -34,14 +38,14 @@ const candidates = (list, name) => {
   if (!n) return [];
   const scored = [];
   for (const x of list) {
-    const xn = norm(x.name);
     let score = 0;
-    if (xn === n || String(x.id) === String(name) ||
-        (x.barcodes || []).includes(name)) {
-      score = 100;
-    } else if (xn.startsWith(n)) score = 80;
-    else if (xn.includes(n)) score = 60;
-    else if (n.includes(xn)) score = 40;
+    if (String(x.id) === String(name) || (x.barcodes || []).includes(name)) score = 100;
+    for (const xn of namesOf(x)) {
+      if (xn === n) score = Math.max(score, 100);
+      else if (xn.startsWith(n)) score = Math.max(score, 80);
+      else if (xn.includes(n)) score = Math.max(score, 60);
+      else if (n.includes(xn)) score = Math.max(score, 40);
+    }
     if (score > 0) scored.push({ score, item: x });
   }
   return scored.sort((a, b) => b.score - a.score).map((s) => s.item);
@@ -83,11 +87,12 @@ const TOOLS = [
     handler: async ({ query }) => {
       const items = await enrichedItems();
       const filtered = query ?
-        items.filter((i) => norm(i.name).includes(norm(query))) :
+        items.filter((i) => matchesName(i, query)) :
         items;
       return filtered.map((i) => ({
         id: i.id,
         name: i.name,
+        aliases: i.aliases || [],
         price: i.price,
         quantity: i.quantity,
         expirationDate: i.expirationDate,
@@ -157,7 +162,7 @@ const TOOLS = [
     },
     handler: async ({ item }) => {
       const items = (await enrichedItems()).filter((i) =>
-        norm(i.name).includes(norm(item)),
+        matchesName(i, item),
       );
       if (items.length === 0) return `No item found matching "${item}".`;
       const nameById = new Map((await containersList()).map((c) => [c.id, c.name]));

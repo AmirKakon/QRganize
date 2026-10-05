@@ -24,11 +24,13 @@ import {
   deleteItem,
   addItemBarcode,
   removeItemBarcode,
+  addItemAliases,
+  removeItemAlias,
   mergeItems,
 } from "../../utilities/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { itemsQuery, useRefreshInventory } from "../../utilities/queries";
-import { getImageSrc, generateRandomId } from "../../utilities/helpers";
+import { getImageSrc, generateRandomId, filterItemOptions } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
 import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
@@ -42,6 +44,8 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [newBarcode, setNewBarcode] = useState("");
   const [addingBarcode, setAddingBarcode] = useState(false);
+  const [newAlias, setNewAlias] = useState("");
+  const [addingAlias, setAddingAlias] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeCandidates, setMergeCandidates] = useState([]);
@@ -179,6 +183,40 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     } catch (error) {
       console.error("Error removing barcode:", error);
       setSnackbar({ open: true, message: "Couldn't remove barcode.", severity: "error" });
+    }
+  };
+
+  const handleAddAlias = async () => {
+    const alias = newAlias.trim().replace(/\s+/g, " ");
+    if (!alias) return;
+    setAddingAlias(true);
+    try {
+      const added = await addItemAliases(item.id, alias);
+      setItem((prev) => ({ ...prev, aliases: [...(prev.aliases || []), ...added] }));
+      setNewAlias("");
+      refreshInventory();
+      setSnackbar({
+        open: true,
+        message: added.length ? "Name added." : "This item already has that name.",
+        severity: added.length ? "success" : "info",
+      });
+    } catch (error) {
+      console.error("Error adding name:", error);
+      setSnackbar({ open: true, message: "Couldn't add the name. Save the item first, then try again.", severity: "error" });
+    } finally {
+      setAddingAlias(false);
+    }
+  };
+
+  const handleRemoveAlias = async (alias) => {
+    try {
+      await removeItemAlias(item.id, alias);
+      setItem((prev) => ({ ...prev, aliases: (prev.aliases || []).filter((a) => a !== alias) }));
+      refreshInventory();
+      setSnackbar({ open: true, message: "Name removed.", severity: "success" });
+    } catch (error) {
+      console.error("Error removing name:", error);
+      setSnackbar({ open: true, message: "Couldn't remove the name.", severity: "error" });
     }
   };
 
@@ -338,6 +376,52 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
             </Box>
           </Paper>
 
+          <Paper variant="outlined" sx={{ p: 2, width: "100%" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Also known as
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
+              Other names for this item, like the Hebrew text on your receipts.
+              Search and the receipt scanner check these too.
+            </Typography>
+            {(item.aliases || []).length > 0 && (
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1 }}>
+                {item.aliases.map((alias) => (
+                  <Chip
+                    key={alias}
+                    label={<span dir="auto">{alias}</span>}
+                    size="small"
+                    variant="outlined"
+                    onDelete={() => handleRemoveAlias(alias)}
+                  />
+                ))}
+              </Box>
+            )}
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <TextField
+                size="small"
+                label="Add a name"
+                value={newAlias}
+                onChange={(e) => setNewAlias(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddAlias();
+                  }
+                }}
+                inputProps={{ dir: "auto" }}
+                sx={{ flex: 1 }}
+              />
+              <Button
+                variant="outlined"
+                onClick={handleAddAlias}
+                disabled={addingAlias || !newAlias.trim() || !item.id}
+              >
+                {addingAlias ? <CircularProgress size={20} /> : "Add"}
+              </Button>
+            </Box>
+          </Paper>
+
           <Button variant="contained" color="primary" onClick={handleDownloadBarcode} sx={{ width: "100%" }}>
             Download Barcode
           </Button>
@@ -397,13 +481,14 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
         <DialogContent>
           <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
             Everything from <strong>{item.name || "this item"}</strong> — its
-            stock, barcodes, and shopping-list flag — moves into the item you
+            stock, barcodes, names, and shopping-list flag — moves into the item you
             pick, and <strong>this item is deleted</strong>. Use it to fold a
             duplicate the finder missed. This can&apos;t be undone.
           </Typography>
           <Autocomplete
             options={mergeCandidates}
             getOptionLabel={(o) => o.name || ""}
+            filterOptions={filterItemOptions}
             isOptionEqualToValue={(o, v) => o.id === v.id}
             value={mergeTarget}
             onChange={(e, v) => setMergeTarget(v)}

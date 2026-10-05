@@ -14,6 +14,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useItems, useContainers } from "../../utilities/queries";
 import Loading from "../../components/Loading";
 import useOpenItem from "../../utilities/useOpenItem";
+import { itemMatches } from "../../utilities/helpers";
 
 // One search box across items (name / barcode) and containers (name).
 const SearchPage = () => {
@@ -34,7 +35,7 @@ const SearchPage = () => {
     return items
       .filter(
         (i) =>
-          (i.name || "").toLowerCase().includes(term) ||
+          itemMatches(i, term) ||
           String(i.id).includes(term) ||
           (i.barcodes || []).some((b) => String(b).includes(term))
       )

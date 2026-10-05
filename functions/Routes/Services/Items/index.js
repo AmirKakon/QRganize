@@ -50,6 +50,52 @@ const addBarcodeToItem = async (id, barcode) => {
   return true;
 };
 
+// Alternate names (e.g. the Hebrew text a receipt prints for an item with an
+// English name) are stored trimmed with single spaces; comparisons ignore case.
+const normName = (value) => String(value || "").trim().replace(/\s+/g, " ");
+const sameName = (a, b) => normName(a).toLowerCase() === normName(b).toLowerCase();
+
+// Add alternate names to an item, skipping blanks, its own name and names it
+// already has. Returns the names actually added.
+const addAliasesToItem = async (id, aliases) => {
+  const ref = db.collection(itemsDB).doc(String(id));
+  const doc = await ref.get();
+  if (!doc.exists) {
+    throw new NotFoundError(`No item found with id: ${id}`);
+  }
+  const item = doc.data();
+  const known = [item.name, ...(item.aliases || [])];
+  const added = [];
+  for (const alias of [].concat(aliases || []).map(normName)) {
+    if (alias && ![...known, ...added].some((n) => sameName(n, alias))) {
+      added.push(alias);
+    }
+  }
+  if (added.length) {
+    await ref.update({ aliases: FieldValue.arrayUnion(...added) });
+  }
+  return added;
+};
+
+// Rename an item without touching its other fields.
+const renameItem = async (id, name) => {
+  const ref = db.collection(itemsDB).doc(String(id));
+  if (!(await ref.get()).exists) {
+    throw new NotFoundError(`No item found with id: ${id}`);
+  }
+  await ref.update({ name: normName(name) });
+  return true;
+};
+
+const removeAliasFromItem = async (id, alias) => {
+  const ref = db.collection(itemsDB).doc(String(id));
+  if (!(await ref.get()).exists) {
+    throw new NotFoundError(`No item found with id: ${id}`);
+  }
+  await ref.update({ aliases: FieldValue.arrayRemove(String(alias), normName(alias)) });
+  return true;
+};
+
 // Remove an extra barcode (alias) from an item. Removes both the normalized
 // and raw forms in case an older value was stored un-normalized.
 const removeBarcodeFromItem = async (id, barcode) => {
@@ -64,8 +110,8 @@ const removeBarcodeFromItem = async (id, barcode) => {
 };
 
 // Create an item. With an id this upserts: fields the form doesn't send
-// (barcode aliases, lastUsedAt, …) are kept rather than wiped.
-const createItem = async (name, price, image, shoppingList, id = null) => {
+// (barcode aliases, alternate names, lastUsedAt, …) are kept rather than wiped.
+const createItem = async (name, price, image, shoppingList, id = null, aliases = []) => {
   const itemRef = id ?
     db.collection(itemsDB).doc(String(id)) :
     db.collection(itemsDB).doc();
@@ -79,6 +125,9 @@ const createItem = async (name, price, image, shoppingList, id = null) => {
     },
     { merge: true },
   );
+  if (aliases && aliases.length) {
+    await addAliasesToItem(itemRef.id, aliases);
+  }
 
   return {
     itemId: itemRef.id,
@@ -250,7 +299,16 @@ const mergeItems = async (sourceId, targetId) => {
   // Drop the target's own id — it already resolves by document id.
   barcodes.delete(normBarcode(target.id));
 
-  const update = { barcodes: [...barcodes] };
+  // Keep every name the merged item answered to, so searches and receipts
+  // that used it still find the survivor.
+  const aliases = [];
+  for (const alias of [source.name, ...(source.aliases || []), ...(target.aliases || [])].map(normName)) {
+    if (alias && !sameName(alias, target.name) && !aliases.some((a) => sameName(a, alias))) {
+      aliases.push(alias);
+    }
+  }
+
+  const update = { barcodes: [...barcodes], aliases };
   // Keep the target on the shopping list if either item was on it.
   if (source.shoppingList && !target.shoppingList) {
     update.shoppingList = true;
@@ -345,6 +403,9 @@ module.exports = {
   mergeItems,
   addBarcodeToItem,
   removeBarcodeFromItem,
+  addAliasesToItem,
+  removeAliasFromItem,
+  renameItem,
   consume,
   finish,
   searchBarcode,

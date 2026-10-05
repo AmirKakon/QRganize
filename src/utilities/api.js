@@ -52,6 +52,42 @@ export const addItemBarcode = async (itemId, barcode) => {
   return res.status === "Success";
 }
 
+// Add alternate names to an item (e.g. the Hebrew text a receipt prints).
+// Resolves with the names that were actually new.
+export const addItemAliases = async (itemId, aliases) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/addAlias/${itemId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ aliases: [].concat(aliases) }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.data ?? [];
+}
+
+export const removeItemAlias = async (itemId, alias) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/removeAlias/${itemId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ alias }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.status === "Success";
+}
+
 // Remove a barcode alias from an item (undo a wrongly-added extra barcode).
 export const removeItemBarcode = async (itemId, barcode) => {
   const response = await fetch(`${apiBaseUrl}/api/items/removeBarcode/${itemId}`, {

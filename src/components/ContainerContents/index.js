@@ -27,6 +27,7 @@ import useOpenItem from "../../utilities/useOpenItem";
 import dayjs from "dayjs";
 import { addLot, consumeLot, deleteLot, updateLot } from "../../utilities/api";
 import { useContainers } from "../../utilities/queries";
+import { itemMatches } from "../../utilities/helpers";
 
 const toDateString = (date) =>
   date ? dayjs(date).format("YYYY-MM-DD").concat("T00:00:00+00:00") : null;
@@ -62,9 +63,7 @@ const ContainerContents = ({ containerId, lots, allItems, onChanged }) => {
   const sorted = [...lots].sort((a, b) =>
     nameOf(a.itemId).localeCompare(nameOf(b.itemId))
   );
-  const filtered = allItems.filter((i) =>
-    (i.name || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = allItems.filter((i) => itemMatches(i, search));
 
   const run = async (fn) => {
     setBusy(true);

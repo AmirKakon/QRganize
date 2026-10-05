@@ -34,8 +34,10 @@ import {
   createItem,
   addLot,
   addItemBarcode,
+  addItemAliases,
 } from "../../utilities/api";
 import { useItems, useContainers, useRefreshInventory } from "../../utilities/queries";
+import { itemNames, filterItemOptions } from "../../utilities/helpers";
 
 const money = (n) => `$${(Number(n) || 0).toFixed(2)}`;
 
@@ -115,14 +117,22 @@ const normBarcode = (value) => String(value || "").replace(/\D/g, "").replace(/^
 // A code short enough to be a store PLU (e.g. "22") is not a reliable key.
 const isRealBarcode = (value) => normBarcode(value).length >= 8;
 
-// Find an existing item that matches an extracted line. Barcode is the
-// strongest key (items are keyed by barcode), so try it first; fall back to
-// name (exact, then substring) when there is no usable barcode.
-const matchExisting = (name, barcode, items) => {
+const normText = (value) => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+
+// Letters and digits only, so "מלפפון," and "מלפפון" compare as one word.
+const words = (value) => ` ${normText(value).replace(/[^\p{L}\p{N}%']+/gu, " ").trim()} `;
+
+const hasName = (item, text) => itemNames(item).some((n) => normText(n) === normText(text));
+
+// Find an existing item that matches an extracted line, strongest key first:
+// barcode (items are keyed by barcode, plus barcode aliases), then an exact
+// name or alternate name (receipt text learned from earlier receipts, then
+// the English name), then an alternate name appearing as whole words in the
+// receipt line (longest wins, so "עגבניות שרי" beats "עגבניות"), and finally
+// the older loose substring match on names.
+const matchExisting = (receiptName, englishName, barcode, items) => {
   if (isRealBarcode(barcode)) {
     const bc = normBarcode(barcode);
-    // Match a numeric (barcode) document id, or any barcode alias the item
-    // picked up from a merge / a previously-linked package.
     const byBarcode = items.find(
       (i) =>
         (/^\d+$/.test(String(i.id)) && normBarcode(i.id) === bc) ||
@@ -130,16 +140,38 @@ const matchExisting = (name, barcode, items) => {
     );
     if (byBarcode) return byBarcode;
   }
-  const n = name.trim().toLowerCase();
-  if (!n) return null;
-  return (
-    items.find((i) => (i.name || "").trim().toLowerCase() === n) ||
-    items.find((i) => {
-      const existing = (i.name || "").trim().toLowerCase();
+
+  for (const text of [receiptName, englishName]) {
+    if (!normText(text)) continue;
+    const exact = items.find((i) => hasName(i, text));
+    if (exact) return exact;
+  }
+
+  const line = words(receiptName);
+  let best = null;
+  let bestLength = 0;
+  for (const item of items) {
+    for (const alias of item.aliases || []) {
+      const phrase = words(alias);
+      const length = phrase.trim().length;
+      if (length >= 3 && length > bestLength && line.includes(phrase)) {
+        best = item;
+        bestLength = length;
+      }
+    }
+  }
+  if (best) return best;
+
+  for (const text of [englishName, receiptName]) {
+    const n = normText(text);
+    if (!n) continue;
+    const loose = items.find((i) => {
+      const existing = normText(i.name);
       return existing && (existing.includes(n) || n.includes(existing));
-    }) ||
-    null
-  );
+    });
+    if (loose) return loose;
+  }
+  return null;
 };
 
 const ScanReceiptPage = () => {
@@ -172,9 +204,12 @@ const ScanReceiptPage = () => {
       }
       setRows(
         items.map((item) => {
-          const match = matchExisting(item.name, item.barcode, allItems);
+          const match = matchExisting(item.name, item.englishName, item.barcode, allItems);
           return {
-            name: item.name,
+            // Items are named in English; the printed text is kept so it can
+            // be saved as an alternate name and matched next time.
+            name: item.englishName || item.name,
+            receiptName: item.name,
             price: item.price,
             quantity: item.quantity,
             barcode: item.barcode || "",
@@ -182,7 +217,7 @@ const ScanReceiptPage = () => {
             matchedId: match ? match.id : null,
             matchedName: match ? match.name : null,
             // Pre-fill a suggested expiry for known perishables (editable).
-            expirationDate: suggestExpiry(item.name),
+            expirationDate: suggestExpiry(`${item.englishName || ""} ${item.name}`),
           };
         })
       );
@@ -237,6 +272,7 @@ const ScanReceiptPage = () => {
             image: null,
             expirationDate: null,
             shoppingList: false,
+            aliases: normText(row.receiptName) !== normText(row.name) ? [row.receiptName] : [],
             // Key the item by its barcode when one is present, so future
             // receipt scans (and the barcode scanner) match it by id.
             ...(isRealBarcode(row.barcode)
@@ -257,6 +293,17 @@ const ScanReceiptPage = () => {
             quantity: Number(row.quantity) || 1,
             expirationDate: toDateString(row.expirationDate),
           });
+        }
+        // Remember the printed text on the matched item so the next receipt
+        // (which prints the same abbreviation) matches it by name, even
+        // without a barcode.
+        const matchedItem = row.matchedId && allItems.find((i) => i.id === row.matchedId);
+        if (matchedItem && normText(row.receiptName) && !hasName(matchedItem, row.receiptName)) {
+          try {
+            await addItemAliases(row.matchedId, row.receiptName);
+          } catch (aliasError) {
+            console.error("Failed to save the receipt name:", aliasError);
+          }
         }
         // If this line was linked to an existing item but carries a different
         // barcode (a new package of the same product), remember that barcode so
@@ -351,6 +398,11 @@ const ScanReceiptPage = () => {
                         sx={{ flex: 1, minWidth: 0 }}
                       />
                     </Box>
+                    {row.receiptName && normText(row.receiptName) !== normText(row.name) && (
+                      <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: 0.5, ml: 5 }}>
+                        On receipt: <span dir="auto">{row.receiptName}</span>
+                      </Typography>
+                    )}
 
                     {/* Row 2: price, qty, expiry */}
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
@@ -464,12 +516,13 @@ const ScanReceiptPage = () => {
         <DialogContent>
           <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
             {matchRowIndex !== null && rows[matchRowIndex]
-              ? `Receipt line: "${rows[matchRowIndex].name}"`
+              ? `Receipt line: "${rows[matchRowIndex].receiptName || rows[matchRowIndex].name}"`
               : ""}
           </Typography>
           <Autocomplete
             options={allItems}
             getOptionLabel={(option) => option.name || ""}
+            filterOptions={filterItemOptions}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             value={
               matchRowIndex !== null && rows[matchRowIndex]?.matchedId
@@ -485,6 +538,9 @@ const ScanReceiptPage = () => {
                   <Typography variant="body2">{option.name}</Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {option.quantity ?? 0} in stock · id {option.id}
+                    {(option.aliases || []).length > 0 && (
+                      <> · <span dir="auto">{option.aliases.join(", ")}</span></>
+                    )}
                   </Typography>
                 </Box>
               </li>

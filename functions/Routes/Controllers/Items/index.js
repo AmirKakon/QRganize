@@ -17,6 +17,7 @@ app.post("/api/items/create", authenticate, async (req, res) => {
       req.body.image ?? null,
       req.body.shoppingList ?? false,
       req.body.id ?? null,
+      Array.isArray(req.body.aliases) ? req.body.aliases : [],
     );
 
     return res
@@ -61,6 +62,55 @@ app.put("/api/items/addBarcode/:id", authenticate, async (req, res) => {
       .send({ status: "Success", msg: added ? "Barcode added" : "No change" });
   } catch (error) {
     handleError(res, error, `Failed to add barcode to item: ${req.params.id}`);
+  }
+});
+
+// add alternate names to an item (body: { alias } or { aliases: [...] })
+app.put("/api/items/addAlias/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    const aliases = Array.isArray(req.body.aliases) ? req.body.aliases : [req.body.alias];
+    if (!aliases.some((a) => typeof a === "string" && a.trim())) {
+      throw new MissingArgumentError("Missing parameter: alias");
+    }
+
+    const added = await ItemService.addAliasesToItem(req.params.id, aliases);
+
+    return res
+      .status(200)
+      .send({ status: "Success", msg: added.length ? "Names added" : "No change", data: added });
+  } catch (error) {
+    handleError(res, error, `Failed to add names to item: ${req.params.id}`);
+  }
+});
+
+// rename an item (only its name changes)
+app.put("/api/items/rename/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    if (typeof req.body.name !== "string" || !req.body.name.trim()) {
+      throw new MissingArgumentError("Missing parameter: name");
+    }
+
+    await ItemService.renameItem(req.params.id, req.body.name);
+
+    return res.status(200).send({ status: "Success", msg: "Item renamed" });
+  } catch (error) {
+    handleError(res, error, `Failed to rename item: ${req.params.id}`);
+  }
+});
+
+// remove an alternate name from an item
+app.put("/api/items/removeAlias/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    checkRequiredParams(["alias"], req.body);
+
+    await ItemService.removeAliasFromItem(req.params.id, req.body.alias);
+
+    return res.status(200).send({ status: "Success", msg: "Name removed" });
+  } catch (error) {
+    handleError(res, error, `Failed to remove name from item: ${req.params.id}`);
   }
 });
 

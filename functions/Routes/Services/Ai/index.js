@@ -23,6 +23,7 @@ const receiptSchema = {
         type: "OBJECT",
         properties: {
           name: { type: "STRING" },
+          englishName: { type: "STRING" },
           price: { type: "NUMBER" },
           quantity: { type: "NUMBER" },
           barcode: { type: "STRING" },
@@ -79,8 +80,14 @@ const parseReceipt = async (image) => {
 
   const prompt =
     "This is a photo of a store purchase receipt. Extract only the " +
-    "purchased product line items. Keep each product name in its " +
-    "original language.\n\n" +
+    "purchased product line items. Keep each product name exactly as " +
+    "printed, in its original language, as name.\n\n" +
+    "Also give each line an englishName: a short, natural English name " +
+    "for the product, the way someone would write it on a shopping list. " +
+    "Translate Hebrew, expand receipt abbreviations, and drop store codes " +
+    "and pack weights unless they tell two products apart (e.g. " +
+    "\"Cucumbers\", \"Danone PRO yogurt\", \"Whole spelt flour\"). If the " +
+    "name is already English, clean it up the same way.\n\n" +
     "Pricing and quantity rules:\n" +
     "- If an item is sold per unit (a discrete count), set price to the " +
     "per-unit price and quantity to the number of units purchased.\n" +
@@ -156,6 +163,7 @@ const parseReceipt = async (image) => {
   const items = (parsed.items || [])
     .map((item) => ({
       name: String(item.name || "").trim(),
+      englishName: String(item.englishName || "").trim(),
       price: Number(item.price) || 0,
       // Inventory counts are whole numbers; round up any fractional weight
       // the model may still return, with a floor of 1.

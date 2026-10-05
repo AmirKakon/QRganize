@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import PrintIcon from "@mui/icons-material/Print";
 import { useItems, useContainers } from "../../utilities/queries";
+import { itemMatches } from "../../utilities/helpers";
 import Label from "../../components/Label";
 
 // Batch label printing: pick containers (QR) or items (barcode), then print a sheet.
@@ -43,9 +44,7 @@ const PrintLabelsPage = () => {
 
   const filtered = useMemo(
     () =>
-      source.filter((entry) =>
-        (entry.name || "").toLowerCase().includes(search.toLowerCase())
-      ),
+      source.filter((entry) => itemMatches(entry, search)),
     [source, search]
   );
 

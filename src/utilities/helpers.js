@@ -24,3 +24,18 @@ export const generateRandomId = (length = 10) => {
   return Math.floor(min + Math.random() * (max - min + 1)).toString();
 };
 
+
+// An item answers to its name and its alternate names (e.g. the Hebrew text a
+// receipt prints for an item named in English), so every search checks both.
+export const itemNames = (item) =>
+  [item?.name, ...(item?.aliases || [])].filter(Boolean);
+
+export const itemMatches = (item, query) => {
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return true;
+  return itemNames(item).some((n) => n.toLowerCase().includes(q));
+};
+
+// For MUI Autocomplete: filter options by name or alternate name.
+export const filterItemOptions = (options, { inputValue }) =>
+  options.filter((o) => itemMatches(o, inputValue));

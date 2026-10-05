@@ -20,7 +20,7 @@ import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
-import { getImageSrc, PLACEHOLDER_IMAGE } from "../../utilities/helpers";
+import { getImageSrc, itemMatches, PLACEHOLDER_IMAGE } from "../../utilities/helpers";
 import { setItemShoppingList } from "../../utilities/api";
 import useScrollMemory from "../../utilities/useScrollMemory";
 import useOpenItem from "../../utilities/useOpenItem";
@@ -146,8 +146,7 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
   }, [containers, areaId]);
 
   const filteredItems = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    let list = items.filter((item) => (item.name || "").toLowerCase().includes(q));
+    let list = items.filter((item) => itemMatches(item, searchQuery));
 
     if (status === "instock") list = list.filter((i) => (i.quantity || 0) > 0);
     else if (status === "outofstock") list = list.filter((i) => (i.quantity || 0) === 0);

@@ -11,6 +11,7 @@ import {
   Alert,
 } from "@mui/material";
 import { consumeItemOne, finishItem } from "../../utilities/api";
+import { itemMatches } from "../../utilities/helpers";
 
 // Consumption-optimized list: in-stock items, recently-used first, with big
 // "Use 1" / "Finish" buttons and no scanning. Built for the day-to-day
@@ -28,7 +29,7 @@ const QuickUse = ({ items = [], onChanged }) => {
     const term = q.trim().toLowerCase();
     return items
       .filter((i) => (overrides[i.id] ?? i.quantity ?? 0) > 0)
-      .filter((i) => (i.name || "").toLowerCase().includes(term))
+      .filter((i) => itemMatches(i, term))
       .sort((a, b) => {
         const la = a.lastUsedAt || "";
         const lb = b.lastUsedAt || "";

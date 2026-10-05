@@ -239,6 +239,28 @@ reset Home to the Overview tab, cleared filters and scrolled to the top.
 - [x] **Fix: saving an item wiped its extra barcodes** — `createItem` with an id did a full `set()`,
       dropping `barcodes` and `lastUsedAt`; it now merges.
 
+## 9. English Names + Hebrew Receipts
+
+Receipts are Hebrew (often abbreviated) while items are named in English, so lines without a
+usable barcode never matched and Hebrew searches found nothing.
+
+- [x] **Alternate names (`aliases`)** — items carry an `aliases` array (e.g. the Hebrew text a
+      receipt prints). `PUT /api/items/addAlias/:id` (`{ alias }` or `{ aliases: [] }`, skips
+      blanks / the item's own name / existing names, case-insensitive), `PUT /api/items/removeAlias/:id`,
+      `PUT /api/items/rename/:id` (name only). `createItem` accepts `aliases`. Merging carries the
+      source's name and aliases onto the survivor.
+- [x] **Search everywhere checks aliases** — `itemMatches` / `filterItemOptions` in
+      `utilities/helpers.js`, used by View Items, Search, Quick Use, container "add item", Print
+      Labels and both "match/merge into" pickers; MCP `search_items`, `find_item_location` and name
+      resolution (hosted `/api/mcp` and `mcp/`) too. The item page has an "Also known as" section.
+- [x] **Receipt scanner learns names** — Gemini returns `englishName` beside the printed `name`;
+      new items are created with the English name and the printed text as an alias. Matching order:
+      barcode → exact name/alias (printed text, then English) → an alias appearing as whole words in
+      the line (longest wins) → the old loose substring match. Saving a matched line stores its
+      printed text on the item, so the next receipt matches without a barcode.
+- [~] **One-time name cleanup** — reviewed proposals (English names, Hebrew aliases, duplicate
+      merges) applied through the endpoints above.
+
 ---
 
 _Last updated: 2026-10-05_
