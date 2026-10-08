@@ -261,6 +261,34 @@ usable barcode never matched and Hebrew searches found nothing.
 - [~] **One-time name cleanup** — reviewed proposals (English names, Hebrew aliases, duplicate
       merges) applied through the endpoints above.
 
+## 10. Tags
+
+Groups for browsing — `chicken`, `meal prep`, `dairy` — kept separate from alternate names, which
+identify one product (a group word as an alias would make receipts and the MCP pick an arbitrary
+member). Meal prep is one item per dish, tagged `meal prep` plus its main ingredient.
+
+- [x] **Data/API** — items carry `tags` (lowercase, de-duplicated). `PUT /api/items/tags/:id`
+      (`{ tags: [] }` replaces; empty clears); `createItem` accepts `tags`; merging unions them.
+- [x] **App** — item page "Tags" (chips with suggestions from tags in use), View Items "Tag" filter
+      (`?tag=`), search matches tags (receipt matching does not).
+- [x] **MCP** — `list_tags`, `tag_item`, `search_items` `tag` filter, `create_item` `tags`; tags in
+      `resolve_item` / `get_item_stock` output.
+- [x] **MCP single-item tools ask instead of guessing** — `findByName` returns one item only for an
+      id/barcode, a unique exact name/alias, or a unique partial match; otherwise it errors with the
+      candidates (previously "chicken" silently meant Chicken breast for consume/finish/etc.).
+- [ ] Bulk tagging of existing items (review page, then apply).
+- [ ] Receipt scanner suggests tags for new items (from the existing vocabulary) and tags drive
+      default expiry / container.
+
+## 11. Platform
+
+- [x] Cloud Functions on **Node 22** (Node 20 is decommissioned 2026-10-30).
+- [x] **Version you can check** — `functions/package.json` and `mcp/package.json` carry the same
+      version as `public/version.txt` (bump all three together). `GET /api/version` returns the
+      live backend version + Node runtime; both MCP servers report it as their server version.
+- [x] `checkRequiredParams` imported `MissingArgumentError` from the wrong module, so a missing
+      parameter crashed with a 500 instead of returning 400.
+
 ---
 
-_Last updated: 2026-10-05_
+_Last updated: 2026-10-08_

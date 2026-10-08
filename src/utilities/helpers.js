@@ -30,12 +30,24 @@ export const generateRandomId = (length = 10) => {
 export const itemNames = (item) =>
   [item?.name, ...(item?.aliases || [])].filter(Boolean);
 
+// Search also matches tags, so typing "chicken" lists every chicken item.
+// Receipt matching deliberately uses itemNames only: a tag is a group, not a
+// name, and would match many items.
 export const itemMatches = (item, query) => {
   const q = String(query || "").trim().toLowerCase();
   if (!q) return true;
-  return itemNames(item).some((n) => n.toLowerCase().includes(q));
+  return [...itemNames(item), ...(item?.tags || [])].some((n) => n.toLowerCase().includes(q));
 };
 
-// For MUI Autocomplete: filter options by name or alternate name.
+// Tags in use across items, most used first: [{ tag, count }].
+export const tagCounts = (items) => {
+  const counts = {};
+  (items || []).forEach((i) => (i.tags || []).forEach((t) => (counts[t] = (counts[t] || 0) + 1)));
+  return Object.entries(counts)
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+};
+
+// For MUI Autocomplete: filter options by name, alternate name or tag.
 export const filterItemOptions = (options, { inputValue }) =>
   options.filter((o) => itemMatches(o, inputValue));

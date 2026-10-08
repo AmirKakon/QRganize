@@ -77,6 +77,24 @@ const addAliasesToItem = async (id, aliases) => {
   return added;
 };
 
+// Tags group items for browsing ("chicken", "meal prep"). Unlike alternate
+// names they never identify a single item, so receipt matching and MCP lookups
+// ignore them. Stored lowercase, trimmed and de-duplicated.
+const normTags = (tags) => [
+  ...new Set([].concat(tags || []).map((t) => normName(t).toLowerCase()).filter(Boolean)),
+];
+
+// Replace an item's tags (an empty list clears them). Returns the saved tags.
+const setItemTags = async (id, tags) => {
+  const ref = db.collection(itemsDB).doc(String(id));
+  if (!(await ref.get()).exists) {
+    throw new NotFoundError(`No item found with id: ${id}`);
+  }
+  const saved = normTags(tags);
+  await ref.update({ tags: saved });
+  return saved;
+};
+
 // Rename an item without touching its other fields.
 const renameItem = async (id, name) => {
   const ref = db.collection(itemsDB).doc(String(id));
@@ -111,7 +129,7 @@ const removeBarcodeFromItem = async (id, barcode) => {
 
 // Create an item. With an id this upserts: fields the form doesn't send
 // (barcode aliases, alternate names, lastUsedAt, …) are kept rather than wiped.
-const createItem = async (name, price, image, shoppingList, id = null, aliases = []) => {
+const createItem = async (name, price, image, shoppingList, id = null, aliases = [], tags = []) => {
   const itemRef = id ?
     db.collection(itemsDB).doc(String(id)) :
     db.collection(itemsDB).doc();
@@ -122,6 +140,7 @@ const createItem = async (name, price, image, shoppingList, id = null, aliases =
       price: price,
       image: await ImageService.storeImage("items", itemRef.id, image),
       shoppingList: shoppingList,
+      ...(tags && tags.length ? { tags: normTags(tags) } : {}),
     },
     { merge: true },
   );
@@ -308,7 +327,11 @@ const mergeItems = async (sourceId, targetId) => {
     }
   }
 
-  const update = { barcodes: [...barcodes], aliases };
+  const update = {
+    barcodes: [...barcodes],
+    aliases,
+    tags: normTags([...(target.tags || []), ...(source.tags || [])]),
+  };
   // Keep the target on the shopping list if either item was on it.
   if (source.shoppingList && !target.shoppingList) {
     update.shoppingList = true;
@@ -406,6 +429,7 @@ module.exports = {
   addAliasesToItem,
   removeAliasFromItem,
   renameItem,
+  setItemTags,
   consume,
   finish,
   searchBarcode,

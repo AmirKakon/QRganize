@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -26,11 +26,12 @@ import {
   removeItemBarcode,
   addItemAliases,
   removeItemAlias,
+  setItemTags,
   mergeItems,
 } from "../../utilities/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { itemsQuery, useRefreshInventory } from "../../utilities/queries";
-import { getImageSrc, generateRandomId, filterItemOptions } from "../../utilities/helpers";
+import { itemsQuery, useItems, useRefreshInventory } from "../../utilities/queries";
+import { getImageSrc, generateRandomId, filterItemOptions, tagCounts } from "../../utilities/helpers";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
 import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
@@ -58,6 +59,8 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
   });
   const queryClient = useQueryClient();
   const refreshInventory = useRefreshInventory();
+  const { data: allItems } = useItems();
+  const tagOptions = useMemo(() => tagCounts(allItems).map((t) => t.tag), [allItems]);
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
 
@@ -217,6 +220,21 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
     } catch (error) {
       console.error("Error removing name:", error);
       setSnackbar({ open: true, message: "Couldn't remove the name.", severity: "error" });
+    }
+  };
+
+  const handleTagsChange = async (value) => {
+    const next = [...new Set(value.map((t) => String(t).trim().toLowerCase()).filter(Boolean))];
+    const previous = item.tags || [];
+    setItem((prev) => ({ ...prev, tags: next }));
+    try {
+      const saved = await setItemTags(item.id, next);
+      setItem((prev) => ({ ...prev, tags: saved }));
+      refreshInventory();
+    } catch (error) {
+      console.error("Error saving tags:", error);
+      setItem((prev) => ({ ...prev, tags: previous }));
+      setSnackbar({ open: true, message: "Couldn't save tags. Save the item first, then try again.", severity: "error" });
     }
   };
 
@@ -420,6 +438,31 @@ const ItemDetails = ({ item, setItem, setBarcode, lots = [], containers = [], on
                 {addingAlias ? <CircularProgress size={20} /> : "Add"}
               </Button>
             </Box>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 2, width: "100%" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+              Tags
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
+              Groups like &quot;chicken&quot; or &quot;meal prep&quot; for filtering in View Items.
+              Pick an existing tag or type a new one and press Enter.
+            </Typography>
+            <Autocomplete
+              multiple
+              freeSolo
+              options={tagOptions}
+              value={item.tags || []}
+              onChange={(e, value) => handleTagsChange(value)}
+              disabled={!item.id}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  size="small"
+                  placeholder={(item.tags || []).length ? "" : "Add a tag"}
+                />
+              )}
+            />
           </Paper>
 
           <Button variant="contained" color="primary" onClick={handleDownloadBarcode} sx={{ width: "100%" }}>

@@ -1,6 +1,6 @@
 {
   "name": "qrganize-mcp",
-  "version": "1.0.0",
+  "version": "2.35.0",
   "private": true,
   "type": "module",
   "description": "MCP server exposing the QRganize inventory to AI assistants",

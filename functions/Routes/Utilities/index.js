@@ -1,4 +1,4 @@
-const { MissingArgumentError } = require("./error-handler");
+const { MissingArgumentError } = require("../Contracts/Errors");
 
 const checkRequiredParams = (requiredParams, params) => {
   for (const param of requiredParams) {

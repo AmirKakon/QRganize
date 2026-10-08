@@ -71,6 +71,24 @@ export const addItemAliases = async (itemId, aliases) => {
   return res.data ?? [];
 }
 
+// Replace an item's tags; resolves with the saved (normalized) tags.
+export const setItemTags = async (itemId, tags) => {
+  const response = await fetch(`${apiBaseUrl}/api/items/tags/${itemId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("accessToken"),
+      uuid: localStorage.getItem("uuid"),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ tags }),
+  });
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  const res = await response.json();
+  return res.data ?? [];
+}
+
 export const removeItemAlias = async (itemId, alias) => {
   const response = await fetch(`${apiBaseUrl}/api/items/removeAlias/${itemId}`, {
     method: "PUT",

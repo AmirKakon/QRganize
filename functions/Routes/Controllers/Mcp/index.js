@@ -12,7 +12,7 @@ const LotService = require("../../Services/Lots");
 // services directly (no self-HTTP round-trip).
 
 const PROTOCOL_VERSION = "2025-06-18";
-const SERVER_INFO = { name: "qrganize", version: "1.0.0" };
+const SERVER_INFO = { name: "qrganize", version: require("../../../package.json").version };
 
 // ---- helpers ----------------------------------------------------------------
 const norm = (s) => (s || "").trim().toLowerCase();
@@ -21,14 +21,28 @@ const norm = (s) => (s || "").trim().toLowerCase();
 const namesOf = (x) => [x.name, ...(x.aliases || [])].map(norm).filter(Boolean);
 const matchesName = (x, query) => namesOf(x).some((n) => n.includes(norm(query)));
 
+// Pick exactly one item or container for an action: an id or barcode wins,
+// then a unique exact name/alternate name, then a unique partial match. A name
+// that matches several (e.g. "chicken" -> eight items) is an error listing
+// them, so the assistant asks which one instead of silently picking the first.
 const findByName = (list, name) => {
   const n = norm(name);
   if (!n) return null;
-  return (
-    list.find((x) => namesOf(x).includes(n)) ||
-    list.find((x) => namesOf(x).some((xn) => xn.includes(n) || n.includes(xn))) ||
-    list.find((x) => String(x.id) === String(name)) ||
-    null
+  const byId = list.find(
+    (x) => String(x.id) === String(name) || (x.barcodes || []).includes(String(name)),
+  );
+  if (byId) return byId;
+  const exact = list.filter((x) => namesOf(x).includes(n));
+  if (exact.length === 1) return exact[0];
+  const matches = exact.length ? exact : list.filter((x) =>
+    namesOf(x).some((xn) => xn.includes(n) || n.includes(xn)),
+  );
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0];
+  throw new Error(
+    `"${name}" matches ${matches.length} entries: ` +
+    matches.slice(0, 10).map((x) => `${x.name} (id ${x.id})`).join("; ") +
+    ". Ask the user which one they mean, then retry with its exact name or id.",
   );
 };
 
@@ -78,21 +92,27 @@ const TOOLS = [
   {
     name: "search_items",
     description:
-      "Search the inventory for items by name. Omit query to list everything. " +
-      "Returns id, name, price, quantity, expirationDate and shopping-list flag.",
+      "Search the inventory by name or alternate name, optionally only items " +
+      "with a tag (see list_tags). Omit both to list everything. Returns id, " +
+      "name, aliases, tags, price, quantity, expirationDate and shopping-list flag.",
     inputSchema: {
       type: "object",
-      properties: { query: { type: "string", description: "Name to search for" } },
+      properties: {
+        query: { type: "string", description: "Name to search for" },
+        tag: { type: "string", description: "Only items with this tag, e.g. \"meal prep\"" },
+      },
     },
-    handler: async ({ query }) => {
+    handler: async ({ query, tag }) => {
       const items = await enrichedItems();
-      const filtered = query ?
-        items.filter((i) => matchesName(i, query)) :
-        items;
+      const filtered = items.filter((i) =>
+        (!query || matchesName(i, query)) &&
+        (!tag || (i.tags || []).includes(norm(tag))),
+      );
       return filtered.map((i) => ({
         id: i.id,
         name: i.name,
         aliases: i.aliases || [],
+        tags: i.tags || [],
         price: i.price,
         quantity: i.quantity,
         expirationDate: i.expirationDate,
@@ -118,6 +138,7 @@ const TOOLS = [
         id: i.id,
         name: i.name,
         aliases: i.aliases || [],
+        tags: i.tags || [],
         quantity: i.quantity,
         onShoppingList: !!i.shoppingList,
       }));
@@ -141,6 +162,7 @@ const TOOLS = [
         id: it.id,
         name: it.name,
         aliases: it.aliases || [],
+        tags: it.tags || [],
         quantity: it.quantity || 0,
         batches: (it.lots || []).map((l) => ({
           container: l.containerId ?
@@ -337,13 +359,19 @@ const TOOLS = [
           description: "Optional alternate names, e.g. the Hebrew text a receipt prints " +
             "(search and the receipt scanner match these too)",
         },
+        tags: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional tags (groups) such as \"chicken\" or \"meal prep\"; reuse existing ones from list_tags",
+        },
       },
       required: ["name"],
     },
-    handler: async ({ name, price, image, container, quantity, expirationDate, aliases }) => {
+    handler: async ({ name, price, image, container, quantity, expirationDate, aliases, tags }) => {
       const created = await ItemService.createItem(
         name, String(price ?? "0"), image ?? null, false, null,
         Array.isArray(aliases) ? aliases : [],
+        Array.isArray(tags) ? tags : [],
       );
       const itemId = created && created.itemId;
       let note = `Created item "${name}"${image ? " with image" : ""}.`;
@@ -358,6 +386,46 @@ const TOOLS = [
         }
       }
       return note;
+    },
+  },
+  {
+    name: "list_tags",
+    description:
+      "List the tags (groups) used on items, with how many items have each — " +
+      "e.g. chicken, meal prep, dairy. Use a tag with search_items to list a group.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => {
+      const counts = {};
+      for (const i of await enrichedItems()) {
+        for (const t of i.tags || []) counts[t] = (counts[t] || 0) + 1;
+      }
+      return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([tag, items]) => ({ tag, items }));
+    },
+  },
+  {
+    name: "tag_item",
+    description:
+      "Add and/or remove tags (groups) on an item, e.g. tag a new dish as " +
+      "\"meal prep\" and \"chicken\". Tags group items for browsing; they are " +
+      "not names (use add_item_names for those). Reuse existing tags from list_tags.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        item: { type: "string", description: "Item name or id" },
+        add: { type: "array", items: { type: "string" }, description: "Tags to add" },
+        remove: { type: "array", items: { type: "string" }, description: "Tags to remove" },
+      },
+      required: ["item"],
+    },
+    handler: async ({ item, add, remove }) => {
+      const it = findByName(await enrichedItems(), item);
+      if (!it) return `No item found matching "${item}".`;
+      const drop = new Set([].concat(remove || []).map((t) => norm(t)));
+      const next = [...(it.tags || []), ...[].concat(add || [])].filter((t) => !drop.has(norm(t)));
+      const saved = await ItemService.setItemTags(it.id, next);
+      return `"${it.name}" tags: ${saved.length ? saved.join(", ") : "(none)"}.`;
     },
   },
   {

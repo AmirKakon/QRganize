@@ -70,7 +70,9 @@ server sees the same quantities and expiration dates as the app.
 
 | Tool | What it does |
 |------|--------------|
-| `search_items` | Search items by name or alternate name (or list all) |
+| `search_items` | Search items by name or alternate name, optionally by tag (or list all) |
+| `list_tags` | Tags in use (chicken, meal prep…) with item counts |
+| `tag_item` | Add/remove tags on an item |
 | `list_containers` | List all containers |
 | `get_container_contents` | Items inside a container |
 | `find_item_location` | Which container(s) an item is in |

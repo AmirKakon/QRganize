@@ -21,6 +21,11 @@ There is one user — do not ask "whose inventory?"; there's only one.
   `aliases` — alternate names it also answers to. Items are named in English;
   receipts are often in Hebrew and abbreviated, so the printed Hebrew text is
   kept as an alias (e.g. "Cucumbers" also answers to "מלפפון").
+- **Tags** — groups for browsing, e.g. `chicken`, `meal prep`, `dairy`. An item
+  can have several. Tags are NOT names: they never identify a single item, so
+  use them to list a group (`search_items` with `tag`), never to pick an item
+  to consume. Meal prep is tracked as one item per dish ("Chicken curry"),
+  tagged `meal prep` plus its main ingredient.
 - **Lot / batch** — one physical batch of an item: a `quantity`, an optional
   `container`, and an optional `expirationDate`. **An item's stock is the sum of
   its lots.** The same item can exist in several containers and carry several
@@ -75,7 +80,8 @@ See `README.md` for client registration details.
 
 | Tool | Input | Returns / use |
 |---|---|---|
-| `search_items` | `query?` (string) | Items whose name or alias matches (or all if omitted): id, name, aliases, price, quantity, expirationDate, onShoppingList. Hebrew queries work. |
+| `search_items` | `query?` (string), `tag?` (string) | Items whose name or alias matches and/or that have the tag (or all if both omitted): id, name, aliases, tags, price, quantity, expirationDate, onShoppingList. Hebrew queries work. |
+| `list_tags` | — | Tags in use with item counts. Check before inventing a new tag. |
 | `resolve_item` | `name` (string, req) | **Ranked candidate items** (id, name, aliases, quantity) for a vague name, alias or barcode. Use to disambiguate before consume/finish. |
 | `get_item_stock` | `item` (name or id, req) | Total quantity + each batch's container and expiry. "How much X do I have / where is it?" |
 | `find_item_location` | `item` (string, req) | Which container(s) an item lives in, with per-container counts. "Where are the X?" |
@@ -91,6 +97,7 @@ See `README.md` for client registration details.
 | `consume_item` | `item` (req), `amount?` (int, default 1) | **Use N whole units**, FEFO across batches. For "I used/ate X", recipe deduction. Returns remaining quantity. |
 | `finish_item` | `item` (req) | **Clear all stock** for the item (every batch); keeps the item. For "I finished / used up / threw out X". |
 | `create_item` | `name` (req), `price?`, `image?`, `container?`, `quantity?`, `expirationDate?` (YYYY-MM-DD), `aliases?` (string[]) | Create a new one-off item; optionally attach an image, alternate names, and stock it in a container. Name it in English; put Hebrew/receipt text in `aliases`. If it exists, use `add_item_to_container` / `set_item_image`. |
+| `tag_item` | `item` (req), `add?` (string[]), `remove?` (string[]) | Add/remove tags on an item. Reuse existing tags from `list_tags`. |
 | `add_item_names` | `item` (req), `names` (string[], req) | Teach an existing item extra names (e.g. the Hebrew text a receipt prints, or the user's nickname for it). Search, resolve and the receipt scanner match them afterwards. |
 | `set_item_image` | `item` (req), `image` (req) | Set/replace an existing item's photo. |
 | `add_item_to_container` | `item` (req), `container` (req), `quantity?` (default 1), `expirationDate?` | Add stock of an **existing** item into a container as a batch. |
@@ -144,6 +151,10 @@ Deduction is in **whole units** — if a recipe needs "200g pasta", consume 1 un
 ## Limits & notes
 
 - **Single user; the API is currently open (no auth).** Treat it as trusted-local.
+- **Ambiguous names are refused, not guessed.** Tools that act on one item
+  (consume, finish, stock, add to container, tag, …) return an error listing
+  the candidates when a name matches several items ("chicken" → 8 items).
+  Ask the user which one, then retry with the exact name or id.
 - **Matching is name-based** (name or alias) — prefer `resolve_item` when
   unsure; don't silently act on the wrong item. When the user calls an item by
   a name it doesn't have yet and confirms which one they meant, offer to

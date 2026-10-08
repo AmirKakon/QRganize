@@ -20,7 +20,7 @@ import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
-import { getImageSrc, itemMatches, PLACEHOLDER_IMAGE } from "../../utilities/helpers";
+import { getImageSrc, itemMatches, tagCounts, PLACEHOLDER_IMAGE } from "../../utilities/helpers";
 import { setItemShoppingList } from "../../utilities/api";
 import useScrollMemory from "../../utilities/useScrollMemory";
 import useOpenItem from "../../utilities/useOpenItem";
@@ -93,6 +93,7 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
   const status = searchParams.get("status") ?? "all"; // all | instock | outofstock | expiring
   const areaId = searchParams.get("area") ?? "";
   const containerId = searchParams.get("container") ?? "";
+  const tag = searchParams.get("tag") ?? "";
   const sortBy = searchParams.get("sort") ?? "name"; // name | price | qty | expiry
 
   const setFilters = (changes) =>
@@ -109,6 +110,8 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
   const setSearchQuery = (value) => setFilters({ q: value });
   const setStatus = (value) => setFilters({ status: value === "all" ? "" : value });
   const setContainerId = (value) => setFilters({ container: value });
+  const setTag = (value) => setFilters({ tag: value });
+  const tagOptions = useMemo(() => tagCounts(items), [items]);
   const setSortBy = (value) => setFilters({ sort: value === "name" ? "" : value });
   // Optimistic shopping-list state for instant cart feedback on the grid.
   const [cartOverrides, setCartOverrides] = useState({});
@@ -164,6 +167,10 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
       );
     }
 
+    if (tag) {
+      list = list.filter((i) => (i.tags || []).includes(tag));
+    }
+
     if (containerId) {
       list = list.filter((i) =>
         (i.lots || []).some((l) =>
@@ -188,15 +195,15 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
     }
     return sorted;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, containers, searchQuery, status, areaId, containerId, sortBy]);
+  }, [items, containers, searchQuery, status, areaId, containerId, tag, sortBy]);
 
   const openItem = useOpenItem();
 
   const filtersActive =
-    searchQuery || status !== "all" || areaId || containerId || sortBy !== "name";
+    searchQuery || status !== "all" || areaId || containerId || tag || sortBy !== "name";
 
   const clearFilters = () =>
-    setFilters({ q: "", status: "", area: "", container: "", sort: "" });
+    setFilters({ q: "", status: "", area: "", container: "", tag: "", sort: "" });
 
   const scrollRef = useScrollMemory("items-list", filteredItems.length > 0, isSmallScreen);
 
@@ -290,6 +297,20 @@ const ItemList = ({ items, isSmallScreen, containers = [], areas = [], onItemsCh
               </MenuItem>
             </Select>
           </FormControl>
+
+          {tagOptions.length > 0 && (
+            <FormControl size="small" sx={{ minWidth: 130 }}>
+              <InputLabel>Tag</InputLabel>
+              <Select value={tag} label="Tag" onChange={(e) => setTag(e.target.value)}>
+                <MenuItem value="">All tags</MenuItem>
+                {tagOptions.map((t) => (
+                  <MenuItem key={t.tag} value={t.tag}>
+                    {t.tag} ({t.count})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <FormControl size="small" sx={{ minWidth: 130 }}>
             <InputLabel>Sort by</InputLabel>

@@ -6,6 +6,14 @@ const { MissingArgumentError } = require("../../Contracts/Errors");
 const ItemService = require("../../Services/Items");
 const LotService = require("../../Services/Lots");
 
+// which backend build and Node runtime are serving (to confirm a deploy)
+app.get("/api/version", (req, res) =>
+  res.status(200).send({
+    status: "Success",
+    data: { version: require("../../../package.json").version, node: process.version },
+  }),
+);
+
 // create an item
 app.post("/api/items/create", authenticate, async (req, res) => {
   try {
@@ -18,6 +26,7 @@ app.post("/api/items/create", authenticate, async (req, res) => {
       req.body.shoppingList ?? false,
       req.body.id ?? null,
       Array.isArray(req.body.aliases) ? req.body.aliases : [],
+      Array.isArray(req.body.tags) ? req.body.tags : [],
     );
 
     return res
@@ -97,6 +106,22 @@ app.put("/api/items/rename/:id", authenticate, async (req, res) => {
     return res.status(200).send({ status: "Success", msg: "Item renamed" });
   } catch (error) {
     handleError(res, error, `Failed to rename item: ${req.params.id}`);
+  }
+});
+
+// replace an item's tags (body: { tags: [...] }; an empty list clears them)
+app.put("/api/items/tags/:id", authenticate, async (req, res) => {
+  try {
+    checkRequiredParams(["id"], req.params);
+    if (!Array.isArray(req.body.tags)) {
+      throw new MissingArgumentError("Missing parameter: tags (array)");
+    }
+
+    const tags = await ItemService.setItemTags(req.params.id, req.body.tags);
+
+    return res.status(200).send({ status: "Success", msg: "Tags saved", data: tags });
+  } catch (error) {
+    handleError(res, error, `Failed to save tags for item: ${req.params.id}`);
   }
 });
 

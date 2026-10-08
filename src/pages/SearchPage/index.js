@@ -88,7 +88,10 @@ const SearchPage = () => {
                     }
                   >
                     <ListItemButton onClick={() => openItem(i.id)}>
-                      <ListItemText primary={i.name} secondary={`Price: ${i.price}`} />
+                      <ListItemText
+                        primary={i.name}
+                        secondary={`Price: ${i.price}${(i.tags || []).length ? ` · ${i.tags.join(", ")}` : ""}`}
+                      />
                     </ListItemButton>
                   </ListItem>
                 ))}
