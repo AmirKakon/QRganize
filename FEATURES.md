@@ -283,9 +283,14 @@ member). Meal prep is one item per dish, tagged `meal prep` plus its main ingred
 ## 11. Platform
 
 - [x] Cloud Functions on **Node 22** (Node 20 is decommissioned 2026-10-30).
-- [x] **Version you can check** — `functions/package.json` and `mcp/package.json` carry the same
-      version as `public/version.txt` (bump all three together). `GET /api/version` returns the
-      live backend version + Node runtime; both MCP servers report it as their server version.
+- [x] **Version you can check** — bump `public/version.txt` on every release (shown in the
+      footer); bump `functions/package.json` and `mcp/package.json` to the same number when the
+      release changes them. `GET /api/version` returns the live backend version + Node runtime;
+      both MCP servers report it as their server version.
+- [x] **Hosting cache** — everything is served `no-cache` (revalidated on each load, so a deploy
+      shows up on the next open) except the fingerprinted `/static/**` bundles, which are cached
+      for a year. Before, `index.html` and `version.txt` were cached for an hour, so a phone could
+      keep running the previous release after a deploy.
 - [x] `checkRequiredParams` imported `MissingArgumentError` from the wrong module, so a missing
       parameter crashed with a 500 instead of returning 400.
 
