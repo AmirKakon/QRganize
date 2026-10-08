@@ -13,7 +13,16 @@ const MEAL_PREP_DAYS = 4;
 const SIMILAR_MIN_SHARE = 0.6;
 const SIMILAR_MIN_ITEMS = 2;
 
-export const normText = (value) => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+// For comparing names: case, spacing and combining marks (Hebrew vowel marks,
+// accents) don't matter.
+export const normText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .normalize("NFC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 
 export const isStagingContainer = (container) => !container || normText(container.name) === STAGING_NAME;
 export const isFreezerContainer = (container) => Boolean(container) && normText(container.name).includes("freezer");

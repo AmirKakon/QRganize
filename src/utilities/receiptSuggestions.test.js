@@ -29,6 +29,7 @@ describe("matchExisting", () => {
   test.each([
     ["a barcode", ["?", "", "07290000000017"], "Cucumbers"],
     ["an alternate name", ["מלפפון", "", ""], "Cucumbers"],
+    ["an alternate name despite vowel marks", ["מִלְפָפוֹן", "", ""], "Cucumbers"],
     ["the English name", ["xx-garbled", "Cucumbers", ""], "Cucumbers"],
     ["an alternate name inside the line", ["מלפפון חממה", "Greenhouse cucumbers", ""], "Cucumbers"],
     ["the longest alternate name", ["עגבניות שרי", "", ""], "Cherry tomatoes"],

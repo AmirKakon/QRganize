@@ -36,6 +36,12 @@ const receiptSchema = {
   required: ["items"],
 };
 
+// Receipt text as printed: no Hebrew vowel marks (niqqud) or other combining
+// marks, which the model sometimes adds and which would never match the plain
+// text saved as an item's alternate name.
+const stripMarks = (value) =>
+  String(value || "").normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC").trim();
+
 // Split a data URL ("data:image/jpeg;base64,...") into mime type + raw base64.
 const parseImageData = (image) => {
   const match = /^data:(.+);base64,(.*)$/.exec(image);
@@ -96,8 +102,9 @@ const parseReceipt = async (image, tags = []) => {
 
   const prompt =
     "This is a photo of a store purchase receipt. Extract only the " +
-    "purchased product line items. Keep each product name exactly as " +
-    "printed, in its original language, as name.\n\n" +
+    "purchased product line items. For name, copy the product name exactly " +
+    "as printed, in its original language, without the quantity, weight, " +
+    "unit price or total from that line, and without adding vowel marks.\n\n" +
     "Also give each line an englishName: a short, natural English name " +
     "for the product, the way someone would write it on a shopping list. " +
     "Translate Hebrew, expand receipt abbreviations, and drop store codes " +
@@ -123,8 +130,8 @@ const parseReceipt = async (image, tags = []) => {
     "shelf-stable products such as pasta, cans, snacks, drinks and household " +
     "goods." +
     (vocabulary.length ?
-      "\n\ntags: pick up to 3 tags from the allowed list that describe the " +
-      "product (e.g. chicken thighs -> chicken, meat). Use none if nothing fits." :
+      "\n\ntags: pick the 1 or 2 tags from the allowed list that fit the " +
+      "product best (e.g. chicken thighs -> chicken, meat). Use none if nothing fits." :
       "");
 
   const body = {
@@ -186,7 +193,7 @@ const parseReceipt = async (image, tags = []) => {
 
   const items = (parsed.items || [])
     .map((item) => ({
-      name: String(item.name || "").trim(),
+      name: stripMarks(item.name),
       englishName: String(item.englishName || "").trim(),
       price: Number(item.price) || 0,
       // Inventory counts are whole numbers; round up any fractional weight
@@ -198,7 +205,7 @@ const parseReceipt = async (image, tags = []) => {
       tags: [].concat(item.tags || [])
         .map((t) => String(t).toLowerCase())
         .filter((t, i, all) => vocabulary.includes(t) && all.indexOf(t) === i)
-        .slice(0, 3),
+        .slice(0, 2),
       shelfLifeDays: Number.isInteger(item.shelfLifeDays) &&
         item.shelfLifeDays >= 1 && item.shelfLifeDays <= 730 ?
         item.shelfLifeDays :
