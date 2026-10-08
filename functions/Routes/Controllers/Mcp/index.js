@@ -117,6 +117,7 @@ const TOOLS = [
       return matches.slice(0, 10).map((i) => ({
         id: i.id,
         name: i.name,
+        aliases: i.aliases || [],
         quantity: i.quantity,
         onShoppingList: !!i.shoppingList,
       }));
@@ -139,6 +140,7 @@ const TOOLS = [
       return {
         id: it.id,
         name: it.name,
+        aliases: it.aliases || [],
         quantity: it.quantity || 0,
         batches: (it.lots || []).map((l) => ({
           container: l.containerId ?
@@ -329,12 +331,19 @@ const TOOLS = [
         container: { type: "string", description: "Optional container to stock it in" },
         quantity: { type: "number", description: "Optional quantity (default 1)" },
         expirationDate: { type: "string", description: "Optional YYYY-MM-DD" },
+        aliases: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional alternate names, e.g. the Hebrew text a receipt prints " +
+            "(search and the receipt scanner match these too)",
+        },
       },
       required: ["name"],
     },
-    handler: async ({ name, price, image, container, quantity, expirationDate }) => {
+    handler: async ({ name, price, image, container, quantity, expirationDate, aliases }) => {
       const created = await ItemService.createItem(
         name, String(price ?? "0"), image ?? null, false, null,
+        Array.isArray(aliases) ? aliases : [],
       );
       const itemId = created && created.itemId;
       let note = `Created item "${name}"${image ? " with image" : ""}.`;
@@ -349,6 +358,30 @@ const TOOLS = [
         }
       }
       return note;
+    },
+  },
+  {
+    name: "add_item_names",
+    description:
+      "Teach an existing item extra names it should also answer to — e.g. the " +
+      "Hebrew or abbreviated text a receipt prints for an item named in English, " +
+      "or a nickname the user uses. Search, resolve and the receipt scanner match " +
+      "these names afterwards. Names it already has are skipped.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        item: { type: "string", description: "Item name or id" },
+        names: { type: "array", items: { type: "string" }, description: "Names to add" },
+      },
+      required: ["item", "names"],
+    },
+    handler: async ({ item, names }) => {
+      const it = findByName(await enrichedItems(), item);
+      if (!it) return `No item found matching "${item}".`;
+      const added = await ItemService.addAliasesToItem(it.id, Array.isArray(names) ? names : [names]);
+      return added.length ?
+        `"${it.name}" now also answers to: ${added.join(", ")}.` :
+        `"${it.name}" already has those names.`;
     },
   },
   {

@@ -17,7 +17,10 @@ There is one user — do not ask "whose inventory?"; there's only one.
 
 - **Item** — a product, identified by an `id` (usually its barcode). Has a
   `name`, `price`, a total `quantity` (sum of its batches), an optional earliest
-  `expirationDate`, a `shoppingList` flag, and a `barcodes` alias list.
+  `expirationDate`, a `shoppingList` flag, a `barcodes` alias list, and
+  `aliases` — alternate names it also answers to. Items are named in English;
+  receipts are often in Hebrew and abbreviated, so the printed Hebrew text is
+  kept as an alias (e.g. "Cucumbers" also answers to "מלפפון").
 - **Lot / batch** — one physical batch of an item: a `quantity`, an optional
   `container`, and an optional `expirationDate`. **An item's stock is the sum of
   its lots.** The same item can exist in several containers and carry several
@@ -72,8 +75,8 @@ See `README.md` for client registration details.
 
 | Tool | Input | Returns / use |
 |---|---|---|
-| `search_items` | `query?` (string) | Items whose name matches (or all if omitted): id, name, price, quantity, expirationDate, onShoppingList. |
-| `resolve_item` | `name` (string, req) | **Ranked candidate items** (id, name, quantity) for a vague name/barcode. Use to disambiguate before consume/finish. |
+| `search_items` | `query?` (string) | Items whose name or alias matches (or all if omitted): id, name, aliases, price, quantity, expirationDate, onShoppingList. Hebrew queries work. |
+| `resolve_item` | `name` (string, req) | **Ranked candidate items** (id, name, aliases, quantity) for a vague name, alias or barcode. Use to disambiguate before consume/finish. |
 | `get_item_stock` | `item` (name or id, req) | Total quantity + each batch's container and expiry. "How much X do I have / where is it?" |
 | `find_item_location` | `item` (string, req) | Which container(s) an item lives in, with per-container counts. "Where are the X?" |
 | `list_containers` | — | All containers (id, name). |
@@ -87,7 +90,8 @@ See `README.md` for client registration details.
 |---|---|---|
 | `consume_item` | `item` (req), `amount?` (int, default 1) | **Use N whole units**, FEFO across batches. For "I used/ate X", recipe deduction. Returns remaining quantity. |
 | `finish_item` | `item` (req) | **Clear all stock** for the item (every batch); keeps the item. For "I finished / used up / threw out X". |
-| `create_item` | `name` (req), `price?`, `image?`, `container?`, `quantity?`, `expirationDate?` (YYYY-MM-DD) | Create a new one-off item; optionally attach an image and stock it in a container. Use when the item doesn't exist yet. If it exists, use `add_item_to_container` / `set_item_image`. |
+| `create_item` | `name` (req), `price?`, `image?`, `container?`, `quantity?`, `expirationDate?` (YYYY-MM-DD), `aliases?` (string[]) | Create a new one-off item; optionally attach an image, alternate names, and stock it in a container. Name it in English; put Hebrew/receipt text in `aliases`. If it exists, use `add_item_to_container` / `set_item_image`. |
+| `add_item_names` | `item` (req), `names` (string[], req) | Teach an existing item extra names (e.g. the Hebrew text a receipt prints, or the user's nickname for it). Search, resolve and the receipt scanner match them afterwards. |
 | `set_item_image` | `item` (req), `image` (req) | Set/replace an existing item's photo. |
 | `add_item_to_container` | `item` (req), `container` (req), `quantity?` (default 1), `expirationDate?` | Add stock of an **existing** item into a container as a batch. |
 | `add_to_shopping_list` | `item` (req), `price?` | Flag an existing item to buy, or create+flag a new one. |
@@ -140,8 +144,10 @@ Deduction is in **whole units** — if a recipe needs "200g pasta", consume 1 un
 ## Limits & notes
 
 - **Single user; the API is currently open (no auth).** Treat it as trusted-local.
-- **Matching is name-based** — prefer `resolve_item` when unsure; don't silently
-  act on the wrong item.
+- **Matching is name-based** (name or alias) — prefer `resolve_item` when
+  unsure; don't silently act on the wrong item. When the user calls an item by
+  a name it doesn't have yet and confirms which one they meant, offer to
+  remember it with `add_item_names`.
 - **`finish_item` keeps the item** at quantity 0 (so it stays searchable and can
   be re-added). It does not delete the item.
 - **No partial/weight quantities** — whole units only.

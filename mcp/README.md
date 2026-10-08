@@ -70,7 +70,7 @@ server sees the same quantities and expiration dates as the app.
 
 | Tool | What it does |
 |------|--------------|
-| `search_items` | Search items by name (or list all) |
+| `search_items` | Search items by name or alternate name (or list all) |
 | `list_containers` | List all containers |
 | `get_container_contents` | Items inside a container |
 | `find_item_location` | Which container(s) an item is in |
@@ -82,7 +82,8 @@ server sees the same quantities and expiration dates as the app.
 | `get_item_stock` | How much of an item is in stock and where |
 | `consume_item` | Record using N whole units (FEFO) |
 | `finish_item` | Clear all of an item's stock (keeps the item) |
-| `create_item` | Create a one-off item (optional image + stocked in a container) |
+| `create_item` | Create a one-off item (optional image, alternate names, stocked in a container) |
+| `add_item_names` | Teach an item extra names (e.g. the Hebrew text on receipts) |
 | `set_item_image` | Set/replace an existing item's photo (URL or base64) |
 
 ## Hosted endpoint

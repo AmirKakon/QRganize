@@ -344,6 +344,7 @@ const TOOLS = [
         matches.slice(0, 10).map((i) => ({
           id: i.id,
           name: i.name,
+          aliases: i.aliases || [],
           quantity: i.quantity,
           onShoppingList: !!i.shoppingList,
         }))
@@ -368,6 +369,7 @@ const TOOLS = [
       return text({
         id: it.id,
         name: it.name,
+        aliases: it.aliases || [],
         quantity: it.quantity || 0,
         batches: (it.lots || []).map((l) => ({
           container: l.containerId
@@ -423,6 +425,36 @@ const TOOLS = [
     },
   },
   {
+    name: "add_item_names",
+    description:
+      "Teach an existing item extra names it should also answer to — e.g. the " +
+      "Hebrew or abbreviated text a receipt prints for an item named in English, " +
+      "or a nickname the user uses. Search, resolve and the receipt scanner match " +
+      "these names afterwards. Names it already has are skipped.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        item: { type: "string", description: "Item name or id" },
+        names: { type: "array", items: { type: "string" }, description: "Names to add" },
+      },
+      required: ["item", "names"],
+    },
+    handler: async ({ item, names }) => {
+      const it = findByName(await getItems(), item);
+      if (!it) return text(`No item found matching "${item}".`);
+      const res = await api(`/api/items/addAlias/${encodeURIComponent(it.id)}`, {
+        method: "PUT",
+        body: { aliases: Array.isArray(names) ? names : [names] },
+      });
+      const added = res.data || [];
+      return text(
+        added.length
+          ? `"${it.name}" now also answers to: ${added.join(", ")}.`
+          : `"${it.name}" already has those names.`
+      );
+    },
+  },
+  {
     name: "create_item",
     description:
       "Create a new inventory item by name (for one-off items not scanned from a " +
@@ -437,16 +469,23 @@ const TOOLS = [
         container: { type: "string", description: "Optional container to stock it in" },
         quantity: { type: "number", description: "Optional quantity if a container is given (default 1)" },
         expirationDate: { type: "string", description: "Optional YYYY-MM-DD" },
+        aliases: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional alternate names, e.g. the Hebrew text a receipt prints " +
+            "(search and the receipt scanner match these too)",
+        },
       },
       required: ["name"],
     },
-    handler: async ({ name, price, container, quantity, expirationDate }) => {
+    handler: async ({ name, price, container, quantity, expirationDate, aliases }) => {
       const created = await createItemApi({
         name,
         price: String(price ?? "0"),
         image: null,
         shoppingList: false,
         expirationDate: null,
+        aliases: Array.isArray(aliases) ? aliases : [],
       });
       const itemId = created?.itemId;
       let note = `Created item "${name}".`;
