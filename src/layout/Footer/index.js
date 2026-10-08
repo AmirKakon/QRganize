@@ -85,8 +85,9 @@ const Footer = ({ isSmallScreen }) => {
   const [version, setVersion] = useState("Loading...");
 
   useEffect(() => {
-    // Fetch the content of version.txt
-    fetch("/version.txt")
+    // Bypass the browser cache: Hosting caches version.txt for a while, so a
+    // cached copy would show the previous release right after a deploy.
+    fetch("/version.txt", { cache: "no-store" })
       .then((response) => response.text())
       .then((text) => {
         setVersion(text.trim()); // Update state with fetched version
