@@ -174,7 +174,8 @@ export const mergeItems = async (sourceId, targetId) => {
   return res.status === "Success";
 }
 
-export const parseReceipt = async (image) => {
+// `tags` is the user's tag list; Gemini may only suggest tags from it.
+export const parseReceipt = async (image, tags = []) => {
   const response = await fetch(`${apiBaseUrl}/api/ai/parseReceipt`, {
     method: "POST",
     headers: {
@@ -182,7 +183,7 @@ export const parseReceipt = async (image) => {
       uuid: localStorage.getItem("uuid"),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ image }),
+    body: JSON.stringify({ image, tags }),
   });
   if (!response.ok) {
     let message = `Error: ${response.status}`;

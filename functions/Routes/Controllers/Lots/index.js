@@ -3,6 +3,7 @@ const { authenticate } = require("../Auth");
 const { checkRequiredParams } = require("../../Utilities");
 const { handleError } = require("../../Utilities/error-handler");
 const LotService = require("../../Services/Lots");
+const ItemService = require("../../Services/Items");
 
 // Add stock (a lot) for an item. quantity defaults to 1; container/date optional.
 app.post("/api/lots/add", authenticate, async (req, res) => {
@@ -12,6 +13,11 @@ app.post("/api/lots/add", authenticate, async (req, res) => {
       req.body.itemId,
       req.body.containerId ?? null,
       req.body.quantity ?? 1,
+      req.body.expirationDate ?? null,
+    );
+    await ItemService.rememberStock(
+      req.body.itemId,
+      req.body.containerId ?? null,
       req.body.expirationDate ?? null,
     );
     return res.status(200).send({ status: "Success", data: lot });
@@ -25,6 +31,11 @@ app.put("/api/lots/update/:id", authenticate, async (req, res) => {
   try {
     checkRequiredParams(["id"], req.params);
     const result = await LotService.updateLot(req.params.id, req.body);
+    if (req.body.containerId && result.itemId) {
+      // A move teaches where the item lives; an edited date doesn't teach
+      // shelf life (it's counted from the purchase, not from today).
+      await ItemService.rememberStock(result.itemId, req.body.containerId, null);
+    }
     return res.status(200).send({ status: "Success", data: result });
   } catch (error) {
     return handleError(res, error, `Failed to update lot: ${req.params.id}`);

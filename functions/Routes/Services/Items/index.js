@@ -95,6 +95,32 @@ const setItemTags = async (id, tags) => {
   return saved;
 };
 
+// Remember where an item's stock was put and, for dated stock, how many days
+// it lasts, so the next purchase defaults to the same container and expiry
+// even after this stock is used up (stock records are deleted at zero).
+// Freezer stock doesn't teach shelf life: frozen food lasts months, which
+// would be a wrong default the next time the item goes in the fridge.
+const rememberStock = async (itemId, containerId, expirationDate) => {
+  const update = {};
+  let containerName = "";
+  if (containerId) {
+    update.lastContainerId = String(containerId);
+    const container = await db.collection("containers").doc(String(containerId)).get();
+    containerName = container.exists ? String(container.data().name || "") : "";
+  }
+  if (expirationDate && !/freezer/i.test(containerName)) {
+    const days = Math.round((new Date(expirationDate).getTime() - Date.now()) / 86400000);
+    if (days >= 1 && days <= 730) update.shelfLifeDays = days;
+  }
+  if (!Object.keys(update).length) return;
+  try {
+    await db.collection(itemsDB).doc(String(itemId)).update(update);
+  } catch (error) {
+    // The stock itself was saved; only the defaults for next time are lost.
+    logger.warn(`Couldn't remember stock defaults for item ${itemId}`, error);
+  }
+};
+
 // Rename an item without touching its other fields.
 const renameItem = async (id, name) => {
   const ref = db.collection(itemsDB).doc(String(id));
@@ -430,6 +456,7 @@ module.exports = {
   removeAliasFromItem,
   renameItem,
   setItemTags,
+  rememberStock,
   consume,
   finish,
   searchBarcode,

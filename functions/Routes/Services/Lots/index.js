@@ -53,9 +53,11 @@ const addLot = async (
 // Edit a lot's quantity / container / date. Quantity <= 0 deletes the lot.
 const updateLot = async (id, fields) => {
   const ref = db.collection(lotsDB).doc(id);
-  if (!(await ref.get()).exists) {
+  const doc = await ref.get();
+  if (!doc.exists) {
     throw new NotFoundError(`No lot found with id: ${id}`);
   }
+  const itemId = doc.data().itemId;
 
   const update = {};
   if (fields.containerId !== undefined) {
@@ -68,13 +70,13 @@ const updateLot = async (id, fields) => {
     const qty = Number(fields.quantity) || 0;
     if (qty <= 0) {
       await ref.delete();
-      return { id, deleted: true };
+      return { id, itemId, deleted: true };
     }
     update.quantity = qty;
   }
 
   await ref.update(update);
-  return { id };
+  return { id, itemId };
 };
 
 // Consume `amount` from a lot (used it); removes the lot when it hits zero.

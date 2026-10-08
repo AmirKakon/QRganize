@@ -27,6 +27,7 @@ const receiptSchema = {
           price: { type: "NUMBER" },
           quantity: { type: "NUMBER" },
           barcode: { type: "STRING" },
+          shelfLifeDays: { type: "INTEGER", nullable: true },
         },
         required: ["name", "price", "quantity"],
       },
@@ -65,7 +66,22 @@ const checkAndIncrementUsage = async (userId) => {
 };
 
 // Send the receipt image to Gemini and return normalized line items.
-const parseReceipt = async (image) => {
+// The schema for one scan: tags are limited to the user's existing tags (an
+// enum), so suggestions can't invent new ones.
+const schemaFor = (tags) => {
+  if (!tags.length) return receiptSchema;
+  const schema = JSON.parse(JSON.stringify(receiptSchema));
+  schema.properties.items.items.properties.tags = {
+    type: "ARRAY",
+    items: { type: "STRING", enum: tags },
+  };
+  return schema;
+};
+
+const parseReceipt = async (image, tags = []) => {
+  const vocabulary = [...new Set([].concat(tags || [])
+    .map((t) => String(t).trim().toLowerCase())
+    .filter((t) => t && t.length <= 40))].slice(0, 100);
   // Read config defensively (same pattern as the rest of the app) so module
   // load never crashes when the runtime config is absent (e.g. CI analysis).
   const geminiCfg = functions.config().gemini || {};
@@ -101,7 +117,15 @@ const parseReceipt = async (image) => {
     "container deposits. If a quantity cannot be determined, use 1.\n\n" +
     "If a product barcode or item code is printed on the line (usually a " +
     "long run of digits), return it as barcode using digits only. Omit " +
-    "barcode when no code is visible for that line.";
+    "barcode when no code is visible for that line.\n\n" +
+    "shelfLifeDays: how many days the product typically stays good after " +
+    "purchase, stored the usual way (fridge for perishables). Omit it for " +
+    "shelf-stable products such as pasta, cans, snacks, drinks and household " +
+    "goods." +
+    (vocabulary.length ?
+      "\n\ntags: pick up to 3 tags from the allowed list that describe the " +
+      "product (e.g. chicken thighs -> chicken, meat). Use none if nothing fits." :
+      "");
 
   const body = {
     contents: [
@@ -114,7 +138,7 @@ const parseReceipt = async (image) => {
     ],
     generationConfig: {
       responseMimeType: "application/json",
-      responseSchema: receiptSchema,
+      responseSchema: schemaFor(vocabulary),
     },
   };
 
@@ -170,6 +194,15 @@ const parseReceipt = async (image) => {
       quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
       // Digits only; used to match against existing items (keyed by barcode).
       barcode: String(item.barcode || "").replace(/\D/g, ""),
+      // The fallback model may not honour the enum, so filter again.
+      tags: [].concat(item.tags || [])
+        .map((t) => String(t).toLowerCase())
+        .filter((t, i, all) => vocabulary.includes(t) && all.indexOf(t) === i)
+        .slice(0, 3),
+      shelfLifeDays: Number.isInteger(item.shelfLifeDays) &&
+        item.shelfLifeDays >= 1 && item.shelfLifeDays <= 730 ?
+        item.shelfLifeDays :
+        null,
     }))
     .filter((item) => item.name);
 

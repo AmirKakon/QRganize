@@ -24,6 +24,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { addLot, consumeLot, updateLot, deleteLot } from "../../utilities/api";
+import { useItems } from "../../utilities/queries";
+import { suggestContainer, suggestShelfLife } from "../../utilities/receiptSuggestions";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -61,6 +63,9 @@ const StockList = ({ itemId, lots, containers, onChanged }) => {
   const [addContainer, setAddContainer] = useState(UNASSIGNED);
   const [addQty, setAddQty] = useState(1);
   const [addDate, setAddDate] = useState(null);
+  const [addDateTouched, setAddDateTouched] = useState(false);
+  const { data: allItems } = useItems();
+  const item = allItems.find((i) => i.id === itemId) || null;
 
   const containerName = (id) =>
     containers.find((c) => c.id === id)?.name || "Unassigned";
@@ -85,13 +90,37 @@ const StockList = ({ itemId, lots, containers, onChanged }) => {
   const sorted = sortByExpiry(lots);
   const total = lots.reduce((sum, l) => sum + (l.quantity || 0), 0);
 
-  // Pre-select the container the item already lives in, so adding more stock
-  // doesn't silently default to Unassigned.
-  const defaultContainer = lots.find((l) => l.containerId)?.containerId ?? UNASSIGNED;
+  // Expiry for new stock in a container (freezer, this item's history, meal
+  // prep…), or null when the item doesn't go off.
+  const suggestedDate = (containerId) => {
+    const life = suggestShelfLife({
+      item,
+      tags: item?.tags,
+      text: item?.name,
+      container: containers.find((c) => c.id === containerId),
+    });
+    return life ? dayjs().startOf("day").add(life.days, "day") : null;
+  };
 
+  // Pre-fill where the item lives (or where similar items live) and when it
+  // will expire, the same defaults the receipt scanner uses.
   const openAddForm = () => {
-    if (!adding) setAddContainer(defaultContainer);
+    if (!adding) {
+      const { containerId } = suggestContainer(
+        { item: item ? { ...item, lots } : null, tags: item?.tags },
+        allItems,
+        containers
+      );
+      setAddContainer(containerId || UNASSIGNED);
+      setAddDate(suggestedDate(containerId));
+      setAddDateTouched(false);
+    }
     setAdding((v) => !v);
+  };
+
+  const changeAddContainer = (containerId) => {
+    setAddContainer(containerId);
+    if (!addDateTouched) setAddDate(suggestedDate(containerId));
   };
 
   const handleAdd = () =>
@@ -159,7 +188,7 @@ const StockList = ({ itemId, lots, containers, onChanged }) => {
             <Select
               value={addContainer}
               label="Container"
-              onChange={(e) => setAddContainer(e.target.value)}
+              onChange={(e) => changeAddContainer(e.target.value)}
             >
               <MenuItem value={UNASSIGNED}>
                 <em>Unassigned</em>
@@ -183,7 +212,10 @@ const StockList = ({ itemId, lots, containers, onChanged }) => {
           <DatePicker
             label="Expires"
             value={addDate}
-            onChange={setAddDate}
+            onChange={(date) => {
+              setAddDate(date);
+              setAddDateTouched(true);
+            }}
             disablePast
             slotProps={{ field: { clearable: true }, textField: { size: "small" } }}
             sx={{ width: 170 }}

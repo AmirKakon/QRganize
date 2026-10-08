@@ -276,9 +276,28 @@ member). Meal prep is one item per dish, tagged `meal prep` plus its main ingred
 - [x] **MCP single-item tools ask instead of guessing** — `findByName` returns one item only for an
       id/barcode, a unique exact name/alias, or a unique partial match; otherwise it errors with the
       candidates (previously "chicken" silently meant Chicken breast for consume/finish/etc.).
-- [ ] Bulk tagging of existing items (review page, then apply).
-- [ ] Receipt scanner suggests tags for new items (from the existing vocabulary) and tags drive
-      default expiry / container.
+- [x] Bulk tagging of existing items (review page, then apply): 184 of 186 items, 24 tags.
+
+## 12. Receipt Defaults (tags, container, expiry)
+
+Pure logic in `src/utilities/receiptSuggestions.js` (unit-tested), shared by the receipt scanner and
+the item page's "Add stock".
+
+- [x] **One row per product** — receipt lines with the same matched item, real barcode or printed
+      text are combined, quantities added ("2 lines combined"); re-linking a row re-combines.
+- [x] **Tags for new items** — Gemini picks up to 3 from the user's existing tags (schema `enum`, then
+      filtered server-side). Matched items keep their tags unless they had none or the user edits.
+- [x] **Container per row** — the item's home (container with most of its stock, else
+      `lastContainerId`), else where similar items live (items with all the same tags decide first,
+      then tag overlap; needs a ≥60% winner backed by 2+ items), else "Recently bought".
+      "Recently bought" and unassigned never count as a home. The row shows why.
+- [x] **Expiry per row** — Freezer → 90 days; else the item's learned `shelfLifeDays`; else
+      `meal prep` → 4 days; else Gemini's per-product `shelfLifeDays`; else the keyword table.
+- [x] **Items remember** — `lastContainerId` and `shelfLifeDays` are saved when stock is added or
+      moved (`/api/lots/add`, `/api/lots/update`, MCP stock tools; not merges). Freezer stock doesn't
+      teach shelf life.
+- [x] Review card shows one summary line ("→ Freezer · chicken, meat · expires …") that expands to
+      edit; "Set all to container…" replaces "Add all to container".
 
 ## 11. Platform
 

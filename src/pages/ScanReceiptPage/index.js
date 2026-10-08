@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Paper,
   Button,
+  ButtonBase,
   TextField,
   Checkbox,
   Chip,
@@ -35,52 +36,24 @@ import {
   addLot,
   addItemBarcode,
   addItemAliases,
+  setItemTags,
 } from "../../utilities/api";
 import { useItems, useContainers, useRefreshInventory } from "../../utilities/queries";
-import { itemNames, filterItemOptions } from "../../utilities/helpers";
+import { filterItemOptions, tagCounts } from "../../utilities/helpers";
+import {
+  collapseRows,
+  withSuggestions,
+  matchExisting,
+  hasName,
+  normText,
+  normBarcode,
+  isRealBarcode,
+} from "../../utilities/receiptSuggestions";
 
 const money = (n) => `$${(Number(n) || 0).toFixed(2)}`;
 
 const toDateString = (d) =>
   d ? dayjs(d).format("YYYY-MM-DD").concat("T00:00:00+00:00") : null;
-
-// Rough household shelf life (days) for perishables, keyed by name substrings
-// (English + Hebrew). First matching entry wins, so list more-specific first.
-// Non-perishables (pasta, rice, cans, cleaning, snacks…) match nothing → no
-// suggested date. These are just editable defaults, not guarantees.
-const SHELF_LIFE = [
-  { days: 30, keys: ["תפוח אדמה", "תפוד", "potato", "בצל", "onion", "שום", "garlic"] },
-  { days: 2, keys: ["salmon", "סלמון", "fresh fish", "דג טרי", "טונה טרי"] },
-  { days: 4, keys: ["strawberr", "raspberr", "blueberr", "berry", "berries", "תות", "פטל"] },
-  {
-    days: 5,
-    keys: [
-      "lettuce", "spinach", "salad", "greens", "arugula", "herb", "basil",
-      "cilantro", "parsley", "mushroom", "banana", "avocado", "asparagus",
-      "bread", "pita", "חסה", "תרד", "פטרוזיליה", "כוסברה", "בזיליקום",
-      "פטריות", "בננה", "אבוקדו", "לחם", "פיתה",
-    ],
-  },
-  {
-    days: 7,
-    keys: [
-      "cucumber", "tomato", "pepper", "zucchini", "broccoli", "cauliflower",
-      "grape", "milk", "cream", "מלפפון", "עגבני", "פלפל", "קישוא", "ברוקולי",
-      "כרובית", "ענב", "חלב", "שמנת",
-    ],
-  },
-  { days: 10, keys: ["yogurt", "יוגורט", "יורט"] },
-  { days: 14, keys: ["cheese", "feta", "celery", "cabbage", "tofu", "גבינ", "סלרי", "כרוב", "טופו"] },
-  { days: 21, keys: ["apple", "orange", "citrus", "lemon", "carrot", "egg", "תפוח", "תפוז", "לימון", "גזר", "ביצ"] },
-];
-
-// Suggest an expiry (dayjs) from an item name, or null if not a known perishable.
-const suggestExpiry = (name) => {
-  const n = (name || "").toLowerCase();
-  if (!n) return null;
-  const hit = SHELF_LIFE.find((e) => e.keys.some((k) => n.includes(k)));
-  return hit ? dayjs().add(hit.days, "day") : null;
-};
 
 // Resize an uploaded image to a max dimension and return a base64 data URL.
 const resizeImage = (file) =>
@@ -111,69 +84,6 @@ const resizeImage = (file) =>
     reader.readAsDataURL(file);
   });
 
-// Strip leading zeros so barcodes compare regardless of padding.
-const normBarcode = (value) => String(value || "").replace(/\D/g, "").replace(/^0+/, "");
-
-// A code short enough to be a store PLU (e.g. "22") is not a reliable key.
-const isRealBarcode = (value) => normBarcode(value).length >= 8;
-
-const normText = (value) => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
-
-// Letters and digits only, so "מלפפון," and "מלפפון" compare as one word.
-const words = (value) => ` ${normText(value).replace(/[^\p{L}\p{N}%']+/gu, " ").trim()} `;
-
-const hasName = (item, text) => itemNames(item).some((n) => normText(n) === normText(text));
-
-// Find an existing item that matches an extracted line, strongest key first:
-// barcode (items are keyed by barcode, plus barcode aliases), then an exact
-// name or alternate name (receipt text learned from earlier receipts, then
-// the English name), then an alternate name appearing as whole words in the
-// receipt line (longest wins, so "עגבניות שרי" beats "עגבניות"), and finally
-// the older loose substring match on names.
-const matchExisting = (receiptName, englishName, barcode, items) => {
-  if (isRealBarcode(barcode)) {
-    const bc = normBarcode(barcode);
-    const byBarcode = items.find(
-      (i) =>
-        (/^\d+$/.test(String(i.id)) && normBarcode(i.id) === bc) ||
-        (Array.isArray(i.barcodes) && i.barcodes.includes(bc))
-    );
-    if (byBarcode) return byBarcode;
-  }
-
-  for (const text of [receiptName, englishName]) {
-    if (!normText(text)) continue;
-    const exact = items.find((i) => hasName(i, text));
-    if (exact) return exact;
-  }
-
-  const line = words(receiptName);
-  let best = null;
-  let bestLength = 0;
-  for (const item of items) {
-    for (const alias of item.aliases || []) {
-      const phrase = words(alias);
-      const length = phrase.trim().length;
-      if (length >= 3 && length > bestLength && line.includes(phrase)) {
-        best = item;
-        bestLength = length;
-      }
-    }
-  }
-  if (best) return best;
-
-  for (const text of [englishName, receiptName]) {
-    const n = normText(text);
-    if (!n) continue;
-    const loose = items.find((i) => {
-      const existing = normText(i.name);
-      return existing && (existing.includes(n) || n.includes(existing));
-    });
-    if (loose) return loose;
-  }
-  return null;
-};
-
 const ScanReceiptPage = () => {
   const [image, setImage] = useState(null);
   const [parsing, setParsing] = useState(false);
@@ -182,44 +92,55 @@ const ScanReceiptPage = () => {
   const { data: allItems } = useItems();
   const { data: containers } = useContainers();
   const refreshInventory = useRefreshInventory();
-  const [containerId, setContainerId] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   // Index of the row whose "match to existing item" dialog is open (null = closed).
   const [matchRowIndex, setMatchRowIndex] = useState(null);
+  // Index of the row whose container / tags / expiry are expanded for editing.
+  const [editingIndex, setEditingIndex] = useState(null);
+  const tagOptions = useMemo(() => tagCounts(allItems).map((t) => t.tag), [allItems]);
 
   const notify = (message, severity = "success") =>
     setSnackbar({ open: true, message, severity });
+
+  const containerName = (id) => containers.find((c) => c.id === id)?.name || "No container";
+
+  // One row per product, each with suggested tags, container and expiry.
+  const suggestAll = (list) =>
+    collapseRows(list).map((row) => withSuggestions(row, allItems, containers));
 
   const handleImage = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setRows([]);
+    setEditingIndex(null);
     setParsing(true);
     try {
       const base64 = await resizeImage(file);
       setImage(base64);
-      const items = await parseReceipt(base64);
+      const items = await parseReceipt(base64, tagOptions);
       if (items.length === 0) {
         notify("No items found on that receipt. Try a clearer photo.", "warning");
       }
       setRows(
-        items.map((item) => {
-          const match = matchExisting(item.name, item.englishName, item.barcode, allItems);
-          return {
-            // Items are named in English; the printed text is kept so it can
-            // be saved as an alternate name and matched next time.
-            name: item.englishName || item.name,
-            receiptName: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            barcode: item.barcode || "",
-            include: true,
-            matchedId: match ? match.id : null,
-            matchedName: match ? match.name : null,
-            // Pre-fill a suggested expiry for known perishables (editable).
-            expirationDate: suggestExpiry(`${item.englishName || ""} ${item.name}`),
-          };
-        })
+        suggestAll(
+          items.map((item) => {
+            const match = matchExisting(item.name, item.englishName, item.barcode, allItems);
+            return {
+              // Items are named in English; the printed text is kept so it can
+              // be saved as an alternate name and matched next time.
+              name: item.englishName || item.name,
+              receiptName: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              barcode: item.barcode || "",
+              include: true,
+              matchedId: match ? match.id : null,
+              matchedName: match ? match.name : null,
+              aiTags: item.tags || [],
+              aiShelfLife: item.shelfLifeDays || null,
+            };
+          })
+        )
       );
     } catch (error) {
       console.error("Error parsing receipt:", error);
@@ -234,20 +155,43 @@ const ScanReceiptPage = () => {
       prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
     );
 
-  // Link (or unlink) a review row to an existing inventory item. Passing null
-  // resets it to a brand-new item.
-  const setRowMatch = (index, item) =>
+  // Change a suggested field. It is marked as the user's so suggestions never
+  // overwrite it, and the fields that depend on it are refreshed: new tags can
+  // change the container, a new container can change the expiry.
+  const editSuggestion = (index, changes) =>
     setRows((prev) =>
       prev.map((row, i) =>
-        i === index
-          ? {
-              ...row,
-              matchedId: item ? item.id : null,
-              matchedName: item ? item.name : null,
-            }
+        i === index ? withSuggestions({ ...row, ...changes }, allItems, containers) : row
+      )
+    );
+
+  const setAllContainers = (containerId) =>
+    setRows((prev) =>
+      prev.map((row) =>
+        row.include
+          ? withSuggestions(
+              { ...row, containerId, containerTouched: true, containerReason: "set by you" },
+              allItems,
+              containers
+            )
           : row
       )
     );
+
+  // Link (or unlink) a review row to an existing inventory item. Passing null
+  // resets it to a brand-new item. Rows now pointing at the same item merge.
+  const setRowMatch = (index, item) => {
+    setEditingIndex(null);
+    setRows((prev) =>
+      suggestAll(
+        prev.map((row, i) =>
+          i === index
+            ? { ...row, matchedId: item ? item.id : null, matchedName: item ? item.name : null }
+            : row
+        )
+      )
+    );
+  };
 
   const includedRows = rows.filter((row) => row.include);
   const total = includedRows.reduce(
@@ -262,6 +206,7 @@ const ScanReceiptPage = () => {
     try {
       for (const row of includedRows) {
         let itemId = row.matchedId;
+        const matchedItem = row.matchedId && allItems.find((i) => i.id === row.matchedId);
         if (itemId) {
           merged += 1;
         } else {
@@ -273,6 +218,7 @@ const ScanReceiptPage = () => {
             expirationDate: null,
             shoppingList: false,
             aliases: normText(row.receiptName) !== normText(row.name) ? [row.receiptName] : [],
+            tags: row.tags || [],
             // Key the item by its barcode when one is present, so future
             // receipt scans (and the barcode scanner) match it by id.
             ...(isRealBarcode(row.barcode)
@@ -284,20 +230,32 @@ const ScanReceiptPage = () => {
             created += 1;
           }
         }
-        // Always record the purchased quantity as stock. A lot with no
-        // container is "unassigned" stock; picking a container files it there.
+        // Always record the purchased quantity as stock, in the row's
+        // container (no container = unassigned stock).
         if (typeof itemId === "string") {
           await addLot({
             itemId,
-            containerId: containerId || null,
+            containerId: row.containerId || null,
             quantity: Number(row.quantity) || 1,
             expirationDate: toDateString(row.expirationDate),
           });
         }
+        // A matched item keeps its own tags unless it had none or the user
+        // changed them here.
+        if (
+          matchedItem &&
+          (row.tags || []).length &&
+          (row.tagsTouched || !(matchedItem.tags || []).length)
+        ) {
+          try {
+            await setItemTags(row.matchedId, row.tags);
+          } catch (tagError) {
+            console.error("Failed to save tags:", tagError);
+          }
+        }
         // Remember the printed text on the matched item so the next receipt
         // (which prints the same abbreviation) matches it by name, even
         // without a barcode.
-        const matchedItem = row.matchedId && allItems.find((i) => i.id === row.matchedId);
         if (matchedItem && normText(row.receiptName) && !hasName(matchedItem, row.receiptName)) {
           try {
             await addItemAliases(row.matchedId, row.receiptName);
@@ -320,14 +278,11 @@ const ScanReceiptPage = () => {
           }
         }
       }
-      const mergedNote = merged ? ` · ${merged} merged into existing` : "";
-      const containerNote = containerId ? " · filed to container" : "";
-      notify(
-        `Saved: ${created} new item${created === 1 ? "" : "s"}` +
-          `${mergedNote}${containerNote}.`
-      );
+      const mergedNote = merged ? ` · ${merged} added to existing items` : "";
+      notify(`Saved: ${created} new item${created === 1 ? "" : "s"}${mergedNote}.`);
       setRows([]);
       setImage(null);
+      setEditingIndex(null);
     } catch (error) {
       console.error("Error saving receipt items:", error);
       notify("Failed to save some items. Please try again.", "error");
@@ -398,13 +353,16 @@ const ScanReceiptPage = () => {
                         sx={{ flex: 1, minWidth: 0 }}
                       />
                     </Box>
-                    {row.receiptName && normText(row.receiptName) !== normText(row.name) && (
+                    {((row.receiptName && normText(row.receiptName) !== normText(row.name)) || row.lines > 1) && (
                       <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: 0.5, ml: 5 }}>
-                        On receipt: <span dir="auto">{row.receiptName}</span>
+                        {row.receiptName && normText(row.receiptName) !== normText(row.name) && (
+                          <>On receipt: <span dir="auto">{row.receiptName}</span></>
+                        )}
+                        {row.lines > 1 && ` · ${row.lines} lines combined`}
                       </Typography>
                     )}
 
-                    {/* Row 2: price, qty, expiry */}
+                    {/* Row 2: price, qty */}
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
                       <TextField
                         label="Price"
@@ -422,18 +380,101 @@ const ScanReceiptPage = () => {
                         onChange={(e) => updateRow(index, "quantity", Number(e.target.value))}
                         sx={{ width: 70 }}
                       />
-                      <DatePicker
-                        label="Expires"
-                        value={row.expirationDate || null}
-                        onChange={(d) => updateRow(index, "expirationDate", d)}
-                        slotProps={{
-                          field: { clearable: true },
-                          textField: { size: "small", sx: { width: 160 } },
-                        }}
-                      />
                     </Box>
 
-                    {/* Row 3: match status + relink */}
+                    {/* Row 3: where it goes, tags, expiry — one line, tap to edit */}
+                    <ButtonBase
+                      onClick={() => setEditingIndex(editingIndex === index ? null : index)}
+                      aria-expanded={editingIndex === index}
+                      sx={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        mt: 1,
+                        px: 1,
+                        py: 0.75,
+                        borderRadius: 1,
+                        bgcolor: "action.hover",
+                      }}
+                    >
+                      <Typography variant="body2">
+                        → <strong>{containerName(row.containerId)}</strong>
+                        {" · "}
+                        {(row.tags || []).length ? row.tags.join(", ") : "no tags"}
+                        {" · "}
+                        {row.expirationDate
+                          ? `expires ${dayjs(row.expirationDate).format("D MMM YYYY")}`
+                          : "no expiry"}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                        {[
+                          row.containerReason,
+                          row.expiryReason && `expiry: ${row.expiryReason}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        {editingIndex === index ? "" : " — tap to change"}
+                      </Typography>
+                    </ButtonBase>
+
+                    {editingIndex === index && (
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 1.5 }}>
+                        <FormControl size="small" fullWidth>
+                          <InputLabel>Container</InputLabel>
+                          <Select
+                            value={row.containerId || ""}
+                            label="Container"
+                            onChange={(e) =>
+                              editSuggestion(index, {
+                                containerId: e.target.value,
+                                containerTouched: true,
+                                containerReason: "set by you",
+                              })
+                            }
+                          >
+                            <MenuItem value="">
+                              <em>No container</em>
+                            </MenuItem>
+                            {containers.map((c) => (
+                              <MenuItem key={c.id} value={c.id}>
+                                {c.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Autocomplete
+                          multiple
+                          freeSolo
+                          size="small"
+                          options={tagOptions}
+                          value={row.tags || []}
+                          onChange={(e, value) =>
+                            editSuggestion(index, {
+                              tags: [...new Set(value.map((t) => normText(t)).filter(Boolean))],
+                              tagsTouched: true,
+                            })
+                          }
+                          renderInput={(params) => <TextField {...params} label="Tags" />}
+                        />
+                        <DatePicker
+                          label="Expires"
+                          value={row.expirationDate || null}
+                          onChange={(d) =>
+                            editSuggestion(index, {
+                              expirationDate: d,
+                              expiryTouched: true,
+                              expiryReason: "set by you",
+                            })
+                          }
+                          slotProps={{
+                            field: { clearable: true },
+                            textField: { size: "small" },
+                          }}
+                        />
+                      </Box>
+                    )}
+
+                    {/* Row 4: match status + relink */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
                       <Chip
                         size="small"
@@ -456,15 +497,12 @@ const ScanReceiptPage = () => {
             <Divider sx={{ my: 2 }} />
 
             <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <InputLabel>Add all to container (optional)</InputLabel>
+              <InputLabel>Set all to container…</InputLabel>
               <Select
-                value={containerId}
-                label="Add all to container (optional)"
-                onChange={(e) => setContainerId(e.target.value)}
+                value=""
+                label="Set all to container…"
+                onChange={(e) => setAllContainers(e.target.value)}
               >
-                <MenuItem value="">
-                  <em>Don&apos;t add to a container</em>
-                </MenuItem>
                 {containers.map((c) => (
                   <MenuItem key={c.id} value={c.id}>
                     {c.name}
@@ -531,7 +569,10 @@ const ScanReceiptPage = () => {
                   ) || null
                 : null
             }
-            onChange={(event, item) => setRowMatch(matchRowIndex, item)}
+            onChange={(event, item) => {
+              setRowMatch(matchRowIndex, item);
+              setMatchRowIndex(null);
+            }}
             renderOption={(props, option) => (
               <li {...props} key={option.id}>
                 <Box>

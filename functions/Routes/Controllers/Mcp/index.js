@@ -382,6 +382,7 @@ const TOOLS = [
         } else {
           const qty = typeof quantity === "number" ? quantity : 1;
           await LotService.addLot(itemId, c.id, qty, toDate(expirationDate));
+          await ItemService.rememberStock(itemId, c.id, toDate(expirationDate));
           note += ` Stocked ${qty} in "${c.name}".`;
         }
       }
@@ -502,6 +503,7 @@ const TOOLS = [
       if (!c) return `No container found matching "${container}".`;
       const qty = typeof quantity === "number" ? quantity : 1;
       await LotService.addLot(it.id, c.id, qty, toDate(expirationDate));
+      await ItemService.rememberStock(it.id, c.id, toDate(expirationDate));
       return `Added ${qty} ${it.name} to "${c.name}".`;
     },
   },

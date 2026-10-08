@@ -18,7 +18,10 @@ app.post("/api/ai/parseReceipt", authenticate, async (req, res) => {
       });
     }
 
-    const result = await AiService.parseReceipt(req.body.image);
+    const result = await AiService.parseReceipt(
+      req.body.image,
+      Array.isArray(req.body.tags) ? req.body.tags : [],
+    );
 
     return res.status(200).send({ status: "Success", data: result });
   } catch (error) {
